@@ -399,7 +399,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Generate a tennis-racket free-rigid-body dataset on SO(3)."
     )
-    parser.add_argument("--save_dir",    type=str,   default="datasets/data/tennis_racket_3d")
+    parser.add_argument("--save_dir",    type=str,   default="data/tennis_data")
     parser.add_argument("--seed",        type=int,   default=0)
     parser.add_argument("--samples",     type=int,   default=50)
     parser.add_argument("--timesteps",   type=int,   default=100)
