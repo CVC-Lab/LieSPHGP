@@ -16,3 +16,5 @@ datasets/**/*.pkl
 envs/gym-pybullet-drones/
 results/
 stats/
+venv/
+.DS_Store
