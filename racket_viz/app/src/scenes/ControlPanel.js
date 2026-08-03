@@ -49,9 +49,9 @@ export function referencesForScenario(meta) {
   if (meta.mode === "free") {
     const [hMin, hMid, hMax] = meta.H_axis;
     return [
-      { value: hMin, color: AXIS_COLORS[0], label: "H(short axis)" },
+      { value: hMin, color: AXIS_COLORS[0], label: "H(long axis)" },
       { value: hMid, color: AXIS_COLORS[1], label: "H(intermediate axis)" },
-      { value: hMax, color: AXIS_COLORS[2], label: "H(long axis)" },
+      { value: hMax, color: AXIS_COLORS[2], label: "H(short axis)" },
     ];
   }
   return [{ value: meta.desired_H, color: CONTROLLED_TARGET_COLOR, label: "desired H" }];

@@ -87,9 +87,24 @@ function refreshSubfieldVisibility() {
 }
 
 function formatInertia(I) {
-  // I is always sorted ascending (I[0]=short/imin, I[1]=intermediate/imid,
-  // I[2]=long/imax -- see racketGeometry.js).
-  return `Moments of inertia (short, intermediate, long axes): ${I[0].toFixed(4)}, ${I[1].toFixed(4)}, ${I[2].toFixed(4)}`;
+  // I is always sorted ascending -- I[0]=imin (smallest moment of inertia,
+  // the LONG/handle axis), I[1]=imid (intermediate), I[2]=imax (largest
+  // moment of inertia, the SHORT/face-normal axis) -- see racketGeometry.js.
+  // Counterintuitive but correct: moment of inertia is smallest about an
+  // object's longest axis (mass sits close to it) and largest about its
+  // shortest axis (mass swings far around it).
+  const rows = [
+    ["I₁ (long axis)", I[0]],
+    ["I₂ (intermediate)", I[1]],
+    ["I₃ (short axis)", I[2]],
+  ];
+  const rowsHtml = rows
+    .map(
+      ([label, value]) =>
+        `<div style="display:flex;justify-content:space-between;">${label}<span>${value.toFixed(4)}</span></div>`
+    )
+    .join("");
+  return `<div style="margin-bottom:4px;">Moments of inertia</div>${rowsHtml}`;
 }
 
 function renderLegend(container, items) {
@@ -339,7 +354,7 @@ function previewRacketGeometry() {
   if (previousQuaternion) racketGroup.quaternion.copy(previousQuaternion);
   racketScene.add(racketGroup);
 
-  inertiaReadout.textContent = formatInertia(geometry.I);
+  inertiaReadout.innerHTML = formatInertia(geometry.I);
 }
 for (const id of ["handleLength", "hoopLength", "hoopWidth", "hoopFraction"]) {
   sliders[id].addEventListener("input", previewRacketGeometry);
@@ -584,7 +599,7 @@ function renderDoc(doc) {
   achievedIndex = computeAchievedIndex(doc.frames.M_body, doc.frames.t, doc.meta);
   lastTorqueTextMs = null;
 
-  inertiaReadout.textContent = formatInertia(doc.meta.I);
+  inertiaReadout.innerHTML = formatInertia(doc.meta.I);
 
   playback = new Playback(doc.frames.t);
   updateFrame(0);
