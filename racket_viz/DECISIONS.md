@@ -811,3 +811,67 @@ before assuming the underlying logic is wrong.
 JS: 124/124 Vitest (3 new tests for `computeAutoFitDistance`: reproduces the
 original default distance, scales linearly with maxExtent, never returns
 non-positive for a degenerate input).
+
+## 2026-08-03 — Aesthetics pass (Observatory → Blueprint) and Cloudflare Pages deployment
+
+Ran an aesthetics-mockup exploration (four static HTML color-theme previews
+of the real panel layout, generated without touching any app code) so the
+user could pick a direction before implementation. Landed on "Blueprint"
+(deep navy, chalk-white ink, gold/cyan/coral accents) after trying
+"Observatory" (dark neon) first and deciding against it. Implementation:
+`app/src/theme.js` centralizes every canvas/WebGL color as one exported
+object; `index.html`'s `:root` CSS variables mirror the same palette for
+chrome (backgrounds, borders, sliders, buttons) -- the two are hand-kept in
+sync (documented in both files) since there's no build-time bridge between
+JS and CSS here. Swapping themes going forward means editing those two
+blocks, not hunting hex literals across scene files.
+
+Alongside the theme, fixed several rendering issues the user caught by
+inspection: the WebGL panels (racket, sphere, 3D Hamiltonian) were defaulting
+to THREE's black clear color instead of matching the 2D panels' own
+`ctx.fillStyle`, so all three scenes now get `scene.background` set
+explicitly to `THEME.panelBg`. The four grid panels could render at visibly
+different heights depending on how many legend items each one wrapped to
+(more legend items → more wrapped lines → less height left for the actual
+`.panel` canvas box within the same fixed-height grid cell) -- fixed with a
+fixed (not min-) height on `.panel-legend` plus an empty matching-height
+spacer under the racket panel (which has no legend of its own). Removed the
+"close to the tipping point" racket caption entirely per request (the
+underlying `scenarioRunner.js` caption field is left alone -- unused
+metadata now, same as the pre-existing `dot_color` field, not worth a
+schema change for a UI-only removal). The energy panel's y-axis floored at
+a slightly-negative padded minimum instead of exactly 0 even though H is
+provably non-negative (a sum of squares over positive inertias), leaving a
+dead strip of unreachable space below the "0" gridline -- now
+`yMin = Math.max(0, yMin - pad)` so zero sits exactly at the plot's
+bottom-left corner when the data justifies it. Both time-series panels
+(`ControlPanel.js`, `TimeSeriesPanel.js`) also picked up small top/right
+margins in `drawAxes`'s plot-area bounds -- the topmost y-tick and
+rightmost x-tick labels were being drawn exactly at the canvas edge
+(`plotTop=0`, `plotRight=width`), so half the label rendered off-canvas.
+
+Separately, got `racket_viz` committed and pushed for the first time (it had
+existed only locally until now) and set up Cloudflare Pages for a
+shareable deployment link, hitting two unrelated blockers worth recording:
+
+1. Cloudflare's build clones with submodules recursively, and this repo has
+   had a dangling gitlink (`src/models/3D_SO3_Windy_Pendulum/ph_gp_ode_v2/JaxJD`,
+   commit-mode tree entry with no matching `.gitmodules` entry) since its
+   very first commit, on every branch -- so the clone step failed outright
+   with "error occurred while updating repository submodules" before
+   Cloudflare ever got to checking whether `racket_viz/` existed. Fixed by
+   `git rm --cached`-ing the dangling gitlink, scoped to `feature/racket-viz`
+   only (not `main`), since it's pre-existing and unrelated to this feature.
+2. Cloudflare's GitHub OAuth login (used to sign in) is a separate grant
+   from the GitHub App *installation* that actually authorizes repo access
+   -- for an org-owned repo (`CVC-Lab/LieSPHGP`), installing/approving that
+   app requires an org owner, not just the repo's contributors. Confirmed
+   via GitHub's own settings (`Installed GitHub Apps` empty on the personal
+   account, org-level installations page 404s for a non-admin) rather than
+   guessed. Resolved once an org admin approved the pending install request.
+
+Build settings landed on: root directory `racket_viz/app`, build command
+`npm run build`, deploy command `npx wrangler pages deploy dist` (Cloudflare's
+newer unified Workers+Pages UI needs an explicit Wrangler deploy command even
+for a plain static site -- leaving it blank errors with "need deploy
+command").
