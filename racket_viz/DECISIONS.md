@@ -874,4 +874,17 @@ Build settings landed on: root directory `racket_viz/app`, build command
 `npm run build`, deploy command `npx wrangler pages deploy dist` (Cloudflare's
 newer unified Workers+Pages UI needs an explicit Wrangler deploy command even
 for a plain static site -- leaving it blank errors with "need deploy
-command").
+command"). Also added `app/wrangler.jsonc` (name + `assets.directory`) so
+`wrangler deploy` (not the old Pages-only `wrangler pages deploy`) can find
+the project and static output automatically -- and passed
+`--autoconfig=false`, since `wrangler deploy`'s default framework
+auto-detection tries to wire up `@cloudflare/vite-plugin` and hard-errors
+on anything older than Vite 6, which this project doesn't need at all for
+a plain static build.
+
+One more gotcha worth recording: Cloudflare's "Retry build" replays the
+exact build-settings snapshot from when that build entry was originally
+queued, not the project's current live settings -- so updating and saving
+Settings → Build has no effect on a build you retry after the fact. Only a
+genuinely new build (fresh push, or a new manually-triggered deployment)
+picks up updated settings.
