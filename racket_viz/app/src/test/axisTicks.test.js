@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { niceTicks, formatTick, stepTicks, isMajorTick, formatStepTick } from "../scenes/axisTicks.js";
+import { niceTicks, formatTick, stepTicks, isMajorTick, formatStepTick, computeNiceStep } from "../scenes/axisTicks.js";
 
 describe("niceTicks", () => {
   it("returns `count` evenly-spaced values inclusive of min and max", () => {
@@ -82,5 +82,31 @@ describe("formatStepTick", () => {
 
   it("prints fractional steps with matching decimals", () => {
     expect(formatStepTick(0.5, 0.5)).toBe("0.5");
+  });
+});
+
+describe("computeNiceStep", () => {
+  it("reproduces the omega panel's previously hand-tuned default (range ~16 -> major 2, minor 1)", () => {
+    expect(computeNiceStep(16)).toEqual({ majorStep: 2, minorStep: 1 });
+  });
+
+  it("reproduces the energy panel's previously hand-tuned default (range ~220 -> major 20, minor 10)", () => {
+    expect(computeNiceStep(220)).toEqual({ majorStep: 20, minorStep: 10 });
+  });
+
+  it("regression: a small range (e.g. H maxing out around 14) no longer collapses to a single visible tick", () => {
+    // Previously a fixed majorStep=20 meant the only gridline below yMax=14
+    // was "0" -- nothing else fit on the chart at all.
+    const { majorStep } = computeNiceStep(14);
+    expect(majorStep).toBeLessThan(14);
+    expect(majorStep).toBe(2);
+  });
+
+  it("scales down for a very small range", () => {
+    expect(computeNiceStep(3)).toEqual({ majorStep: 0.5, minorStep: 0.1 });
+  });
+
+  it("falls back to a safe default for a non-positive range", () => {
+    expect(computeNiceStep(0)).toEqual({ majorStep: 1, minorStep: 0.5 });
   });
 });

@@ -87,7 +87,9 @@ function refreshSubfieldVisibility() {
 }
 
 function formatInertia(I) {
-  return `I1, I2, I3 = ${I[0].toFixed(4)}, ${I[1].toFixed(4)}, ${I[2].toFixed(4)}`;
+  // I is always sorted ascending (I[0]=short/imin, I[1]=intermediate/imid,
+  // I[2]=long/imax -- see racketGeometry.js).
+  return `Moments of inertia (short, intermediate, long axes): ${I[0].toFixed(4)}, ${I[1].toFixed(4)}, ${I[2].toFixed(4)}`;
 }
 
 function renderLegend(container, items) {
@@ -567,7 +569,7 @@ function renderDoc(doc) {
     updateEnergyEllipsoid(desiredEllipsoid, doc.meta.desired_H, doc.meta.I, doc.meta.R_cas);
     controlPanelLabel.textContent = "Current vs. desired (H)";
   } else {
-    controlPanelLabel.textContent = "Hamiltonian (H)";
+    controlPanelLabel.textContent = "Hamiltonian energy (H)";
   }
 
   omegaSeries = computeOmega(doc.frames.M_body, doc.meta.I);

@@ -9,7 +9,7 @@
  * THEME.unstable (the unstable axis), omega[imax] THEME.imax.
  */
 import { computeVisibleWindow } from "./rollingWindow.js";
-import { drawAxes } from "./axisTicks.js";
+import { drawAxes, computeNiceStep } from "./axisTicks.js";
 import { THEME } from "../theme.js";
 
 export const OMEGA_COLORS = [THEME.stable, THEME.unstable, THEME.imax];
@@ -79,6 +79,7 @@ export function drawTimeSeries(ctx, { t, omega, domain, currentIndex, width, hei
   ctx.fillStyle = THEME.panelBg;
   ctx.fillRect(0, 0, width, height);
 
+  const { majorStep, minorStep } = computeNiceStep(yMax - yMin);
   drawAxes(ctx, {
     toX,
     toY,
@@ -86,8 +87,8 @@ export function drawTimeSeries(ctx, { t, omega, domain, currentIndex, width, hei
     xMax: windowEnd,
     yMin,
     yMax,
-    yMinorStep: 1,
-    yMajorStep: 2,
+    yMinorStep: minorStep,
+    yMajorStep: majorStep,
     plotLeft: marginLeft,
     plotRight,
     plotTop: marginTop,

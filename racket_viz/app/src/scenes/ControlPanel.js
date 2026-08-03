@@ -25,7 +25,7 @@
  */
 import * as THREE from "three";
 import { computeVisibleWindow } from "./rollingWindow.js";
-import { drawAxes } from "./axisTicks.js";
+import { drawAxes, computeNiceStep } from "./axisTicks.js";
 import { THEME } from "../theme.js";
 
 export const CONTROLLED_TARGET_COLOR = THEME.target;
@@ -49,9 +49,9 @@ export function referencesForScenario(meta) {
   if (meta.mode === "free") {
     const [hMin, hMid, hMax] = meta.H_axis;
     return [
-      { value: hMin, color: AXIS_COLORS[0], label: "H(imin)" },
-      { value: hMid, color: AXIS_COLORS[1], label: "H(separatrix)" },
-      { value: hMax, color: AXIS_COLORS[2], label: "H(imax)" },
+      { value: hMin, color: AXIS_COLORS[0], label: "H(short axis)" },
+      { value: hMid, color: AXIS_COLORS[1], label: "H(intermediate axis)" },
+      { value: hMax, color: AXIS_COLORS[2], label: "H(long axis)" },
     ];
   }
   return [{ value: meta.desired_H, color: CONTROLLED_TARGET_COLOR, label: "desired H" }];
@@ -100,6 +100,7 @@ export function drawEnergyPanel(ctx, { t, H, references, currentIndex, width, he
   ctx.fillStyle = THEME.panelBg;
   ctx.fillRect(0, 0, width, height);
 
+  const { majorStep, minorStep } = computeNiceStep(yMax - yMin);
   drawAxes(ctx, {
     toX,
     toY,
@@ -107,14 +108,14 @@ export function drawEnergyPanel(ctx, { t, H, references, currentIndex, width, he
     xMax: windowEnd,
     yMin,
     yMax,
-    yMinorStep: 10,
-    yMajorStep: 20,
+    yMinorStep: minorStep,
+    yMajorStep: majorStep,
     plotLeft: marginLeft,
     plotRight,
     plotTop: marginTop,
     plotBottom,
     xLabel: "t (s)",
-    yLabel: "H",
+    yLabel: "Hamiltonian (H)",
   });
 
   ctx.setLineDash([5, 4]);

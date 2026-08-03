@@ -57,6 +57,52 @@ export function stepTicks(min, max, step) {
 }
 
 /**
+ * Picks a "nice" (1/2/5 x a power of ten) major step size that puts roughly
+ * `targetCount` labeled ticks across `range`, plus a minor (unlabeled)
+ * subdivision of that step. Anchored at 0 via stepTicks, so it always lines
+ * up with a round number regardless of where the data actually starts.
+ *
+ * Bucket thresholds are the geometric means between neighboring "nice"
+ * residuals (1, 2, 5, 10) -- the standard rounding rule (as in D3/matplotlib)
+ * for picking whichever of them a given rough step is numerically closest
+ * to on a log scale. `targetCount=8` (not the more typical 5) is chosen
+ * specifically because it reproduces this app's two previously hand-tuned
+ * defaults exactly: omega's range (~16 rad/s) -> major=2/minor=1, and the
+ * default geometry's H range (~220) -> major=20/minor=10.
+ *
+ * This replaces a fixed hardcoded step (tuned for one specific geometry's H
+ * range) that left charts with only a single "0" tick visible whenever the
+ * actual range was much smaller than whatever the fixed step assumed.
+ *
+ * @param {number} range yMax - yMin
+ * @param {number} [targetCount=8]
+ * @returns {{ majorStep: number, minorStep: number }}
+ */
+export function computeNiceStep(range, targetCount = 8) {
+  if (!(range > 0)) return { majorStep: 1, minorStep: 0.5 };
+  const rough = range / targetCount;
+  const magnitude = 10 ** Math.floor(Math.log10(rough));
+  const residual = rough / magnitude;
+  let niceResidual;
+  let minorDivisor;
+  if (residual < Math.SQRT2) {
+    niceResidual = 1;
+    minorDivisor = 2;
+  } else if (residual < Math.sqrt(10)) {
+    niceResidual = 2;
+    minorDivisor = 2;
+  } else if (residual < Math.sqrt(50)) {
+    niceResidual = 5;
+    minorDivisor = 5;
+  } else {
+    niceResidual = 10;
+    minorDivisor = 2;
+  }
+  const majorStep = niceResidual * magnitude;
+  return { majorStep, minorStep: majorStep / minorDivisor };
+}
+
+/**
  * Whether a stepTicks value falls on a labeled ("major") tick -- a multiple
  * of majorStep, which is itself a multiple of the minor step used to
  * generate `value`.
