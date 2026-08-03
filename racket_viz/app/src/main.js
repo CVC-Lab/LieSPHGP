@@ -120,6 +120,18 @@ refreshSliderLabels();
 refreshStartingPerturbationLabel();
 refreshSubfieldVisibility();
 
+// "Explain" flip-card toggles: one generic listener for all 4 panels rather
+// than four near-identical ones. Purely a CSS transform on the target
+// .flip-inner -- the canvas underneath keeps rendering every frame
+// regardless of which face is currently showing, same as how the 3D
+// Hamiltonian view already keeps drawing while hidden.
+document.querySelectorAll(".explain-switch").forEach((toggle) => {
+  const flipTarget = document.getElementById(toggle.dataset.flip);
+  toggle.addEventListener("change", () => {
+    flipTarget.classList.toggle("flipped", toggle.checked);
+  });
+});
+
 function readParamsFromSidebar() {
   return {
     handleLength: Number(sliders.handleLength.value),
