@@ -45,7 +45,12 @@
        below: a canvas's own height attribute would otherwise inflate their
        auto min-size and feed back into the next resize. */
     .panel-wrap { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-    .panel-label { flex-shrink: 0; min-height: 16px; font-size: 13px; font-weight: 500; color: var(--muted); padding-bottom: 6px; }
+    /* Label + Explain toggle share one row, outside the bordered box entirely
+       -- keeping the toggle out here (not inside .flip-outer) means it never
+       takes part in the 3D flip transform, so it stays crisp and clickable
+       instead of blurring/rotating along with the panel mid-flip. */
+    .panel-label-row { flex-shrink: 0; min-height: 16px; padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .panel-label { font-size: 13px; font-weight: 500; color: var(--muted); }
     /* Fixed (not min-) height so a legend that happens to wrap to 2 lines
        doesn't shrink its own panel more than a sibling panel's legend that
        fits on 1 line -- all 4 panels stay the same visual size regardless of
@@ -69,10 +74,10 @@
        the 3D rotation. .flip-inner is what actually rotates 180deg; its two
        .flip-face children (front = the live canvas, back = the explanation
        text) are each full-size and backface-hidden, so exactly one is ever
-       visible. The .explain-toggle switch is a sibling of .flip-inner, not a
-       child of either face, so it stays put and clickable regardless of
-       which face is showing -- otherwise flipping to the explanation would
-       flip the only control that can flip back away with it. */
+       visible. .explain-toggle lives in .panel-label-row, entirely outside
+       .flip-outer, so it never takes part in the 3D rotation -- flipping to
+       the explanation would otherwise blur/rotate the only control that can
+       flip back away with it. */
     .flip-outer { position: relative; flex: 1; min-height: 0; min-width: 0; perspective: 1600px; }
     .flip-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.6s ease; }
     .flip-inner.flipped { transform: rotateY(180deg); }
@@ -86,10 +91,11 @@
       padding: 14px 16px; font-size: 12px; line-height: 1.6; color: var(--text);
     }
     .flip-back p { margin: 0; }
-    .explain-toggle {
-      position: absolute; top: 8px; left: 10px; display: flex; align-items: center; gap: 6px;
-      font-size: 11px; color: var(--muted); z-index: 3;
-    }
+    /* Larger + centered reads better for the 3 shorter explanations; the
+       Casimir sphere's is longer (more concepts to cover) so it stays at the
+       base size/left-aligned, tightened for length instead -- see index.html. */
+    .flip-back.centered { text-align: center; font-size: 14px; }
+    .explain-toggle { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); flex-shrink: 0; }
 
     #sidebar {
       width: 300px; flex-shrink: 0; background: var(--sidebar-bg); border-left: 1px solid var(--border);
@@ -183,25 +189,33 @@
       </div>
       <div id="panels">
         <div class="panel-wrap">
-          <div class="panel-label" id="racket-label"></div>
-          <div class="flip-outer">
-            <div class="flip-inner" id="racket-flip">
-              <div class="flip-face flip-front">
-                <canvas id="racket-canvas"></canvas>
-              </div>
-              <div class="flip-face flip-back">
-                <p>This is a live 3D render of the racket's actual orientation — not a canned animation. Its shape comes directly from the geometry sliders. The rotation each frame comes from numerically solving the real rigid-body equations of motion (Euler's equations) for the spin it started with. If Control is off, you're watching the raw spin of the racket. If Control is on, an attitude controller is actively steering it toward the chosen target axis.</p>
-              </div>
-            </div>
+          <div class="panel-label-row">
+            <div class="panel-label" id="racket-label"></div>
             <div class="explain-toggle">
               <span>Explain</span>
               <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="racket-flip" /><span class="slider"></span></label>
             </div>
           </div>
+          <div class="flip-outer">
+            <div class="flip-inner" id="racket-flip">
+              <div class="flip-face flip-front">
+                <canvas id="racket-canvas"></canvas>
+              </div>
+              <div class="flip-face flip-back centered">
+                <p>This is a live 3D render of the racket's actual orientation — not a canned animation. Its shape comes directly from the geometry sliders. The rotation each frame comes from numerically solving the real rigid-body equations of motion (Euler's equations) for the spin it started with. If Control is off, you're watching the raw spin of the racket. If Control is on, an attitude controller is actively steering it toward the chosen target axis.</p>
+              </div>
+            </div>
+          </div>
           <div class="panel-legend"></div>
         </div>
         <div class="panel-wrap">
-          <div class="panel-label" id="control-panel-label">Hamiltonian energy (H)</div>
+          <div class="panel-label-row">
+            <div class="panel-label" id="control-panel-label">Hamiltonian energy (H)</div>
+            <div class="explain-toggle">
+              <span>Explain</span>
+              <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="control-flip" /><span class="slider"></span></label>
+            </div>
+          </div>
           <div class="flip-outer">
             <div class="flip-inner" id="control-flip">
               <div class="flip-face flip-front">
@@ -212,31 +226,29 @@
                   <label class="switch small"><input type="checkbox" id="hamiltonianViewToggle" /><span class="slider"></span></label>
                 </div>
               </div>
-              <div class="flip-face flip-back">
+              <div class="flip-face flip-back centered">
                 <p>The Hamiltonian represents the total energy of the system, in this case, the racket's rotational kinetic energy. The dashed lines show the energy the racket would have if spinning purely about each of its three axes. The racket's actual energy (solid line) stays trapped between the smallest and largest of these forever. With Control on, the dashed line becomes the chosen target energy instead, and the solid line is no longer flat — it climbs or falls as the controller does real work to get there.</p>
               </div>
-            </div>
-            <div class="explain-toggle">
-              <span>Explain</span>
-              <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="control-flip" /><span class="slider"></span></label>
             </div>
           </div>
           <div class="panel-legend" id="control-panel-legend"></div>
         </div>
         <div class="panel-wrap">
-          <div class="panel-label">Angular velocity</div>
+          <div class="panel-label-row">
+            <div class="panel-label">Angular velocity</div>
+            <div class="explain-toggle">
+              <span>Explain</span>
+              <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="omega-flip" /><span class="slider"></span></label>
+            </div>
+          </div>
           <div class="flip-outer">
             <div class="flip-inner" id="omega-flip">
               <div class="flip-face flip-front">
                 <canvas id="omega-canvas"></canvas>
               </div>
-              <div class="flip-face flip-back">
+              <div class="flip-face flip-back centered">
                 <p>This display shows the spin rate (radians/second) about each of the racket's principal axes, over time — long, intermediate, and short. Near the intermediate axis, all three swing through large, coupled oscillations instead of settling down, which is the visible signature of the instability. Near a stable axis (long or short), one component dominates while the other two stay as small, bounded wobbles.</p>
               </div>
-            </div>
-            <div class="explain-toggle">
-              <span>Explain</span>
-              <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="omega-flip" /><span class="slider"></span></label>
             </div>
           </div>
           <div class="panel-legend">
@@ -246,19 +258,21 @@
           </div>
         </div>
         <div class="panel-wrap">
-          <div class="panel-label">Casimir Sphere</div>
+          <div class="panel-label-row">
+            <div class="panel-label">Casimir Sphere</div>
+            <div class="explain-toggle">
+              <span>Explain</span>
+              <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="sphere-flip" /><span class="slider"></span></label>
+            </div>
+          </div>
           <div class="flip-outer">
             <div class="flip-inner" id="sphere-flip">
               <div class="flip-face flip-front">
                 <canvas id="sphere-canvas"></canvas>
               </div>
               <div class="flip-face flip-back">
-                <p>A Casimir is a conserved quantity — built into the underlying structure of the physics, not something we choose. Here, that quantity is the racket's total angular momentum. Because it never changes during a free spin, every possible trajectory is confined to the surface of a sphere. The light-blue and coral dots are the six equilibrium spins (stable and unstable). Initializing the system exactly at one of these dots without perturbation or disturbance (by wind, for example) will lead to a constant system since every derivative will be 0. The orange loops are the separatrices — trajectories that pass exactly through the unstable points, marking the boundary between the blue, gently-wobbling loops nearby and a full flip. The yellow dot is where the racket actually is right now, moving in real time — under Control or Wind it can wander off this sphere entirely, since angular momentum is only conserved for a truly free spin.</p>
+                <p>A Casimir is a conserved quantity, built into the physics itself rather than something we choose — here, it's the racket's total angular momentum. Since it never changes during a free spin, every trajectory stays confined to this sphere's surface. The light-blue and coral dots are the six equilibrium spins (stable and unstable); starting exactly on one, undisturbed, leaves the state frozen forever, since every derivative vanishes there. The orange separatrices pass exactly through the unstable points, marking the boundary between the nearby blue wobbling loops and a full flip. The yellow dot is the racket's actual state right now — under Control or Wind it can leave this sphere entirely, since angular momentum is only conserved for a truly free spin.</p>
               </div>
-            </div>
-            <div class="explain-toggle">
-              <span>Explain</span>
-              <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="sphere-flip" /><span class="slider"></span></label>
             </div>
           </div>
           <div class="panel-legend">
