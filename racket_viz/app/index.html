@@ -68,6 +68,11 @@
       position: absolute; top: 8px; right: 10px; display: flex; align-items: center; gap: 6px;
       font-size: 11px; color: var(--muted); z-index: 2;
     }
+    /* Native <input> checkboxes ignore backface-visibility in some browsers
+       (a known Chrome/WebKit quirk), so the front face's "3D" toggle can
+       still bleed through once .flip-inner has rotated to show the back --
+       hide it explicitly rather than relying on backface-visibility alone. */
+    .flip-inner.flipped .panel-toggle { display: none; }
 
     /* Flip-card mechanic ("Explain" toggle): .flip-outer is the flex/grid
        sizing box (replaces the old plain .panel), holding a perspective for
