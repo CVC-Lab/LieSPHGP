@@ -94,9 +94,9 @@ function formatInertia(I) {
   // object's longest axis (mass sits close to it) and largest about its
   // shortest axis (mass swings far around it).
   const rows = [
-    ["I₁ (long axis)", I[0]],
-    ["I₂ (intermediate)", I[1]],
-    ["I₃ (short axis)", I[2]],
+    ["I₁ (Long Axis)", I[0]],
+    ["I₂ (Intermediate)", I[1]],
+    ["I₃ (Short Axis)", I[2]],
   ];
   const rowsHtml = rows
     .map(
@@ -104,7 +104,7 @@ function formatInertia(I) {
         `<div style="display:flex;justify-content:space-between;">${label}<span>${value.toFixed(4)}</span></div>`
     )
     .join("");
-  return `<div style="margin-bottom:4px;">Moments of inertia</div>${rowsHtml}`;
+  return `<div style="margin-bottom:4px;">Moments of Inertia</div>${rowsHtml}`;
 }
 
 function renderLegend(container, items) {
@@ -183,7 +183,7 @@ function applyPreset(preset) {
 //     controlOn: false,
 //     windOn: false,
 //     T: 20,
-//     label: "Free spin",
+//     label: "Free Spin",
 //     caption: "Close to the tipping point, the racket suddenly flips over.",
 //   })
 // );
@@ -194,7 +194,7 @@ function applyPreset(preset) {
 //     endAxis: "imin",
 //     windOn: false,
 //     T: 6,
-//     label: "Control on",
+//     label: "Control On",
 //     caption: "An active controller steers the spin toward axis imin.",
 //   })
 // );
@@ -205,7 +205,7 @@ function applyPreset(preset) {
 //     endAxis: "imax",
 //     windOn: false,
 //     T: 6,
-//     label: "Control on",
+//     label: "Control On",
 //     caption: "An active controller steers the spin toward axis imax.",
 //   })
 // );
@@ -594,9 +594,9 @@ function renderDoc(doc) {
   desiredEllipsoid.visible = doc.meta.mode === "controlled";
   if (doc.meta.mode === "controlled") {
     updateEnergyEllipsoid(desiredEllipsoid, doc.meta.desired_H, doc.meta.I, doc.meta.R_cas);
-    controlPanelLabel.textContent = "Current vs. desired (H)";
+    controlPanelLabel.textContent = "Current vs. Desired (H)";
   } else {
-    controlPanelLabel.textContent = "Hamiltonian energy (H)";
+    controlPanelLabel.textContent = "Hamiltonian Energy (H)";
   }
 
   omegaSeries = computeOmega(doc.frames.M_body, doc.meta.I);
@@ -604,7 +604,7 @@ function renderDoc(doc) {
 
   hSeries = computeH(doc.frames.M_body, doc.meta.I);
   hReferences = referencesForScenario(doc.meta);
-  renderLegend(controlPanelLegend, [{ color: "#eeeeee", label: "current" }, ...hReferences]);
+  renderLegend(controlPanelLegend, [{ color: "#eeeeee", label: "Current" }, ...hReferences]);
 
   torqueMagnitudeSeries = computeTorqueMagnitude(doc.frames.controller_torque);
   cumulativeWorkSeries = computeCumulativeWork(doc.frames.controller_torque, doc.frames.M_body, doc.meta.I, doc.frames.t);
@@ -628,7 +628,7 @@ function runFromSidebar(label, caption) {
   // started produces no motion), but indistinguishable from a stuck/broken
   // run without saying so explicitly.
   if (params.controlOn && params.startAxis === params.endAxis && label === undefined) {
-    params.label = "Already at target";
+    params.label = "Already at Target";
     params.caption = "Starting and ending axis are the same -- holding steady, nothing to correct.";
   }
 
@@ -637,8 +637,28 @@ function runFromSidebar(label, caption) {
 }
 
 let lastFrameMs = null;
+let running = false;
+
+/** Stops this system's own rAF self-reschedule -- called by the carousel
+ * when this slide isn't the active one, so an off-screen system's WebGL
+ * renders/physics tick don't keep costing frames forever as more systems
+ * get added (see app.js). Idempotent. */
+export function pause() {
+  running = false;
+}
+
+/** Restarts the rAF loop if it isn't already running. lastFrameMs is reset
+ * so the dt computed on the very next frame doesn't include however long
+ * this system sat paused. */
+export function resume() {
+  if (running) return;
+  running = true;
+  lastFrameMs = null;
+  requestAnimationFrame(animate);
+}
 
 function animate(nowMs) {
+  if (!running) return;
   requestAnimationFrame(animate);
 
   const dt = lastFrameMs === null ? 0 : (nowMs - lastFrameMs) / 1000;
@@ -690,7 +710,6 @@ applyPreset({
   controlOn: false,
   windOn: false,
   T: 20,
-  label: "Free spin",
+  label: "Free Spin",
   caption: "Close to the tipping point, the racket suddenly flips over.",
 });
-requestAnimationFrame(animate);

@@ -5,9 +5,18 @@ import {
   computeCumulativeWork,
   computeTorqueMagnitude,
   computeAchievedIndex,
+  computeAchievedIndexAttitude,
+  computeAttitudeErrorDeg,
+  computeSettledIndex,
 } from "../scenes/ControlMetrics.js";
 import { computeH } from "../scenes/ControlPanel.js";
 import { buildScenario } from "../physics/scenarioRunner.js";
+
+const IDENTITY = [
+  [1, 0, 0],
+  [0, 1, 0],
+  [0, 0, 1],
+];
 
 describe("isAchievable", () => {
   it("is true only for controlled, wind-off, stable-target scenarios", () => {
@@ -110,5 +119,58 @@ describe("computeAchievedIndex", () => {
       [0, 0, 1],
     ];
     expect(computeAchievedIndex(M_body, t, baseMeta, 0.05, 1.0)).toBe(2);
+  });
+});
+
+describe("computeAttitudeErrorDeg", () => {
+  it("is 0 for identical orientations", () => {
+    expect(computeAttitudeErrorDeg(IDENTITY, [1, 0, 0, 0])).toBeCloseTo(0, 9);
+  });
+
+  it("is 90 for a quaternion 90deg off the target", () => {
+    const s = Math.SQRT1_2;
+    const quat90AboutX = [s, s, 0, 0];
+    expect(computeAttitudeErrorDeg(IDENTITY, quat90AboutX)).toBeCloseTo(90, 6);
+  });
+});
+
+describe("computeAchievedIndexAttitude", () => {
+  const t = [0, 1, 2, 3, 4];
+  const identityQuat = [1, 0, 0, 0];
+  const farQuat = [Math.SQRT1_2, Math.SQRT1_2, 0, 0]; // 90deg off IDENTITY
+
+  it("returns null with no target (uncontrolled)", () => {
+    expect(computeAchievedIndexAttitude([identityQuat, identityQuat], null, [0, 1])).toBeNull();
+  });
+
+  it("returns null if it never sustains within tolerance", () => {
+    const quats = [farQuat, farQuat, farQuat, farQuat, farQuat];
+    expect(computeAchievedIndexAttitude(quats, IDENTITY, t)).toBeNull();
+  });
+
+  it("finds the index where sustained convergence begins", () => {
+    const quats = [farQuat, farQuat, identityQuat, identityQuat, identityQuat];
+    expect(computeAchievedIndexAttitude(quats, IDENTITY, t, 0.03, 1.0)).toBe(2);
+  });
+});
+
+describe("computeSettledIndex", () => {
+  const t = [0, 1, 2, 3, 4];
+  const I = [1, 1, 1]; // omega == M_body directly
+
+  it("returns null if angular velocity never sustains near zero", () => {
+    const M_body = [[1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0]];
+    expect(computeSettledIndex(M_body, I, t)).toBeNull();
+  });
+
+  it("finds the index where sustained rest begins, regardless of orientation", () => {
+    const M_body = [
+      [1, 0, 0],
+      [1, 0, 0],
+      [0, 0, 0], // comes to rest here...
+      [0, 0, 0], // ...and stays (>= 1s sustained by t=3)
+      [0, 0, 0],
+    ];
+    expect(computeSettledIndex(M_body, I, t)).toBe(2);
   });
 });

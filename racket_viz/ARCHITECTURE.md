@@ -236,6 +236,90 @@ validated at three target axes (e1/e2/e3, Stage D); "alignment" = the full
 wind-robustness scenario) — no Python module in *this* repo has it yet, since
 wind didn't exist as a feature until the sidebar needed it.
 
+## Multi-system carousel (added for the windy pendulum)
+
+The site now holds more than one physical system, switchable via a
+horizontal slide carousel rather than a single fixed layout — built to
+generalize to a third system later, not hardcoded to exactly two.
+
+- `index.html`: `#system-viewport` (clips to one slide's width, `overflow:
+  hidden`) → `#system-track` (the row that actually translates) → one
+  `.system-slide` per system, each a fully self-contained copy of the
+  racket's original `#app-layout` markup (own panels grid, own sidebar) with
+  system-specific element ids (`pendulum-*` instead of bare ids). Sliding via
+  CSS `transform`, not `display:none/block` — an off-screen slide stays laid
+  out with real `clientWidth`/`clientHeight`, so its canvases never hit the
+  "0-size while hidden" bug the 3D/torque panels already had to work around
+  for their own `display:none` toggles.
+- `app.js` is the new top-level entry point (replacing the old direct
+  `<script src="/src/main.js">`): it owns which slide is active and drives
+  `pause()`/`resume()` on that system's own module — each system module (e.g.
+  `main.js`, `pendulumMain.js`) exports these two functions, gating its own
+  `requestAnimationFrame` self-reschedule behind a `running` flag. This keeps
+  an off-screen system from costing render/physics cycles forever as more
+  systems get added, without needing any shared "engine" abstraction.
+- **Deliberately NOT a shared generic "System" class.** `pendulumMain.js` is
+  a second, independently-written copy of `main.js`'s pattern (own
+  Three.js renderer/scene, own sidebar wiring, own `animate()` loop), not a
+  parameterized instance of a common base. The user explicitly expected "a
+  lot of copying and pasting" for additional systems, and premature
+  abstraction before a third system exists to prove out what's actually
+  shared would guess wrong about the generalization. What genuinely *is*
+  shared (and reused directly, unmodified): `ControlPanel.js::drawEnergyPanel`,
+  `TimeSeriesPanel.js`, `ControlMetrics.js`'s torque/work panel,
+  `rigidBody.js::integrateFull`, `controllers.js::GeometricAttitudeController`,
+  `theme.js`, and every CSS class (`.panel-wrap`, `.flip-outer`, etc).
+- **`DataLoader.js::validateScenario` is racket-specific and must NOT be
+  called from a new system's `renderDoc`.** It enforces the exact schema
+  documented below (`R_cas`, `background`, `geometry.verts_body`/etc.) — a
+  real bug hit during this build: copy-pasting `validateScenario(doc)` into
+  `pendulumMain.js` made the pendulum's (legitimately different-shaped) doc
+  throw at module-load time, which silently prevented `app.js`'s import of
+  that module from completing — breaking `resume()` for *every* system,
+  including the racket's, since `app.js`'s own code never got past the
+  failed import. If a new system's data shape doesn't match the racket's
+  contract, skip `validateScenario` for it entirely rather than relaxing the
+  racket's own schema to accommodate a different system.
+
+## Windy pendulum: physics differences from the racket
+
+`pendulum_geometry.py`/`pendulumGeometry.js`: a thin rod + solid spherical
+bob, entirely closed-form (no point discretization needed, unlike the
+racket's numerical quadrature) — see that file's docstring for the exact
+parallel-axis derivation. Two things are NOT like the racket:
+
+- **Inertia is taken about the pivot, not the COM.** A pendulum rotates about
+  a fixed point that generally isn't its own center of mass — this is
+  exactly why gravity produces a nonzero torque at all. `com` is exported
+  alongside `I` specifically so the gravity-torque calculation
+  (`gravityTorqueBody`) has something to act on.
+- **No Casimir sphere.** Angular momentum is conserved for the free-floating
+  racket (no external torque) but NOT for a gravity pendulum — there's no
+  single invariant sphere to draw fixed points and separatrices on. Panel 4
+  is a promoted torque/work readout instead (reusing `ControlMetrics.js`
+  exactly as the racket's sidebar already did), not a re-skinned sphere.
+
+**Controller**: `GravityCompensatedAttitudeController` = the racket's
+`GeometricAttitudeController` PD law, MINUS the exact gravity torque at the
+current orientation (feedforward cancellation, not a plus — see
+`pendulum_controller.py`'s docstring for the sign derivation). This is what
+makes it genuine IDA-PBC (shapes the closed-loop system to have its one
+equilibrium at the target attitude) rather than a PD controller that would
+leave a permanent steady-state droop against gravity. **Do not reuse this
+class's default `clip=2.0`** (inherited from the racket's direct-torque-
+actuator scale) for a real pendulum scenario — the worst-case gravity torque
+alone (`totalMass * g * |com|`) is easily several N·m, so that clip
+chronically saturates the controller, leaving an uncancelled gravity residual
+that looks exactly like an uncontrolled swing instead of converging (a real
+bug hit during this build, fixed by passing `Infinity` from
+`pendulumScenarioRunner.js`).
+
+**Free-swing default is deliberately tilted** (`startingAngleDeg` defaults to
+25, not 0): starting exactly at the hanging-straight-down equilibrium is a
+true zero-torque fixed point (see `pendulum_dynamics.py`'s docstring), so an
+exact 0° start never moves at all — same reasoning as the racket's own
+`startingPerturbation` existing to avoid a boring exact on-axis start.
+
 ## eigen3x3.js — the one module with no Python line to translate
 
 `racket_geometry.py` diagonalizes the inertia tensor with `numpy.linalg.eigh`

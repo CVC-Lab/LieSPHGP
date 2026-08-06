@@ -178,6 +178,12 @@ export function drawAxes(ctx, { toX, toY, xMin, xMax, yMin, yMax, yMinorStep, yM
   // units) doesn't turn into visual clutter.
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
+  // Tracked so the rotated yLabel below can be placed clear of however wide
+  // the tick values actually turn out to be -- a fixed offset overlapped the
+  // tick numbers whenever they were wider than expected (e.g. the pendulum's
+  // Hamiltonian axis, whose negative-decimal ticks like "-8.60" are the
+  // widest labels in the app).
+  let maxYTickLabelWidth = 0;
   for (const v of yTicks) {
     const y = toY(v);
     const major = !yMinorStep || !yMajorStep || isMajorTick(v, yMajorStep);
@@ -200,6 +206,7 @@ export function drawAxes(ctx, { toX, toY, xMin, xMax, yMin, yMax, yMinorStep, yM
       ctx.fillStyle = LABEL_COLOR;
       const label = yMinorStep ? formatStepTick(v, yMajorStep ?? yMinorStep) : formatTick(v, yMax - yMin);
       ctx.fillText(label, plotLeft - TICK_LENGTH - 3, y);
+      maxYTickLabelWidth = Math.max(maxYTickLabelWidth, ctx.measureText(label).width);
     }
   }
 
@@ -246,7 +253,14 @@ export function drawAxes(ctx, { toX, toY, xMin, xMax, yMin, yMax, yMinorStep, yM
   }
   if (yLabel) {
     ctx.save();
-    ctx.translate(8, (plotTop + plotBottom) / 2);
+    // Sits just left of the tick-value column, whatever width that column
+    // actually turned out to need (see maxYTickLabelWidth above) -- not a
+    // fixed offset, which overlapped wide tick values like "-8.60". The
+    // rotated label's own thickness (~font-size, since textBaseline is
+    // "top" post-rotation) needs a further 10px of clearance, plus a small
+    // fixed gap so the two columns never touch.
+    const yLabelX = Math.max(2, plotLeft - TICK_LENGTH - 3 - maxYTickLabelWidth - 6 - 10);
+    ctx.translate(yLabelX, (plotTop + plotBottom) / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.textAlign = "center";
     ctx.textBaseline = "top";

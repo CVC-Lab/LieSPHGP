@@ -56,7 +56,7 @@ export function buildScenario(params) {
     T = 6.0,
     N = 600,
     rng = Math.random,
-    label = controlOn ? "Control on" : "Free spin",
+    label = controlOn ? "Control On" : "Free Spin",
     caption = "",
     dotColor,
   } = params;

@@ -49,12 +49,12 @@ export function referencesForScenario(meta) {
   if (meta.mode === "free") {
     const [hMin, hMid, hMax] = meta.H_axis;
     return [
-      { value: hMin, color: AXIS_COLORS[0], label: "H(long axis)" },
-      { value: hMid, color: AXIS_COLORS[1], label: "H(intermediate axis)" },
-      { value: hMax, color: AXIS_COLORS[2], label: "H(short axis)" },
+      { value: hMin, color: AXIS_COLORS[0], label: "H(Long Axis)" },
+      { value: hMid, color: AXIS_COLORS[1], label: "H(Intermediate Axis)" },
+      { value: hMax, color: AXIS_COLORS[2], label: "H(Short Axis)" },
     ];
   }
-  return [{ value: meta.desired_H, color: CONTROLLED_TARGET_COLOR, label: "desired H" }];
+  return [{ value: meta.desired_H, color: CONTROLLED_TARGET_COLOR, label: "Desired H" }];
 }
 
 /**
@@ -77,15 +77,23 @@ export function drawEnergyPanel(ctx, { t, H, references, currentIndex, width, he
     yMax += 1;
   }
   const pad = (yMax - yMin) * 0.1;
-  // H = 0.5*sum(M_i^2/I_i) can never be negative -- floor at 0 (rather than
-  // padding below it like the top) so "0" sits exactly at the plot's
-  // bottom-left corner instead of leaving a dead strip of unreachable space
-  // below a slightly-negative padded minimum.
-  yMin = Math.max(0, yMin - pad);
+  // H = 0.5*sum(M_i^2/I_i) can never be negative FOR THE RACKET -- floor at 0
+  // there (rather than padding below it like the top) so "0" sits exactly at
+  // the plot's bottom-left corner instead of leaving a dead strip of
+  // unreachable space below a slightly-negative padded minimum. Gated on the
+  // UNPADDED yMin already being >= 0 (true for the racket, so its behavior
+  // here is unchanged) because this panel is shared with the pendulum, whose
+  // H includes gravitational PE and is genuinely negative half the time --
+  // clamping that to 0 anyway flips yMin above yMax and silently produces
+  // zero tick marks (confirmed live: a real bug, not hypothetical).
+  yMin = yMin >= 0 ? Math.max(0, yMin - pad) : yMin - pad;
   yMax += pad;
 
   const { startIdx, endIdx, windowStart, windowEnd } = computeVisibleWindow(t, currentIndex, windowSeconds);
-  const marginLeft = 46;
+  // 54, not 46: leaves enough room for drawAxes to fit its rotated yLabel
+  // clear of wide tick values (e.g. this panel's own "-8.60"-style negative
+  // decimals) without the two overlapping -- see axisTicks.js.
+  const marginLeft = 54;
   const marginRight = 18;
   const marginTop = 10;
   const marginBottom = 34;

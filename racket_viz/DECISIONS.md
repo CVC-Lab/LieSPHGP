@@ -888,3 +888,173 @@ queued, not the project's current live settings -- so updating and saving
 Settings → Build has no effect on a build you retry after the fact. Only a
 genuinely new build (fresh push, or a new manually-triggered deployment)
 picks up updated settings.
+
+## 2026-08-05 — Second system: windy pendulum, multi-system carousel
+
+Started the site's second physical system (branch `feature/second-system`,
+off `feature/racket-viz`), per the original 2026-07-24 plan's "swipe between
+systems" idea. Deliberately not pushed during this build -- every push to a
+Cloudflare-connected branch triggers a build against a limited quota, so
+work happened entirely against the local dev server until ready for review.
+
+**Skipped the ML pipeline entirely.** Researched LieSPHGP's
+`src/models/3D_SO3_Windy_Pendulum/` (6 parallel training variants) before
+starting: zero trained checkpoints anywhere, empty training logs, two
+controller scripts that exist as source but can't run (both require
+checkpoints that don't exist). Confirmed `envs/windy_pendulum_3d.py` is
+fully-actuated (direct 3-axis body torque) exactly like the racket's `g=I₃`
+case -- same reason the racket's own controller never needed a trained
+model. Ported the analytic physics directly instead (gravity + friction
+torque, a hand-derived gravity-compensated IDA-PBC controller), matching how
+the racket viz already worked. See `ARCHITECTURE.md`'s "Windy pendulum:
+physics differences from the racket" for the physics/controller details.
+
+**Carousel, not a toggle.** User explicitly wants the transition to
+genuinely SLIDE (not flip/rotate, to avoid the same blur bug the racket's
+Explain flip-cards needed a real fix for) and wants it built for a *third*
+system later, not hardcoded to two -- see `ARCHITECTURE.md`'s "Multi-system
+carousel" section for the `#system-viewport`/`#system-track`/`.system-slide`
+structure and the deliberate choice NOT to build a shared "System" class
+(each system is its own independently-written module, copy-pasting the
+established pattern, per the user's own stated expectation that adding
+systems "should be a lot of copying and pasting").
+
+**Panel 4 (was the racket's Casimir Sphere) is a promoted torque/work
+readout instead.** Discussed two options with the user first: (a) a
+"bob-position sphere" reusing the sphere-panel's visual language (genuinely
+analogous physics -- swing-vs-flip-over is topologically the same
+stable/unstable-separatrix structure as the racket's stable-spin-vs-flip,
+even though the underlying invariant differs), or (b) promote the racket's
+existing sidebar torque/work readout to a full panel. User picked (b)
+specifically "so both functions can be seen easier than hiding in the side
+panel" -- reuses `ControlMetrics.js` unchanged, no new physics/design needed.
+
+**Two real bugs found only by actually running it in-browser** (both now
+documented in `ARCHITECTURE.md` so they aren't rediscovered by a future
+system): (1) copy-pasting `DataLoader.js::validateScenario(doc)` into the
+new system's `renderDoc` -- that validator enforces the racket's own exact
+schema (`R_cas`, `background`, racket-shaped `geometry`), so it threw at
+module-load time for the pendulum's legitimately-different doc shape,
+which silently broke `app.js`'s import chain and prevented EVERY system's
+`resume()` from ever being called, not just the pendulum's. (2) Reusing
+`GravityCompensatedAttitudeController`'s default `clip=2.0` (inherited from
+the racket's small-torque scale) for a real pendulum scenario: the
+worst-case gravity torque alone is several N·m, so the controller was
+chronically saturated and could never fully cancel gravity, producing a
+residual disturbance that looked exactly like an uncontrolled swing instead
+of converging -- fixed by passing an unclipped (`Infinity`) controller from
+`pendulumScenarioRunner.js` instead of trusting the class's own default.
+
+Also added a "Starting angle" slider (defaults to 25°, mirroring the
+racket's own `startingPerturbation`) after noticing the free-swing demo sat
+completely motionless by default -- starting exactly at the hanging-down
+equilibrium is a true zero-torque fixed point, same reasoning as why the
+racket needs a kick off its own unstable axis.
+
+## 2026-08-06 — Pendulum control UX pass, panel-text rewrites, Title Case convention
+
+**Removed the K_R/K_p ("attitude gain"/"rate gain") sliders entirely; gains
+now auto-scale from the pendulum's own live inertia.** User asked why they
+existed at all, since nothing else in the sidebar exposes a raw controller
+gain. Same reasoning as the racket's own `defaultKpForAxisControl`: I₂/I₃
+(transverse inertia) varies roughly 240x across the geometry sliders' own
+ranges, so a fixed gain pair would be badly overdamped for a light/short
+pendulum and sluggish/underdamped for a heavy/long one. Added
+`default_gains_for_attitude_control`/`defaultGainsForAttitudeControl`
+(Python + JS, ported line-for-line, both test-covered) implementing the
+standard 2nd-order relations `K_R = omega_n^2 * I`, `K_p = 2*zeta*omega_n*I`,
+critically damped (`zeta=1`) by default -- `pendulumScenarioRunner.js` now
+computes these internally from the resolved geometry instead of accepting
+them as scenario params, exactly mirroring how the racket's own
+`buildScenario` computes its Kp internally with no Kp param in its public
+API.
+
+**Target dropdown replaced with a continuous "Target angle" slider
+(-180°..180°); "Starting angle" widened to -80°..80°.** The three-option
+dropdown (hanging down / horizontal / inverted) was an artificial UI
+restriction, not a physics limit -- both sliders now reuse one shared
+`tiltedDownDirForAngle()` helper in `pendulumMain.js` (0°=hanging down,
+±180°=inverted, sign picks which side), replacing three near-duplicate
+tilt-vector blocks with one. Both sliders live-preview the pose they'd
+produce while paused, via a single `previewingPose` flag (renamed from the
+starting-angle-only `previewingStart`) so dragging either one doesn't fight
+`updateFrame`'s per-frame orientation write.
+
+**Distinguished "achieved" (reached the exact target) from "settled"
+(came to rest, but off-target) -- and fixed a stable/unstable equilibrium
+mislabel in the process.** With wind on, the controller's lack of an
+integral term means a constant disturbance torque leaves a permanent
+steady-state attitude error (confirmed numerically: ~2° off-target for
+windStd=0.05 in one test run) -- so `computeAchievedIndexAttitude`'s tight
+attitude-error tolerance is gated on `!wind_on`, and a separate, looser
+`computeSettledIndex` (sustained near-zero angular velocity, independent of
+*where* it settles) drives a distinct "Settled with wind -- holding N·m,
+X° off-target" readout instead. Both live in `ControlMetrics.js`, shared
+with the racket's own `computeAchievedIndex`/`isAchievable` pattern.
+Separately: the "holding requires no torque" case can mean either the
+*stable* equilibrium (hanging straight down) or the *unstable* one
+(inverted straight up) -- both are torque-free (com collinear with gravity
+either way), so the original code's blanket "stable equilibrium" label was
+wrong whenever the target was upright. Fixed by checking `sign(desired_H)`
+(negative = below the pivot = stable; positive = above = unstable), caught
+by the user spotting "unstable equilibrium" mislabeled as "stable" on an
+inverted-target run.
+
+**All four pendulum panel explanations rewritten, collaboratively, one at a
+time.** Angular velocity: expanded to properly explain the axial vs.
+transverse axes (an SVG diagram was drawn for this conversation to work out
+the explanation, not committed to the repo) and to correct "the two
+transverse axes go through the bob" to the physically-accurate "through the
+pivot" (all three principal axes pass through the pivot, since inertia here
+is about the pivot, not the pendulum's COM). Hamiltonian: rewritten to open
+by defining what a Hamiltonian *is* (mirroring the racket panel's own
+opening sentence) rather than assuming the reader already knows, and to use
+only complete sentences throughout (no colon-fragments). Free swing:
+tightened, dropped the racket cross-reference so the panel reads standalone.
+Control torque & work: expanded substantially (this panel had the most
+spare vertical room of the four) to name and explain IDA-PBC
+(Interconnection and Damping Assignment Passivity-Based Control) in plain
+terms -- reshaping the energy landscape so the target becomes the new low
+point, via live gravity cancellation plus a spring-and-damper pull toward
+the target.
+
+**Established a per-panel "shrink font until it exactly fits, no
+scrollbar" convention** for these longer flip-card explanations (the
+`.flip-back` back-face has real `overflow-y: auto`, so an overlong
+explanation doesn't visibly break anything -- it just silently requires a
+scroll the user won't discover from a static view). Checked by temporarily
+overriding `.flip-back`'s `font-size` in-browser and comparing
+`scrollHeight` to `clientHeight` at each candidate size, then hard-coding
+the largest one that fits exactly as a scoped CSS override
+(`#pendulum-<panel>-flip .flip-back.centered { font-size: ...px; }`) --
+landed on 12px (Angular velocity), 13.5px (Hamiltonian), 12.5px (Control
+torque & work), and the shared 14px default (Free swing, short enough as
+rewritten).
+
+**Fixed a real y-axis label overlap bug, not a "small window" illusion.**
+The rotated y-axis unit label (e.g. "Hamiltonian (H)") in `axisTicks.js`'s
+`drawAxes` was positioned at a fixed pixel offset from the panel edge,
+independent of how wide the adjacent tick-value numbers actually were --
+most visible on the pendulum's Energy panel specifically, since its
+negative-decimal H values (e.g. "-8.60") produce the widest tick labels
+anywhere in the app. Fixed by measuring the actual rendered tick-label
+width (`ctx.measureText`) each draw and positioning the rotated label clear
+of it, plus bumping the shared `marginLeft` (46px -> 54px, `ControlPanel.js`
+/ `TimeSeriesPanel.js` / `ControlMetrics.js`) so there's room for the
+now-dynamic gap. Confirmed the bug reproduces identically regardless of
+window size (all these offsets are fixed canvas-pixel values, not
+CSS-relative), then confirmed the fix holds at both a normal and a
+deliberately narrow window width.
+
+**Adopted Title Case for every UI label, heading, panel title, legend
+item, dropdown option, and button across both systems** (standard rule:
+capitalize each "important" word, lowercase minor words -- "of", "to",
+"and", "vs." -- unless first/last in the string), per explicit user request
+("Starting angle" -> "Starting Angle", "Moments of inertia" -> "Moments of
+Inertia"). Deliberately excludes two categories, which stay sentence-case:
+the four flip-card explanation paragraphs (prose, not titles), and live
+status/readout text like "Work: 12.3 J", "Done! Achieved at t = 3.01s", and
+"Settled with wind -- holding..." (messages, not titles -- title-casing
+"Done! Achieved At T =" would read as broken English). This is now the
+standing convention for any future label/heading/legend addition to either
+system, not a one-time cleanup.

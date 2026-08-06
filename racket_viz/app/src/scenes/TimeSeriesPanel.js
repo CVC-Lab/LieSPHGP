@@ -64,7 +64,9 @@ export function drawTimeSeries(ctx, { t, omega, domain, currentIndex, width, hei
   const [yMin, yMax] = domain;
   const { startIdx, endIdx, windowStart, windowEnd } = computeVisibleWindow(t, currentIndex, windowSeconds);
 
-  const marginLeft = 46;
+  // 54, not 46 -- see ControlPanel.js's identical comment; leaves enough
+  // room for drawAxes's rotated yLabel to clear wide tick values.
+  const marginLeft = 54;
   const marginRight = 18;
   const marginTop = 10;
   const marginBottom = 34;
