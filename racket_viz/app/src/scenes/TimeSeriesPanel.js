@@ -136,3 +136,118 @@ export function drawTimeSeries(ctx, { t, omega, domain, currentIndex, width, hei
     ctx.fill();
   }
 }
+
+/**
+ * Cart-pole's panel 3 analogue -- NOT a reuse of drawTimeSeries above: that
+ * function is hardcoded to 3 components of one vector quantity (omega),
+ * while this is exactly 2 DIFFERENT physical quantities (an angle in rad,
+ * its own rate in rad/s), which is a real schema difference, not just a
+ * different color count (per ARCHITECTURE.md's "check explicitly, don't
+ * assume a reuse fits" rule). Both series share one y-axis, same as the
+ * racket's omega panel already puts 3 differently-scaled axes on one axis --
+ * there's precedent for that combination in this codebase already.
+ */
+export const CARTPOLE_STATE_COLORS = { theta: THEME.imax, thetaDot: THEME.stable };
+
+/**
+ * @param {number[]} thetaSeries @param {number[]} thetaDotSeries
+ * @param {number} [padFactor=0.1]
+ * @returns {[number, number]}
+ */
+export function computeCartPoleStateDomain(thetaSeries, thetaDotSeries, padFactor = 0.1) {
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = 0; i < thetaSeries.length; i++) {
+    min = Math.min(min, thetaSeries[i], thetaDotSeries[i]);
+    max = Math.max(max, thetaSeries[i], thetaDotSeries[i]);
+  }
+  if (min === max) {
+    min -= 1;
+    max += 1;
+  }
+  const pad = (max - min) * padFactor;
+  return [min - pad, max + pad];
+}
+
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {object} opts
+ * @param {number[]} opts.t
+ * @param {number[]} opts.theta rad
+ * @param {number[]} opts.thetaDot rad/s
+ * @param {[number, number]} opts.domain
+ * @param {number} opts.currentIndex
+ * @param {number} opts.width
+ * @param {number} opts.height
+ * @param {number} [opts.windowSeconds=5]
+ */
+export function drawCartPoleStatePanel(ctx, { t, theta, thetaDot, domain, currentIndex, width, height, windowSeconds = 5 }) {
+  const [yMin, yMax] = domain;
+  const { startIdx, endIdx, windowStart, windowEnd } = computeVisibleWindow(t, currentIndex, windowSeconds);
+
+  const marginLeft = 54;
+  const marginRight = 18;
+  const marginTop = 10;
+  const marginBottom = 34;
+  const plotW = width - marginLeft - marginRight;
+  const plotH = height - marginBottom - marginTop;
+  const plotRight = width - marginRight;
+  const plotBottom = marginTop + plotH;
+  const toX = (ti) => marginLeft + ((ti - windowStart) / (windowEnd - windowStart || 1)) * plotW;
+  const toY = (v) => marginTop + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = THEME.panelBg;
+  ctx.fillRect(0, 0, width, height);
+
+  const { majorStep, minorStep } = computeNiceStep(yMax - yMin);
+  drawAxes(ctx, {
+    toX,
+    toY,
+    xMin: windowStart,
+    xMax: windowEnd,
+    yMin,
+    yMax,
+    yMinorStep: minorStep,
+    yMajorStep: majorStep,
+    plotLeft: marginLeft,
+    plotRight,
+    plotTop: marginTop,
+    plotBottom,
+    xLabel: "t (s)",
+    yLabel: "θ (rad) / θ̇ (rad/s)",
+  });
+
+  if (yMin < 0 && yMax > 0) {
+    ctx.strokeStyle = THEME.border;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(marginLeft, toY(0));
+    ctx.lineTo(plotRight, toY(0));
+    ctx.stroke();
+  }
+
+  for (const [series, color] of [
+    [theta, CARTPOLE_STATE_COLORS.theta],
+    [thetaDot, CARTPOLE_STATE_COLORS.thetaDot],
+  ]) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = startIdx; i <= endIdx; i++) {
+      const x = toX(t[i]);
+      const y = toY(series[i]);
+      if (i === startIdx) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  const nowX = toX(t[currentIndex]);
+  for (const series of [theta, thetaDot]) {
+    ctx.fillStyle = THEME.current;
+    ctx.beginPath();
+    ctx.arc(nowX, toY(series[currentIndex]), 3.5, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+}

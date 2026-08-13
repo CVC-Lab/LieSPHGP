@@ -133,12 +133,24 @@ export function formatTick(value, span) {
  * Formats a stepTicks value: decimals are derived from the step size itself
  * (not the domain span), so a step of 2 or 10 always prints as an integer
  * ("2", "10"), not "2.00".
+ *
+ * Capped at 6 decimals (unlike its uncapped original form): a degenerate
+ * near-zero data range (e.g. cart-pole's Force panel before any key is
+ * pressed -- force is genuinely, exactly 0.0 for as long as that lasts,
+ * unlike the racket/pendulum's torque, which floating-point noise alone
+ * keeps just barely nonzero) drives `step` down to ~1e-10, which without a
+ * cap asks toFixed for 10 decimal places -- not wrong exactly, but several
+ * such labels rendered at nearly the same y-pixel row read as garbled,
+ * overlapping digits (confirmed live: "00000011"-style text). Capping means
+ * those ticks all correctly render as "0.000000" instead -- repetitive, but
+ * an honest reflection that they're indistinguishable at that scale, not
+ * broken-looking.
  * @param {number} value
  * @param {number} step
  * @returns {string}
  */
 export function formatStepTick(value, step) {
-  const decimals = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  const decimals = Math.max(0, Math.min(6, -Math.floor(Math.log10(step) + 1e-9)));
   return value.toFixed(decimals);
 }
 

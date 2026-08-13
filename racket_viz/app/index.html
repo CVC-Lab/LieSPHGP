@@ -171,6 +171,19 @@
     .field-range { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); opacity: 0.8; }
     .toggle-row { display: flex; align-items: center; gap: 8px; }
     .sub-fields { padding-left: 4px; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+    /* 3-way controller selector (cart-pole's Controller field) -- a discrete
+       segmented control, not a boolean switch or a dropdown: all 3 options
+       (none/manual/ct_sac) are always valid and worth showing at a glance,
+       matching the coworker's own live demo's own control layout. */
+    .segmented { display: flex; gap: 2px; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px; }
+    .seg-btn { flex: 1; padding: 8px 4px; border-radius: 3px; border: none; font-size: 12px; font-family: var(--font); cursor: pointer; background: transparent; color: var(--muted); }
+    .seg-btn.active { background: var(--border); color: var(--imax); }
+    .seg-btn:disabled { color: var(--border); cursor: not-allowed; }
+    #cartpole-ctsac-loading { display: none; font-size: 11px; color: var(--muted); margin-top: -4px; }
+    /* Distinct from the plain .readout boxes -- this is a caution, not just
+       info, so it borrows the same --unstable color already used for the
+       unstable-axis/falling-pole cues elsewhere on the site. */
+    #cartpole-angle-warning { border-color: var(--unstable); color: var(--unstable); margin-top: -8px; }
     .presets { display: flex; flex-wrap: wrap; gap: 6px; }
     .presets button { flex: 1 1 45%; font-size: 11px; padding: 6px 4px; }
     .sidebar-action { display: block; width: 100%; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; box-sizing: border-box; }
@@ -183,6 +196,7 @@
     #torque-canvas { display: block; width: 100%; height: 70px; background: var(--panel-bg); border-radius: 4px; }
     #control-readout { display: none; flex-direction: column; gap: 8px; }
     .done-message { color: var(--stable); font-weight: 600; }
+    .done-message-reason { color: var(--muted); font-weight: 400; font-size: 11px; }
 
     /* Rectangular tick-marked sliders: a thin track with tick marks baked in
        at the quarter-points via a repeating gradient, and a rectangular
@@ -622,6 +636,194 @@
     <button id="pendulum-run-button" class="sidebar-action run-button">Run</button>
     <button id="pendulum-pause-button" class="sidebar-action">Pause</button>
     <button id="pendulum-reset-button" class="sidebar-action">Reset</button>
+  </div>
+  </div>
+      </div>
+      <div class="system-slide" data-system="cartpole" data-label="Windy Cart-Pole">
+  <div id="cartpole-app-layout" class="app-layout">
+    <div id="cartpole-main-content" class="main-content">
+    <div id="cartpole-controls" class="controls-bar">
+      <span id="cartpole-time-readout"></span>
+    </div>
+    <div id="cartpole-panels" class="panels-grid">
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label" id="cartpole-label">Free</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="cartpole-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="cartpole-flip">
+            <div class="flip-face flip-front">
+              <canvas id="cartpole-canvas"></canvas>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>A cart on a frictionless rail carries an unactuated pole, free to rotate about a pivot. The state is the cart's position and the pole's angle, plus their momenta — not their raw velocities, since the two are coupled: pushing the cart also changes how fast the pole tips, and vice versa. Upright (pole straight up) is an unstable balance point; the smallest push sends it falling. If Control is off, nothing pushes back. If Control is on, you're driving the cart yourself with the arrow keys or watching a trained policy take effect.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend"></div>
+      </div>
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label" id="cartpole-energy-label">Energy (H)</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="cartpole-energy-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="cartpole-energy-flip">
+            <div class="flip-face flip-front">
+              <canvas id="cartpole-energy-canvas"></canvas>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>The Hamiltonian represents the total energy of the system: the cart and pole's kinetic energy, plus the pole's gravitational potential energy (highest when it's balanced straight up). With no force and no wind, this stays exactly constant — the frictionless rail never removes energy on its own. Pushing the cart does real work on the system, so H climbs or falls while you're actively driving it. Wind gusts nudge it too, in small, random amounts.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend" id="cartpole-energy-legend"></div>
+      </div>
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label">Angle &amp; Angular Velocity</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="cartpole-theta-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="cartpole-theta-flip">
+            <div class="flip-face flip-front">
+              <canvas id="cartpole-theta-canvas"></canvas>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>This plot tracks the pole's tilt away from straight up (theta, in radians) and how fast that tilt is changing (theta-dot, in radians/second). Near upright, both stay small; once the pole starts to fall, theta grows quickly and theta-dot grows even faster, since the tipping accelerates as gravity pulls harder the further it leans. The episode ends once theta passes a certain threshold or the cart goes off the rail.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--imax)"></span>θ (Angle)</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--stable)"></span>θ̇ (Angular Velocity)</span>
+        </div>
+      </div>
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label">Force &amp; Work</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="cartpole-force-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="cartpole-force-flip">
+            <div class="flip-face flip-front">
+              <canvas id="cartpole-force-canvas"></canvas>
+              <div class="panel-readout" id="cartpole-metrics-text" style="display:none;"></div>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>This shows the magnitude of the force pushing the cart, left or right, over time — zero whenever nothing is actively driving it. The work total is the real energy delivered to the cart-pole system by that force so far, the same running total that shows up as a change in the Hamiltonian panel.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend" id="cartpole-force-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--target)"></span>Force Magnitude</span>
+        </div>
+      </div>
+    </div>
+    </div>
+
+  <div id="cartpole-sidebar" class="app-sidebar">
+    <h3>Cart-Pole Geometry</h3>
+    <div class="field">
+      <label>Pole Mass <span id="poleMass-val"></span></label>
+      <input type="range" id="poleMass" min="0.02" max="1.0" step="0.01" value="0.10" />
+      <div class="field-range"><span>0.02</span><span>1.0</span></div>
+    </div>
+    <div class="field">
+      <label>Cart Mass <span id="cartMass-val"></span></label>
+      <input type="range" id="cartMass" min="0.3" max="3.0" step="0.05" value="1.00" />
+      <div class="field-range"><span>0.3</span><span>3.0</span></div>
+    </div>
+    <div class="field">
+      <label>Pole Length <span id="poleLength-val"></span></label>
+      <input type="range" id="poleLength" min="0.4" max="2.0" step="0.05" value="1.00" />
+      <div class="field-range"><span>0.4</span><span>2.0</span></div>
+    </div>
+    <div class="field">
+      <label>Gravity <span id="gravity-val"></span></label>
+      <input type="range" id="gravity" min="1.0" max="20.0" step="0.1" value="9.8" />
+      <div class="field-range"><span>1.0</span><span>20.0</span></div>
+    </div>
+    <div class="field">
+      <label>Force Limit <span id="forceLimit-val"></span></label>
+      <input type="range" id="forceLimit" min="1.0" max="30.0" step="0.5" value="10.0" />
+      <div class="field-range"><span>1.0</span><span>30.0</span></div>
+    </div>
+    <div class="field">
+      <label>Rail Length <span id="railLength-val"></span></label>
+      <input type="range" id="railLength" min="2.0" max="10.0" step="0.2" value="4.8" />
+      <div class="field-range"><span>2.0</span><span>10.0</span></div>
+    </div>
+
+    <h3>Motion</h3>
+    <div class="field">
+      <label>Starting Angle <span id="cartpoleStartingAngleDeg-val"></span></label>
+      <input type="range" id="cartpoleStartingAngleDeg" min="-20" max="20" step="1" value="5" />
+      <div class="field-range"><span>-20</span><span>20</span></div>
+    </div>
+    <div class="readout" id="cartpole-angle-warning" style="display:none;">ct_sac was only ever trained within +-12&deg; of upright. Past +-15&deg;, expect it to fail to recover, not just struggle.</div>
+    <div class="field">
+      <label>Starting Position <span id="cartpoleStartingX-val"></span></label>
+      <input type="range" id="cartpoleStartingX" min="-2.0" max="2.0" step="0.1" value="0.0" />
+      <div class="field-range"><span>-2.0</span><span>2.0</span></div>
+    </div>
+
+    <h3>Controller</h3>
+    <div class="segmented" id="cartpole-controller-segmented">
+      <button type="button" class="seg-btn active" data-mode="none">None</button>
+      <button type="button" class="seg-btn" data-mode="manual">Manual</button>
+      <button type="button" class="seg-btn" data-mode="ctsac" id="cartpole-ctsac-btn" disabled>ct_sac</button>
+    </div>
+    <div class="readout" id="cartpole-ctsac-loading">Loading weights&hellip;</div>
+
+    <div class="sub-fields" id="cartpole-none-subfields">
+      <div class="readout">No force is applied. The pole falls under gravity and wind alone.</div>
+    </div>
+    <div class="sub-fields" id="cartpole-manual-subfields" style="display:none;">
+      <div class="readout">Use the ← / → arrow keys to push the cart.</div>
+    </div>
+    <div class="sub-fields" id="cartpole-ctsac-subfields" style="display:none;">
+      <div class="readout">A small neural network, trained by reinforcement learning (Soft Actor-Critic) to balance the pole: it watches the last 0.16s of the pole's angle and the cart's position, and outputs a continuous push, left or right. Trained only near-upright and on the default slider values. If the system starts too far off vertical, or with different configurations, it will visibly degrade.</div>
+    </div>
+
+    <div id="cartpole-diagnostics" style="display:none;">
+      <h3>Fragility Diagnostics</h3>
+      <div class="readout" id="cartpole-diagnostics-text"></div>
+    </div>
+
+    <div class="toggle-row">
+      <label class="switch"><input type="checkbox" id="cartpoleWindOn" /><span class="slider"></span></label>
+      <span>Wind</span>
+    </div>
+    <div class="sub-fields" id="cartpole-wind-subfields">
+      <div class="field">
+        <label>σ Gust <span id="sigmaGust-val"></span></label>
+        <input type="range" id="sigmaGust" min="0" max="0.02" step="0.001" value="0.002" />
+        <div class="field-range"><span>0</span><span>0.02</span></div>
+      </div>
+      <div class="field">
+        <label>σ Turbulence <span id="sigmaTurb-val"></span></label>
+        <input type="range" id="sigmaTurb" min="0" max="0.01" step="0.0005" value="0.001" />
+        <div class="field-range"><span>0</span><span>0.01</span></div>
+      </div>
+    </div>
+
+    <button id="cartpole-run-button" class="sidebar-action run-button">Run</button>
+    <button id="cartpole-pause-button" class="sidebar-action">Pause</button>
+    <button id="cartpole-reset-button" class="sidebar-action">Reset</button>
   </div>
   </div>
       </div>

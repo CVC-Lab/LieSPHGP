@@ -11,6 +11,7 @@
  */
 import { pause as pauseRacket, resume as resumeRacket } from "./main.js";
 import { pause as pausePendulum, resume as resumePendulum } from "./pendulumMain.js";
+import { pause as pauseCartpole, resume as resumeCartpole } from "./cartpoleMain.js";
 
 // Index must match the .system-slide elements' DOM order in index.html.
 // Add a { pause, resume } entry here (imported from that system's own
@@ -18,6 +19,7 @@ import { pause as pausePendulum, resume as resumePendulum } from "./pendulumMain
 const systems = [
   { pause: pauseRacket, resume: resumeRacket },
   { pause: pausePendulum, resume: resumePendulum },
+  { pause: pauseCartpole, resume: resumeCartpole },
 ];
 
 const track = document.getElementById("system-track");

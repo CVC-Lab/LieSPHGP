@@ -180,6 +180,31 @@ export function computeSettledIndex(M_body, I, t, toleranceOmega = 0.01, sustain
 }
 
 /**
+ * [0, yMax] for drawTorquePanel's y-axis. When there's real (nonzero)
+ * data, this is just `max*1.1`, unchanged from before. When the data is
+ * genuinely (at or near) zero -- e.g. cart-pole's Force panel before any
+ * key is ever pressed, unlike the racket/pendulum's torque, which
+ * floating-point noise alone keeps just barely nonzero -- computing nice
+ * tick steps from a ~1e-9 range produces dozens of ticks finer than
+ * display precision, which all format identically and read as a garbled/
+ * repeated column of the same label stacked on top of itself (confirmed
+ * live -- capping formatStepTick's decimals fixed the GARBLING but not
+ * this: many correct, identical "0.000000" labels stacked is still
+ * broken-looking, just not garbled). Falls back to a fixed sane default
+ * range instead. 1e-6 as the "is this actually zero" threshold is
+ * comfortably below any real torque/force value this app ever produces, so
+ * this never fires for the racket/pendulum's own genuinely-nonzero-but-
+ * small torque -- their behavior is completely unchanged.
+ * @param {number[]} torqueMagnitude
+ * @returns {[number, number]}
+ */
+export function computeTorqueDomain(torqueMagnitude) {
+  const maxMag = Math.max(...torqueMagnitude, 0);
+  const yMax = maxMag > 1e-6 ? maxMag * 1.1 : 1.0;
+  return [0, yMax];
+}
+
+/**
  * Draws the "control function" panel: torque magnitude vs. time, same
  * rolling window as the other time-series panels, with a yellow marker at
  * the current value -- only meaningful while a controller is actually
@@ -201,11 +226,13 @@ export function computeSettledIndex(M_body, I, t, toleranceOmega = 0.01, sustain
  * @param {number} opts.height
  * @param {number} [opts.windowSeconds=5]
  * @param {boolean} [opts.withAxes=false]
+ * @param {string} [opts.yLabel="Torque (N·m)"] cart-pole passes "Force (N)"
+ *   here -- same magnitude-vs-time drawing logic, different actuator units;
+ *   parameterizing this one string is a genuine reuse, not a fork, since
+ *   nothing else about the drawing changes.
  */
-export function drawTorquePanel(ctx, { t, torqueMagnitude, currentIndex, width, height, windowSeconds = 5, withAxes = false }) {
-  const maxMag = Math.max(...torqueMagnitude, 1e-9);
-  const yMin = 0;
-  const yMax = maxMag * 1.1;
+export function drawTorquePanel(ctx, { t, torqueMagnitude, currentIndex, width, height, windowSeconds = 5, withAxes = false, yLabel = "Torque (N·m)" }) {
+  const [yMin, yMax] = computeTorqueDomain(torqueMagnitude);
 
   const { startIdx, endIdx, windowStart, windowEnd } = computeVisibleWindow(t, currentIndex, windowSeconds);
 
@@ -242,7 +269,7 @@ export function drawTorquePanel(ctx, { t, torqueMagnitude, currentIndex, width, 
       plotTop: marginTop,
       plotBottom,
       xLabel: "t (s)",
-      yLabel: "Torque (N·m)",
+      yLabel,
     });
   }
 

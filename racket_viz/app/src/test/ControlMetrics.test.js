@@ -8,6 +8,7 @@ import {
   computeAchievedIndexAttitude,
   computeAttitudeErrorDeg,
   computeSettledIndex,
+  computeTorqueDomain,
 } from "../scenes/ControlMetrics.js";
 import { computeH } from "../scenes/ControlPanel.js";
 import { buildScenario } from "../physics/scenarioRunner.js";
@@ -79,6 +80,28 @@ describe("computeCumulativeWork", () => {
 describe("computeTorqueMagnitude", () => {
   it("is the Euclidean norm of each torque vector", () => {
     expect(computeTorqueMagnitude([[3, 4, 0], [0, 0, 0]])).toEqual([5, 0]);
+  });
+});
+
+describe("computeTorqueDomain", () => {
+  it("scales normally off real (nonzero) data, unchanged from before", () => {
+    expect(computeTorqueDomain([0, 0.5, 2.0, 1.0])).toEqual([0, 2.0 * 1.1]);
+  });
+
+  it("falls back to a fixed sane range when the data is genuinely all zero", () => {
+    // Reproduces the real bug: cart-pole's Force panel is exactly 0.0 for
+    // as long as no key is pressed -- a degenerate near-zero max (the old
+    // `Math.max(..., 1e-9)` fallback) drove nice-tick-step computation into
+    // producing dozens of sub-visible-precision ticks that all rendered as
+    // the same repeated label, stacked -- not garbled text anymore (that
+    // part was already fixed in axisTicks.js), but still a broken-looking
+    // wall of identical "0.000000" rows.
+    expect(computeTorqueDomain([0, 0, 0, 0])).toEqual([0, 1.0]);
+  });
+
+  it("does not treat a genuinely tiny but real value as zero", () => {
+    const [, yMax] = computeTorqueDomain([0, 0.001, 0.0005]);
+    expect(yMax).toBeCloseTo(0.001 * 1.1, 9);
   });
 });
 

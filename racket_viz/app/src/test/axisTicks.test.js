@@ -83,6 +83,18 @@ describe("formatStepTick", () => {
   it("prints fractional steps with matching decimals", () => {
     expect(formatStepTick(0.5, 0.5)).toBe("0.5");
   });
+
+  it("caps decimals at 6 for a pathologically tiny step, instead of a huge digit count", () => {
+    // Reproduces a real bug: cart-pole's Force panel is genuinely, exactly
+    // 0 for as long as no key is pressed (unlike the racket/pendulum's
+    // torque, which floating-point noise alone keeps nonzero) -- a nearly-
+    // zero data range drives the step down to ~1e-10, and an uncapped
+    // formatStepTick asked toFixed for 10 decimal places, which rendered as
+    // garbled/overlapping text once several such labels landed at nearly
+    // the same y-pixel row (confirmed live before this fix).
+    expect(formatStepTick(0, 1e-10)).toBe("0.000000");
+    expect(formatStepTick(1e-10, 1e-10)).toBe("0.000000");
+  });
 });
 
 describe("computeNiceStep", () => {

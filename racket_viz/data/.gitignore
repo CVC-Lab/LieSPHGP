@@ -1,1 +1,6 @@
 *.json
+# Exception: cartpole_policy.json is an external, committed asset (the real
+# trained ct_sac weights from the coworker's checkpoint), not a regenerable
+# physics/export.py output like everything else here -- it must be committed
+# for the deployed site to have anything to fetch() at runtime.
+!cartpole_policy.json

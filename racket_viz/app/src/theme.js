@@ -31,4 +31,9 @@ export const THEME = {
   racketTube: "#f4b942",
   racketFaceA: "#ff8a75",
   racketFaceB: "#5ec8e0",
+
+  cartpoleCart: "#5ec8e0",
+  cartpolePole: "#ff8a75",
+  cartpoleTrack: "#2a4d73",
+  cartpoleGust: "#f4b942",
 };

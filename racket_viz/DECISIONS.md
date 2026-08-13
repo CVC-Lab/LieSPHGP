@@ -1058,3 +1058,1304 @@ status/readout text like "Work: 12.3 J", "Done! Achieved at t = 3.01s", and
 "Done! Achieved At T =" would read as broken English). This is now the
 standing convention for any future label/heading/legend addition to either
 system, not a one-time cleanup.
+
+## 2026-08-11 — Third system kickoff: windy cart-pole, and a real trained NN this time
+
+Started the site's third physical system (branch `feature/third-system`, off
+`feature/second-system`, which stays the up-to-date deployed branch). Source
+physics: `summer-2026/cartpole.py`, a from-scratch Hamiltonian rewrite of the
+classic Sutton cart-pole ("windy cart-pole for ct-rl") with state
+`(x, theta, p_x, p_theta)` -- POSITIONS then MOMENTA, not gym's
+`(x, x_dot, theta, theta_dot)` -- and a continuous per-step wind SDE.
+
+**Convention flip from the racket/pendulum:** here `theta=0` is the pole
+balanced UPRIGHT (the classic cart-pole's actual control target), not
+hanging down. Confirmed directly from the source (`theta_threshold_radians`
+fails the episode at +-12 deg off upright, matching Barto/Sutton/Anderson's
+original problem statement) rather than assumed by analogy to the other two
+systems.
+
+**This system's wind is NOT the racket/pendulum's wind model.** `wind.js`
+samples ONE disturbance torque and holds it constant for the whole run.
+`cartpole.py`'s wind is a genuine continuous SDE -- re-sampled every step via
+a stochastic Heun predictor-corrector, with diffusion
+`s = sigma_gust + sigma_turb*|theta_dot|` that grows with the pole's own
+angular velocity, entering as an impulse on `p_theta` only. No existing
+`wind.js`/`wind.py` pattern applies; ported directly from `cartpole.py`'s own
+`diffusion`/`integrator` methods into a new `cartpole_wind.py`.
+
+**Checked for the pendulum's "checkpointless ML" trap -- and did NOT find
+it this time.** A coworker sent two live-demo links
+(`claude.ai/code/artifact/285103b6-...` and `.../9697efad-...`, the second
+being the broader "two plants" version) showing a REAL trained SAC policy
+(`ct_sac_cartpole_top_300000_steps.pth`, half-precision weights, confirmed
+directly off the demo's own footer text) running live client-side, plus
+`none` (no control) and `you` (arrow-key manual drive) modes. Decision,
+discussed with the user: port the real weights as a hand-written JS
+forward-pass (small MLP, no PyTorch/ONNX at runtime -- still fits "no live
+backend," since it's static data + a pure function, same spirit as the
+physics port itself), rather than skipping it -- explicitly to respect the
+coworker's actual contribution, since this is meant to be presented as
+joint work. **Blocked on the coworker actually sending the checkpoint (or
+exported weights) and the policy's architecture/observation-normalization
+details** -- they were slow to respond, so the build is split into two
+phases so the rest of the system isn't blocked waiting:
+
+- **Phase 1 (this entry, no external dependency):** physics
+  (`cartpole_dynamics.py`, `cartpole_wind.py`), scene, sidebar, all 4 panels,
+  and a real interim "Control" experience via the `you` (manual/keyboard)
+  mode -- not a placeholder, one of the coworker's actual three modes, and
+  it exercises the same force/work panel and diagnostics block the eventual
+  `ct_sac` mode will use. Ships as a complete, deployable third system with
+  `none`/`you` as the only controller options.
+- **Phase 2 (blocked):** `ctSacPolicy.js`, a small isolated forward-pass
+  module, added as a third controller option once the weights arrive. Deliberately
+  isolated: panel 4 and the sidebar diagnostics block are architected to read
+  "whatever force is being applied this instant," not to know or care where
+  that force comes from, so Phase 2 shouldn't require touching Phase 1's code.
+
+**Panel/diagnostics split, decided with the user:** panel 4 (main 4-panel
+grid) stays the established `ControlMetrics`-style force/work panel
+(reusing the pendulum's pattern, force in N instead of torque in N*m -- the
+cart-pole's actuator is a linear force, not a torque). The coworker's own
+fragility-specific readouts (difficulty, instability time, wind/force gains,
+survived, rolling gust plot) do NOT go in the 4-panel grid; they go in a new
+**sidebar-only** block shown when Control is on, mirroring the racket's
+original sidebar-only "Control function" readout from 2026-07-29 (later
+promoted to a full panel for the pendulum -- this system deliberately does
+NOT repeat that promotion, per the user's explicit choice).
+
+**Three of the four sidebar diagnostics are fully analytic, not learned --
+verified two independent ways before being trusted.** Gain A (wind->theta_dot),
+Gain B (force->theta_dot), and Instability Time are closed-form properties of
+the linearized plant at the upright fixed point (mp, mc, l, g only -- no
+controller involved at all). Derived by hand, then cross-checked against (1)
+the coworker's own demo's displayed numbers at its default sliders (32.2,
+1.46, 0.252s) and (2) the eigenvalues of an independently-computed numerical
+4x4 Jacobian of `cartpole_dynamics.drift` at the upright point -- agreement
+to several significant figures both ways. **Explicitly did NOT attempt to
+reverse-engineer "Difficulty Lambda"** (the demo's fourth number, 0.0088 at
+default sliders) -- unlike the other three, it didn't yield to a first-
+principles derivation with the same confidence from one data point, so it's
+deferred until the coworker can give the actual formula, rather than
+shipping a plausible-looking guess dressed up as verified physics.
+
+**Test-first, per the established process, with one design bug caught before
+it shipped:** wrote the full physics test suite (24 pytest cases across
+`test_cartpole_dynamics.py`, `test_cartpole_diagnostics.py`,
+`test_cartpole_wind.py`) against `NotImplementedError` stubs first, confirmed
+red (22 failed on `NotImplementedError`, 1 already-green constant-only test,
+zero import/collection errors, all 50 pre-existing tests still passing)
+before writing any real implementation. While designing the wind module's
+"is the diffusion function smooth at theta_dot=0, not kinked" test, the first
+draft compared raw left/right secant slopes at +-h -- verified numerically
+that this is WRONG (both a genuinely smooth minimum and a real kink are even
+functions, so both give a trivial sign flip either way, proving nothing).
+Fixed by comparing how the one-sided secant shrinks as the step size shrinks
+(shrinks proportionally to h for a true zero derivative; stays ~constant for
+a real kink) -- verified numerically before locking in the corrected test.
+Also verified the wind variance-scaling test's expected ratio (~4.02 for a 4x
+change in dt) numerically before writing its tolerance, so it wouldn't be
+flaky on the first real run.
+
+**Next step:** implement the three stub modules to green, then the JS port
+(`cartpole*.js`, Vitest, cross-validated fixtures) once Python is green, per
+the established order.
+
+## 2026-08-11 (cont.) — Physics implementation, pytest green (72/72)
+
+Implemented `cartpole_dynamics.py`, `cartpole_diagnostics.py`,
+`cartpole_wind.py` in that order (each the direct extraction/closed-form
+derivation described in this file's kickoff entry above and in the modules'
+own docstrings). `hamiltonian()` deliberately reuses `velocities()`
+internally (`0.5*(px*xdot + pth*thdot)`, equal to `0.5 * p^T M^-1 p` since
+`(xdot,thdot) = M^-1 p`) rather than re-deriving `M^-1` a second time, so the
+energy formula can't silently drift out of sync with the velocity map it
+depends on.
+
+One test (not implementation) issue found on the first real run, fixed in
+the test file: `test_upright_is_unstable_hanging_is_stable` assumed a bare
+theta-only perturbation would grow at least 10x over 0.5s of free fall, but
+the actual observed growth was only ~3.7x -- confirmed numerically that this
+is because a pure `(delta_theta, delta_p_theta=0)` kick splits roughly
+evenly onto the linearization's growing (+lambda) and decaying (-lambda)
+eigenmodes, so the visible growth tracks `(1/2)*e^(lambda*t)`, not a full
+`e^(lambda*t)`. Fixed by extending the integration window to T=1.0s
+(~4 instability e-folds, observed growth ~26x) and loosening the threshold
+to 5x, with the reasoning written into the test's own docstring so a future
+reader doesn't mistake this for a fragile magic number.
+
+Physics: 72/72 pytest (50 pre-existing + 22 new, 0 regressions).
+
+**Next step:** generate cross-validation fixtures from this Python oracle,
+then the JS port (`cartpole*.js`, Vitest) test-first against them, per the
+established order.
+
+## 2026-08-11 (cont.) — Cross-validation fixtures + JS port, Vitest green (196/196)
+
+Generated three fixtures from the now-green Python oracle (no generator
+script committed, matching the existing precedent for
+`pendulum_geometry_cases.json`/`racket_geometry_cases.json` -- one-off,
+just the JSON output is checked in): `cartpole_dynamics_cases.json` (48
+cases across 4 plants x 4 states x 3 forces: velocities/drift/hamiltonian),
+`cartpole_diagnostics_cases.json` (5 plants: gain_a/gain_b/instability_time),
+`cartpole_wind_deterministic_cases.json` (12 diffusion cases + 6 sigma=0
+Heun-step cases -- deliberately NOT sampling any actual noise, per this
+system's wind convention that the random stream itself isn't cross-language
+validated, only the deterministic mechanics).
+
+Ported `cartpoleDynamics.js`, `cartpoleDiagnostics.js`, `cartpoleWind.js`
+module-for-module from their Python counterparts, test-first (23 new Vitest
+cases against `throw new Error("not implemented")` stubs, confirmed red --
+22 failed for that reason, 1 already-green constant-only test, matching the
+Python side's red-phase shape exactly -- before implementing). Every new
+test passed on the **first implementation attempt**, the same experience the
+pendulum's JS port had and for the same reason: the hard physics (the gain/
+instability-time derivation, the wind smoothness-test design bug) was
+already found and fixed once, in Python, and this port just reused those
+answers.
+
+**New JS-side convention decided for this module group:** state args
+(`z`/`theta`/`px`/`pth`/`F`) stay positional, but the shared `{mp, mc, l,
+g, ...}` group -- repeated across every function in all three modules --
+is a trailing options object with camelCase keys and inline defaults
+(`{ mp = 0.1, mc = 1.0, l = 0.5, g = 9.8 } = {}`), mirroring
+`pendulumGeometry.js`'s existing `buildPendulum({ rodLength, ... })` pattern
+rather than `pendulumDynamics.js`'s all-positional
+`gravityTorqueBody(R, comBody, totalMass, g)` (that one only has 4 args
+total, not enough to motivate an options bag). `cartpoleWind.js`'s
+`heunStep` keeps its own local Box-Muller `standardNormal(rng)` helper
+(uniform-source-in, standard-normal-out) rather than importing `wind.js`'s
+private equivalent -- same primitive, but the two wind features are
+independent per-system modules by this project's explicit "no shared code
+across systems' own physics" convention, and a shared math primitive this
+small (6 lines) isn't worth breaking that for.
+
+Physics (Python): 72/72 pytest, unchanged this round. JS: 196/196 Vitest
+(173 pre-existing + 23 new, 0 regressions).
+
+**Next step:** `CartPoleScene.js` (mesh + update function), sized statically
+for the geometry sliders' worst case per `ARCHITECTURE.md`'s camera-framing
+rule, then the sidebar + `cartpoleMain.js` (geometry/wind sliders, Motion
+section, Control toggle with `none`/`you` only for now, Run/Pause/Reset,
+the 4 flip-card panels, and the new sidebar-only fragility-diagnostics
+block) per the established build order -- still nothing blocked on the
+coworker's NN weights.
+
+## 2026-08-11 (cont.) — CartPoleScene.js: flat 2D-style render, not fuller 3D
+
+**Confirmed with the user before writing any scene code**: unlike the
+racket/pendulum, `CartPoleScene.js` renders FLAT (side-on, no perspective
+depth) rather than a fuller-3D angled view. Justified twice over -- the
+physics itself is genuinely planar (x, theta only; nothing ever leaves a
+plane, unlike the racket's/pendulum's real 3D rotation), and the coworker's
+own live demo (which this system will sit alongside) renders it flat too.
+Still built on THREE.js/WebGL for pipeline consistency with the rest of the
+app; `cartpoleMain.js` will frame it with an `OrthographicCamera` (removes
+perspective foreshortening entirely) rather than a `PerspectiveCamera`
+merely aimed at a planar scene.
+
+**Rendering convention chosen** (documented in the module since the physics
+itself doesn't care how theta is drawn): x=cart position, y=height,
+track at y=0, theta=0 (upright) -> pole points +y, positive theta tips
+toward +x -- the standard "clock hand from 12" convention. Cart/pole visual
+proportions (0.4m x 0.24m cart, thin pole) match `summer-2026/cartpole.py`'s
+own pygame render pixel ratios exactly, not picked freehand.
+
+**Real camera-framing bug caught by the module's own test, before it ever
+rendered:** the first draft of `cameraHalfExtents` sized `halfWidth` from
+the track boundary and cart width alone. `CartPoleScene.test.js`'s "a full
+pole swing circle... stays within the frame at any angle" test failed
+immediately (`expected 3 to be less than 2.99`) -- because the pole can
+point in ANY direction (a free/wind-driven run isn't limited to the RL
++-12deg band), a pole lying flat sideways reaches `maxPoleLength` further
+out than the track alone, including with the cart already at the boundary.
+This is exactly the same CLASS of bug `ARCHITECTURE.md` already warns about
+for the pendulum's camera (sized only for "hanging down," clipped an
+inverted target) -- caught here by a test before a single frame was ever
+rendered, rather than by spotting a clipped pole visually after the fact.
+Fixed by adding the `maxPoleLength` term to `halfWidth` too, not just
+`halfHeight`.
+
+Added `cartpoleCart`/`cartpolePole`/`cartpoleTrack`/`cartpoleGust` to
+`theme.js`, reusing the existing Blueprint accent hexes (cyan/coral/gold)
+rather than inventing new colors, matching how `racketTube`/`racketFaceA`/
+`racketFaceB` already reuse the same accent palette under per-system names.
+
+JS: 207/207 Vitest (196 + 11 new, 0 regressions).
+
+**Next step:** sidebar + `cartpoleMain.js` (geometry/wind sliders, Motion
+section, Control toggle with `none`/`you` only for now, Run/Pause/Reset, the
+4 flip-card panels, and the sidebar-only fragility-diagnostics block), then
+carousel wiring -- still nothing blocked on the coworker's NN weights.
+
+## 2026-08-11 (cont.) — Sidebar + cartpoleMain.js wired in, verified live: third system ships
+
+Built `index.html`'s third `.system-slide` (Cart-Pole Geometry / Motion /
+Control+diagnostics / Wind sections, 4 flip-card panels), `cartpoleMain.js`,
+and wired both into `app.js`'s `systems` array. Two small, deliberately
+minimal additions to shared modules rather than a fork, per
+`ARCHITECTURE.md`'s "reuse where it genuinely fits" rule: `ControlMetrics.js`'s
+`drawTorquePanel` gained an optional `yLabel` param (defaults to the
+existing "Torque (N·m)", so the pendulum's call site is untouched) so
+cart-pole's call site can pass "Force (N)" -- same drawing logic, different
+actuator units, a real reuse, not a relabeling hack. `TimeSeriesPanel.js`
+gained a NEW function, `drawCartPoleStatePanel` (theta and theta-dot, not a
+generalized version of the existing 3-component omega drawer) -- these are
+two different physical quantities, not 3 components of one vector, a real
+schema difference per the same rule.
+
+**cartpoleMain.js's animate() loop is architecturally different from
+main.js's/pendulumMain.js's**, matching `cartpoleScenarioRunner.js`'s own
+docstring: there is no precomputed trajectory to scrub with a `Playback`
+cursor, since "you" mode's force depends on live keyboard input during the
+run. animate() itself steps the physics once per rendered frame (via
+`cartpoleScenarioRunner.advance`, sub-stepping internally), appending to a
+rolling history buffer (trimmed in batches past 4000 samples, not every
+frame) instead of indexing into a fixed-length array. Arrow-key state is
+tracked via plain `keydown`/`keyup` listeners on `window` -- harmless while
+a different carousel slide is active, since nothing reads that state unless
+this system's own animate() loop is actually being scheduled.
+
+**Camera**: `OrthographicCamera`, framed via `CartPoleScene.cameraHalfExtents`
+at its worst-case static extents, with a "contain" letterbox fit computed
+in `resize()` (expand whichever of half-width/half-height the canvas's own
+aspect ratio has slack on) so the worst case is fully framed at any panel
+aspect ratio -- same spirit as `ControlPanel.js`'s `computeAutoFitDistance`
+for panel 4's 3D view, adapted for two independent axis extents instead of
+one perspective distance.
+
+**Scope deliberately trimmed for this round** (all noted so they aren't
+mistaken for finished): the sidebar's Fragility Diagnostics block shows
+Instability Time / Gain A / Gain B / a live "Survived" readout, but NOT yet
+the rolling gust plot or "Last 20 Episodes" history (would need an
+auto-restart-on-termination episode loop, not built this round) -- and
+Difficulty Lambda still shows "pending", per the earlier entry's honest
+placeholder rather than a guessed formula.
+
+**One real bug found live, not by any test, then given a real regression
+test:** the Force & Work panel's y-axis showed garbled, overlapping digit
+strings (e.g. "00000011") before any key was ever pressed. Root cause:
+cart-pole's force is genuinely, exactly 0.0 for as long as nothing drives it
+(unlike the racket/pendulum's torque, which floating-point noise alone
+keeps just barely nonzero) -- `drawTorquePanel`'s degenerate-range floor
+(`Math.max(torqueMagnitude, 1e-9)`) then produces a ~1e-10 tick step, and
+`axisTicks.js`'s `formatStepTick` had no cap on decimals, asking
+`toFixed(10)` -- several such labels landing at nearly the same y-pixel row
+read as garbled overlapping text. Fixed at the root (capped at 6 decimals in
+`formatStepTick` itself, benefiting every panel that shares it, not just
+this one) rather than special-casing cart-pole's call site, plus a
+regression test reproducing the exact `1e-10`-step case.
+
+**Verified live in the browser** (not just unit tests, per this project's
+own standing rule that type-checks/unit-tests aren't sufficient on their
+own): free-mode instability (5deg start, no control/wind -- grows and
+correctly freezes at termination, ~0.4s, consistent with the ~0.25s
+instability-time formula plus the "growth mode splits roughly evenly"
+correction from the physics tests); Control-on manual driving (arrow-key
+keydown produced an immediate, correctly-signed Force reading matching the
+Force Limit slider exactly, with sensible Energy/Work panel response); Wind
+on (no crash, no NaN, terminates on its own without any manual input, as
+expected given the short instability timescale). Zero console errors
+throughout. Reset/Run/Pause all confirmed working. Physics: 72/72 pytest
+(unchanged this round). JS: 218/218 Vitest (+1 regression test for the axis
+bug above).
+
+**Next step**: get the coworker's actual `ct_sac` weights + architecture +
+observation normalization (still blocked, per the kickoff entry), then wire
+in `ctSacPolicy.js` as the system's third controller option -- everything
+else in this round was built specifically so that addition wouldn't need to
+touch the panels, diagnostics, or scene. Separately, still deferred by
+choice: the gust rolling plot, "Last 20 Episodes" history, and Difficulty
+Lambda's real formula.
+
+## 2026-08-11 (cont.) — First hands-on feedback round: 4 fixes
+
+User tried it live and reported 4 issues, all addressed:
+
+1. **"Driving does not work."** Root cause, found by reasoning through the
+   actual likely user flow rather than guessing: (a) unlike the racket/
+   pendulum, this system did NOT auto-run on load (`resetRun()` at the
+   bottom of the file instead of `runFromSidebar()`) -- a real inconsistency
+   with the established site convention, fixed. (b) Even after that fix,
+   toggling Control on does NOT itself restart the run on the racket/
+   pendulum (confirmed: both call only `refreshSubfieldVisibility` on
+   toggle, matching this project's existing "toggles take effect on the next
+   Run click" convention) -- but cart-pole's Free mode terminates almost
+   instantly (~0.25-0.4s, the genuine, already-verified physics), so by the
+   time a user actually reaches for the arrow keys after flipping Control
+   on, the auto-played free run from page-load has almost always already
+   frozen. Toggling Control now explicitly calls `runFromSidebar()`,
+   deliberately diverging from the other two systems' convention for this
+   one control, with the reasoning written inline. Verified live: toggling
+   Control now visibly restarts (t resets to 0), and an arrow-key press
+   immediately produces a nonzero Force reading and a correct
+   Work/Energy/diagnostics response.
+
+2. **Starting Angle widened is wrong -- narrowed instead, to -90..90deg**
+   (was -180..180). Not arbitrary: past +-90deg the pole's own tip is BELOW
+   its pivot height, which for this system's flat, ground-level rendering
+   means the pole visually dips through the track line in the pre-run
+   preview -- a real "doesn't make physical sense" visual bug, not a taste
+   preference. Confirmed the fix is exact, not just approximate: pole tip
+   height above the pivot is `poleLength * cos(theta)`, which is >= 0 for
+   all |theta| <= 90deg exactly.
+
+3. **Display too small -- tightened the camera's worst-case framing.**
+   `MAX_POLE_HALF_LENGTH` (drives `cameraHalfExtents`) dropped from 1.5 to
+   1.0, and a new `CAMERA_MARGIN=1.05` (down from `cameraHalfExtents`'s own
+   default 1.15) tightens the headroom -- both still leave genuine clearance
+   at the new worst case, just less of it, since the old values left the
+   common default geometry looking small/zoomed-out inside its panel.
+
+4. **"Pole Half-Length" renamed to "Pole Length."** Half-length is an
+   internal physics convention this project inherited directly from
+   `summer-2026/cartpole.py`'s own `self.length` (itself inherited from
+   Sutton's original code) -- meaningful to carry through the tested
+   physics layer unchanged, but not something a sidebar user should have to
+   think in. Converted at the UI boundary only
+   (`poleHalfLengthFromSlider() = sliderValue / 2` in `cartpoleMain.js`);
+   `cartpole_dynamics.py`/`cartpoleDynamics.js`'s own `l` parameter and
+   every test that exercises it are untouched. New slider range 0.4-2.0m
+   (full length), default 1.0m -- exactly double the old 0.2-1.5
+   half-length range's own bounds, now at the tightened
+   `MAX_POLE_HALF_LENGTH=1.0` from fix 3.
+
+JS: 218/218 Vitest (unchanged -- all four fixes were UI/wiring, no new pure-
+function surface). Verified live for all four; no console errors.
+
+**Still open, flagged for the user rather than silently changed**: even
+with fix 1, the underlying instability timescale (~0.25-0.4s at default
+sliders) is objectively fast -- verified correct, matching both the from-
+scratch physics derivation and the coworker's own demo's displayed number,
+not a bug -- so successfully catching a fall in "you" mode still requires a
+quick, correctly-directed push. Deliberately did not soften the default
+physics (e.g. a gentler starting angle or weaker gravity) without checking
+first, since that would trade away real physical accuracy for playability
+without being asked to.
+
+## 2026-08-12 (cont.) — The real ct_sac files arrived; steps 1-5 built, test-first
+
+User reported the reaction window is still too small to catch a fall by
+hand even with the toggle-restart fix above. **Decision: pause "you" mode
+here rather than keep tuning it**, and pivot to the real controller -- the
+coworker's actual files arrived (`POLICY_SPEC.md`, `export_policy.py`,
+`cartpole_policy.json` -- the exported weights, 2.7MB/229,500 numbers --
+and `cartpole_test_vectors.json` -- 24 observation->action pairs,
+independently verified against live PyTorch, tolerance 1e-4 N).
+
+**Verified the actual weights file against the spec before trusting either
+one** (this project's standing practice: check, don't assume a doc matches
+reality): loaded `cartpole_policy.json` directly and ran the exact forward
+pass described in `POLICY_SPEC.md` against all 24 test vectors BEFORE
+writing a single line into this repo. All 24/24 matched, worst error
+2.13e-6 N against the stated 1e-4 N tolerance -- confirms both the
+document and the weights are internally consistent and correct, not just
+plausible-looking.
+
+**Two facts from the spec that change how this mode has to be driven,
+neither of which is a bug to fix:**
+1. **Trained at dt=0.01**, not this project's other dt values -- the
+   16-frame observation window encodes exactly 0.16s of history, and the
+   policy's own learned dynamics are tied to that rate. `ct_sac` mode
+   therefore needs its own fixed-cadence decision loop, distinct from
+   `none`/`you` mode's continuous real-time stepping.
+2. **Only ever seen one plant** (this project's own default mp/mc/l/g/
+   force-limit/wind values, confirmed to match exactly) -- dragging the
+   geometry/wind sliders while `ct_sac` is active is deliberately left
+   live rather than locked, since watching the trained policy degrade
+   out-of-distribution IS the coworker's own demo's whole point ("what
+   changes is how far the problem has drifted from what they were built
+   for").
+
+**Files placed where they're actually used, not just dropped in**:
+`cartpole_policy.json` -> `data/cartpole_policy.json` (Vite's configured
+`publicDir`, so the browser can `fetch()` it at runtime with zero build
+config changes) -- required adding a targeted exception to
+`data/.gitignore`'s blanket `*.json` rule (`!cartpole_policy.json`),
+documented inline: unlike every other file in `data/`, this one is an
+external asset that must actually be committed, not a regenerable
+`physics/export.py` output. `cartpole_test_vectors.json` ->
+`physics/tests/fixtures/`, the same cross-validation-fixture location
+every other module in this project already uses. `POLICY_SPEC.md`/
+`export_policy.py` were NOT copied in (the exporter depends on the
+coworker's separate training codebase and can't run here) -- cited by
+name/path for provenance instead, with their key facts folded into
+`cartpole_policy.py`'s own docstring.
+
+**Built steps 1-5 of the agreed plan, test-first, all pytest/Vitest
+green:**
+- `physics/cartpole_policy.py` / `cartpolePolicy.js`: the forward pass
+  (Linear+ReLU body, bare-linear `body.4` -- the one documented gotcha --
+  bare-linear `mu` head, tanh+rescale) plus the observation-window helpers
+  (`init_window`/`push_frame`/`window_to_observation`). **Deliberately
+  skipped the usual NotImplementedError-stub red phase for the forward
+  pass itself** -- the exact same logic was already verified ad hoc
+  against these same 24 vectors (see above) before being written as the
+  real implementation, so staging a fake red phase for code already known
+  correct would have been theater. The window helpers ARE genuinely new
+  logic and got real tests.
+- `cartpoleScenarioRunner.js`: `initCtSacState`/`advanceCtSac`, a
+  fixed-timestep accumulator (standard game-loop pattern) running exactly
+  as many whole `CT_SAC_DT=0.01` ticks as have accumulated per call --
+  each tick samples the window, runs one policy forward pass, takes one
+  full `heunStep` at `dt=CT_SAC_DT` with that force held constant (matching
+  how the training env itself stepped -- one Euler-Maruyama/Heun step per
+  decision, not further subdivided), then pushes the new measurement into
+  the window. Stops early on termination mid-loop rather than consuming
+  the rest of the accumulated ticks.
+- Tests use a **trivial constant-output fake policy** (all-zero weights,
+  `low===high` so tanh's nonlinearity collapses to one known number
+  regardless of input) to hand-verify the tick mechanics against directly-
+  chained `heunStep` calls -- same "inject a known/fixed value instead of
+  the real complex thing" pattern as `cartpoleWind.test.js`'s
+  `_FixedGenerator`.
+- **One test-design mistake caught by running the numbers, not assumed
+  correct:** the termination early-stop test first assumed a huge constant
+  force at a near-threshold starting angle would terminate on the very
+  FIRST tick. Numerically traced the actual trajectory (`node` one-liner)
+  before asserting anything and found it actually swings theta toward the
+  OPPOSITE boundary (through zero) and crosses on tick 4 of 5, not tick 1 --
+  a genuine, sensible physical result (force couples into theta_dot with a
+  particular sign), not a bug. Fixed the test to check the general
+  property (stopped before consuming all of `dtReal`) instead of a
+  specific miscounted tick number.
+
+Physics (Python): 81/81 pytest (+9 new). JS: 235/235 Vitest (+17 new).
+
+**Next step (paused here per the user's own request)**: wire `ct_sac` into
+the sidebar as a real third Controller option (`none`/`you`/`ct_sac`,
+replacing the current boolean Control toggle) -- a UI change, discussed
+before building per the user's standing preference to go slow on UI/
+wording.
+
+## 2026-08-12 — Pausing "you" mode, pivoting to the real ct_sac weights
+
+**Status check-in after the fixes above**: the auto-restart-on-toggle fix
+made Control actually responsive, but the user reports the reaction window
+is still too small to catch a fall by hand even so -- consistent with the
+"still open" note left above (the ~0.25-0.4s instability timescale is
+verified-correct physics, not a bug, but that doesn't make it humanly
+playable). **Decision: pause manual/"you" mode here rather than keep tuning
+it, and pivot to the real controller** -- the user now has the actual files
+from their coworker (the `ct_sac` checkpoint/weights, architecture, and
+observation-normalization details) that Phase 2 (see the 2026-08-11 kickoff
+entry) was blocked on. Priority order flipped: get the "normal" experience
+(Free vs. an actually-controlled mode, matching the racket/pendulum's own
+pattern) working with the REAL trained policy first, then return to
+manual driving as a stretch/secondary mode once the primary experience is
+solid -- not abandoning "you" mode, just deprioritizing it.
+
+**Not yet started**: still waiting on the user to actually hand over the
+coworker's files in this conversation (checked the project directory and
+this session's scratchpad first -- nothing new landed yet, so nothing to
+build against until they're actually shared). Once they land, next steps
+per the original Phase 2 plan: confirm the policy's exact architecture
+(layer sizes, activation(s), output squashing/rescaling) and observation
+normalization directly from their source rather than guessing, then write
+`ctSacPolicy.js` as a small hand-written forward-pass (Python reference +
+JS port, test-first, cross-validated fixtures -- same process as every
+other physics module in this project), and wire it in as the `Control`
+toggle's real behavior (replacing/supplementing the manual "you" mode that
+currently occupies that slot).
+
+## 2026-08-12 (cont.) — Controller selector wired in: None / Manual / ct_sac
+
+Sketched the 3-way selector as an interactive mockup before touching real
+code (per the user's standing preference to go slow on UI). Two decisions
+made there, carried into the real build:
+
+- **Segmented 3-button control, not a boolean switch or a dropdown** --
+  mirrors the coworker's own live demo's control layout exactly, and with
+  only 3 always-valid options there's no reason to hide two behind a click.
+  New `.segmented`/`.seg-btn` CSS in `index.html`.
+- **"You" renamed to "Manual"** (user's own request, after brainstorming
+  alternatives: Manual/Drive/Keyboard/Pilot) -- standard control-systems
+  terminology, reads cleanly next to "None"/"ct_sac" without being cute.
+  `controllerMode` internally is `"none" | "manual" | "ctsac"`.
+- **`ct_sac` button disabled until the weights finish loading** (a 2.7MB
+  fetch, momentary but not instant) -- selecting a mode with nothing to
+  run would silently do nothing, indistinguishable from broken. Sketched
+  and confirmed via an interactive preview before building the real
+  fetch-then-enable wiring in `cartpoleMain.js`.
+
+**Real architecture change in `cartpoleMain.js`'s `animate()`**: it now
+branches per mode -- `none`/`manual` share the existing continuous real-
+time `advance()` path (force is knowable instantaneously either way), while
+`ctsac` uses the new fixed-cadence `advanceCtSac()` path, maintaining its
+own bundled `{z, window, accumulator, force, workDelta}` state
+(`ctSacState`) kept in sync with the single `z` every other mode/the
+scene/history code reads. `advanceCtSac` gained a `workDelta` return field
+(the work done during just that call, using the same `dH/dt = F*x_dot`
+identity as `advance`'s callers, but evaluated per-tick instead of per-
+rendered-frame -- more natural here since the force is exactly constant
+for each whole tick by construction) -- 2 new tests added for it.
+Fragility Diagnostics now gates on `controllerMode !== "none"` (either
+engaged controller, not just one specific mode).
+
+**Verified live, with one real debugging trail worth recording.** Selecting
+`ct_sac` immediately produced correct, sensible values -- Force: 5.513N,
+then 1.146N, Work accumulating, Fragility Diagnostics all populated,
+panel label "ct_sac", zero thrown console errors. But the simulation then
+appeared to freeze (`t` stuck, "Survived: 0.44s (ongoing)" never updating)
+even after several more seconds of real waiting. Debugged systematically
+rather than guessing:
+1. Installed a `window.error`/`unhandledrejection` trap directly in the
+   page -- caught nothing, ruling out a silent exception.
+2. Confirmed the main thread wasn't blocked (an infinite loop inside
+   `advanceCtSac` would hang synchronous JS execution) -- other JS
+   evaluations kept succeeding fine.
+3. Patched `window.requestAnimationFrame` to count calls -- 0 calls in a
+   2-second window, even after explicitly fronting the tab
+   (`tabs_select`).
+4. Checked `document.hidden`/`document.visibilityState` directly: `true`/
+   `"hidden"`, despite `document.hasFocus()` reporting `true` and this
+   being the tool's only, active tab. Reproduced identically on a brand
+   new tab.
+
+**Conclusion: a characteristic of this Browser-pane tool's environment**
+(pages render with `document.hidden = true` regardless of the tool's own
+tab-activation bookkeeping), not an app bug -- Chrome suspends/throttles
+`requestAnimationFrame` for hidden documents, which is exactly the stall
+observed, and matches (extends) the RAF-throttling gotcha already recorded
+in the 2026-08-05 entry (that one was fixable by fronting the tab; this one
+isn't, at least not by any method tried). A real user's actual browser tab
+has a genuinely correct `visibilityState`, so this shouldn't reproduce
+there. Recorded here so a future verification attempt in this same tool
+doesn't waste time re-diagnosing the same environment limitation, and
+doesn't mistake it for a real animate()-loop bug.
+
+Physics (Python): 81/81 pytest (unchanged this round -- no physics changes,
+only UI/wiring). JS: 237/237 Vitest (+2 for `workDelta`).
+
+**Next up**: none of the site's 3 systems' Controller UIs have been asked
+about together yet -- the racket/pendulum's own Control toggle is still a
+boolean, unlike this system's new 3-way selector. Not proposing to unify
+them (per the explicit no-shared-abstraction convention), just noting the
+inconsistency exists across systems now, in case it's ever worth asking
+the user about.
+
+## 2026-08-12 (cont.) — ct_sac's "oscillates, settles, back and forth" behavior: confirmed real, not a bug
+
+User's own hands-on report after the controller selector landed: watching
+`ct_sac` run, it oscillates, settles, then keeps going back and forth
+rather than coming fully to rest. Investigated rather than assumed either
+way (bug vs. expected):
+
+Ran two independent 60-second CLOSED-LOOP simulations directly in `node`
+(bypassing the browser/rendering entirely -- a `node -e` one-liner calling
+`initCtSacState`/`advanceCtSac` exactly as `cartpoleMain.js` does), one
+with wind off, one with wind on matching the coworker's own demo defaults
+(sigma_gust=0.002, sigma_turb=0.001):
+- **theta (pole angle) stayed bounded the whole run in both cases** --
+  max ~0.087 rad (~5deg) in the wind-off run, ~0.089 rad (~5.1deg) with
+  wind on -- essentially never exceeding its own 5deg starting tilt, and
+  never once crossing the 12deg failure threshold in either 60s run.
+- **x (cart position) wandered substantially in both cases** -- up to
+  +-1.6m (wind off) and +-1.9m (wind on), well inside the +-2.4m track,
+  continuously drifting back and forth rather than re-centering.
+- Also opened the coworker's own live demo directly (same checkpoint) and
+  watched it run for ~15s: same qualitative signature -- small pole tilt,
+  visible cart drift, no failure.
+
+**Conclusion: this is genuine, reproducible behavior of the trained
+policy, not a porting bug.** The pole staying up is the actual invariant
+being maintained; cart position drifting is weakly regularized (or not
+explicitly rewarded to re-center) in whatever the checkpoint was actually
+trained on, so the policy satisfices on "don't tip over" without bothering
+to recenter x as long as it stays inside the track. What reads as "keeps
+going back and forth" from the flat side-on camera view is this ongoing
+drift-and-correct cycle, not repeated near-failures. No code change made
+-- confirmed correct via direct simulation rather than either dismissing
+the report or chasing a bug that isn't there.
+
+Worth folding into the upcoming aesthetics/wording pass: this is a genuinely
+interesting, presentable characteristic of the real trained policy (a
+concrete illustration of reward under-specification -- "the policy learned
+exactly what it was rewarded for, and re-centering wasn't part of that"),
+not just a footnote to explain away.
+
+## 2026-08-12 (cont.) — First real-Safari feedback: 3 fixes, scoped to "ship the regular modes first"
+
+User confirmed the build works in their own Safari and gave 3 concrete
+fixes, explicitly scoping out Manual mode ("we will continue to edit later")
+and asking to get None/ct_sac ship-shape first:
+
+1. **"Difficulty Lambda: pending" removed entirely**, not just left as a
+   placeholder -- the user confirmed they never got the real formula from
+   the coworker, so showing a permanent "pending" forever is worse than not
+   showing the line at all. `formatDiagnostics()` now only shows
+   Instability Time / Gain A / Gain B / Survived.
+
+2. **The Force & Work axis-label bug was only half-fixed by the earlier
+   `formatStepTick` decimal cap.** That fix stopped the GARBLED overlapping
+   digits, but the user's screenshot showed the real remaining problem: a
+   wall of a dozen-plus identical "0.000000" rows stacked on top of each
+   other, still clearly broken-looking even though no longer garbled.
+   Root cause (same family as before, deeper this time): a genuinely-zero
+   data range still drives `computeNiceStep` into a ~1e-10-scale major/minor
+   step, which subdivides the tiny range into dozens of ticks -- capping
+   decimals stopped the GARBLING but not the redundant repetition. Fixed at
+   the actual source this time: extracted `computeTorqueDomain` (new,
+   tested pure function in `ControlMetrics.js`) which falls back to a fixed
+   `[0, 1.0]` range when the max magnitude is at or below a 1e-6 "is this
+   actually zero" threshold -- comfortably below any real torque/force value
+   this app ever produces, so the racket/pendulum's own genuinely-small-but-
+   nonzero torque behavior is completely unchanged (confirmed via a test
+   asserting a tiny-but-real value like 0.001 still scales normally, not
+   just the exactly-zero case).
+
+3. **Cart enlarged and given wheels that dip below the rail**, per direct
+   feedback that the pole "cannot go under the cart" (confirmed: the +-90deg
+   Starting Angle limit already guarantees the pole tip never drops below
+   the pivot height, so there's no geometric conflict with extending the
+   cart's own body downward) and the whole assembly read as too small in
+   its panel. `CART_WIDTH` 0.4->0.55, `CART_HEIGHT` (still the PIVOT height
+   -- unchanged meaning, so camera framing/track decoration/
+   cartpoleMain.js's camera position all just work off the same constant
+   with no other code changes needed) 0.24->0.34. Body now occupies
+   `[WHEEL_RADIUS, CART_HEIGHT]` instead of `[0, CART_HEIGHT]`, with two new
+   wheel circles (`THREE.CircleGeometry`) centered exactly on the rail
+   (y=0, so they visibly dip to `-WHEEL_RADIUS` below it) and positioned
+   just in front of the body's own front face so they're never partially
+   hidden behind it. 4 new/updated tests in `CartPoleScene.test.js`
+   (body-top-at-pivot-height, wheel positions/dip, body-bottom-meets-wheel-
+   top with no gap or overlap) -- confirmed the camera's existing worst-case
+   margin already had enough headroom below the rail for this without
+   needing any framing changes (verified by the existing pole-swing-circle
+   test still passing unchanged).
+
+**Verification note**: tried to visually confirm the wheels via ad hoc
+canvas-zooming hacks (CSS transform/scale tricks) in the Browser pane, but
+these introduced their own transform-math and scaling artifacts that made
+them unreliable for fine visual QA -- abandoned that approach in favor of
+trusting the automated geometry tests (which check exact positions/radii
+directly, not by eyeballing a screenshot) and asked the user to confirm the
+actual look themselves in their own browser, rather than presenting a
+possibly-misleading zoomed screenshot as if it were confirmed correct.
+
+Physics: 81/81 pytest (unchanged -- no physics touched this round). JS:
+242/242 Vitest (+5: 3 for computeTorqueDomain, 2 updated + 2 new for
+CartPoleScene's wheels/sizing... see test file for the exact count).
+
+**Explicitly still deferred, per the user's own scoping**: Manual mode's
+reaction-window difficulty. Not forgotten -- just sequenced after "regular"
+modes (None/ct_sac) are fully ship-shape.
+
+## 2026-08-12 (cont.) — Corrected misread: camera framing, not cart geometry
+
+User corrected the previous entry's fix #3: the ask was never a literal
+"wheels dip below the rail" -- that was this assistant's own
+misinterpretation of "bring it down... wheels are lower". The actual ask:
+move the whole rail+cart+pole system down within its panel, and make the
+whole thing bigger. Reverted the wheel-dip cart geometry back to a plain
+box (`[0, CART_HEIGHT]`, no separate wheel meshes) and fixed the real
+issue instead: **camera framing**.
+
+**Root cause of "looks small and stuck in the middle"**: `cameraHalfExtents`
+framed a full circle of radius `maxPoleLength` around the pivot, symmetric
+above AND below it -- but the +-90deg Starting Angle limit (added earlier
+this same day, precisely to keep the pole from visually dipping below its
+own pivot) already guarantees `cos(theta) >= 0` for the entire reachable
+range, so the pole's tip height is ALWAYS >= the pivot height. The full
+lower half of that circle was framed space that could physically never be
+used -- exactly a pole-length's worth of dead space below the rail, which
+is what pushed the rail toward the panel's vertical center and made
+everything look small.
+
+**Fix: made the vertical framing asymmetric on purpose.** `cameraHalfExtents`
+now returns `{halfWidth, top, bottom}` instead of `{halfWidth, halfHeight}` --
+`top = maxPoleLength*margin` (unchanged, full headroom for the pole),
+`bottom = CART_HEIGHT*margin` (new -- only enough to show the cart itself).
+In the binding (height-constrained) case this HALVES the total framed
+vertical extent, a genuine 2x zoom-in, not just a cosmetic tweak.
+`cartpoleMain.js`'s `resize()` letterbox-fit logic updated to match:
+`bottom` is always held fixed at its required value regardless of aspect
+ratio (this is what keeps the rail's position in-frame consistent), and any
+slack from the canvas's own aspect ratio always expands `top` or
+`halfWidth`, never `bottom` -- still a pure letterbox (never crops), just
+no longer symmetric.
+
+Updated `CartPoleScene.test.js` to match: removed the wheel-specific tests
+(geometry reverted), rewrote the `cameraHalfExtents` tests for the new
+asymmetric shape -- including a new explicit check that `top/bottom > 3`
+(the framing is genuinely lopsided, not just slightly adjusted) and that
+the reachable half-circle (`|theta| <= 90deg`, not the old full circle)
+stays within `top` with real margin to spare.
+
+Verified live: the rail now sits low and consistently in the panel with
+real headroom above for the pole, and the whole assembly reads
+noticeably bigger -- confirmed via a clean-reload error trap (zero errors)
+rather than screenshot-eyeballing, since the earlier round's ad hoc canvas-
+zoom screenshots had already proven unreliable for this kind of visual
+check in this tool.
+
+JS: 241/241 Vitest (net unchanged count -- 2 wheel tests removed, 4
+cameraHalfExtents tests added/rewritten in their place). Physics
+unaffected.
+
+## 2026-08-12 (cont.) — Second correction: wheels back, and the REAL sizing fix
+
+User's actual screenshot made clear the previous round still wasn't it:
+they DO want wheels visible (this assistant over-corrected by removing
+them entirely, misreading "I don't want wheels below the rail" as "remove
+wheels"), and -- the real substance of this round -- the cart+pole was
+still much smaller than intended. Explicit target given: "cart and upright
+pole should fill the display to 80% if not more... it's ok if we have to
+allow the display to scroll... we have a lot of space we're not using."
+
+**Re-added wheels, this time flush with the rail (not dipping below, not
+absent).** Wheel center at `y=WHEEL_RADIUS` (so the wheel spans
+`[0, 2*WHEEL_RADIUS]` -- bottom edge exactly at the rail, never past it).
+Body now occupies `[2*WHEEL_RADIUS, CART_HEIGHT]`. One real bug caught by
+the test suite before it shipped: the first draft set the body's bottom
+edge at the wheel's CENTER (`WHEEL_RADIUS`) instead of its TOP
+(`2*WHEEL_RADIUS`), silently overlapping the top half of each wheel with
+the bottom of the body -- caught by
+`test("body bottom edge sits exactly at the wheels' top...")` failing with
+an exact 2x discrepancy, not a vague near-miss, which is what made the
+off-by-a-factor-of-two bug obvious immediately.
+
+**The actual size fix: found and removed the real waste.** Root cause
+this time (distinct from the previous round's rail-position fix):
+`cameraHalfExtents` was still being called with a fixed
+`MAX_POLE_HALF_LENGTH` constant sized for the Pole Length slider's
+maximum (2.0m) -- so at the DEFAULT pole length (1.0m), the pole only
+ever filled HALF of the vertical space the camera was framed for, no
+matter how the rail's own position was fixed up. This is a genuine,
+deliberate departure from this app's usual "static worst-case framing,
+never recompute" convention (used by the racket, pendulum, and this
+system's own horizontal framing) -- confirmed acceptable specifically
+because the user explicitly asked for it, trading "never needs
+recomputing" for "always looks appropriately large at whatever the
+sliders are currently set to."
+
+Implementation: `cartpoleMain.js` now recomputes `REQUIRED` (renamed
+internally accurate: it's the CURRENT requirement, not a fixed maximum)
+every time the Pole Length slider fires its "input" event -- same moment
+`resizePole`'s existing live-preview call already fires, so no new event
+wiring, just one more thing done at that moment. `CartPoleScene.js`'s
+`cameraHalfExtents` renamed its own param from `maxPoleHalfLength` to
+`poleHalfLength` to match this changed contract, with the docstring
+rewritten to explain the trade-off explicitly rather than leaving the
+"why does this look different from every other camera in this app"
+question unanswered for a future reader.
+
+**A clean, testable consequence, verified before committing to a margin
+value:** because both `top` and `bottom` scale off the exact same
+`margin`, and the rendered content's real height is always exactly
+`poleLength + CART_HEIGHT`, the fraction of the frame actually filled
+works out to precisely `1/margin` -- independent of whatever the
+geometry sliders are set to. Confirmed with a quick throwaway Python
+calculation before picking a value (not guessed): margin=1.2 gives
+exactly 83.3% fill, comfortably inside "80% if not more" at any pole
+length or cart size, not just the current defaults. New test asserts this
+identity directly at two very different pole lengths.
+
+Also, per the same screenshot's implicit ask, doubled `CART_WIDTH`
+(0.55->1.1) and `CART_HEIGHT` (0.34->0.68) again, per "at least double the
+size of the cart."
+
+Verified live: zero console errors on a clean reload (error-trap method,
+not screenshot-eyeballing, per the same reasoning as last round), and a
+direct screenshot this time DOES clearly show both the enlarged cart and
+its wheel circles sitting on the rail -- worth actually looking at rather
+than only trusting the geometry tests, now that the fill-fraction identity
+gives high confidence the numbers are right independent of the visual
+check.
+
+JS: 244/244 Vitest (+3 net this round). Physics unaffected.
+
+**Meta-note for future rounds**: two corrections in a row on this same
+"make the cart-pole bigger" ask, both from initially solving the wrong
+layer of the problem (cart geometry vs. camera framing vs. worst-case
+framing basis). Worth explicitly re-confirming the CONCRETE target (a
+percentage, a comparison screenshot) before implementing, rather than
+inferring intent from a short phrase like "bring it down" -- which is
+exactly what the user's own follow-up ("cart and upright pole should fill
+the display to 80%") did, and which resolved this in one pass once
+supplied.
+
+## 2026-08-12 (cont.) — Third hands-on round: three more fixes, incl. the real panel-layout root cause
+
+Three issues from one more real-Safari round:
+
+**1) ct_sac auto-started on selection, instead of waiting for Run.**
+Root cause: `selectControllerMode` (the sidebar's Controller segmented
+control) called `runFromSidebar()` directly, from an earlier round's fix
+for a *different* bug (restarting a run that had already terminated when
+switching modes) -- but that fix over-reached: it restarted on EVERY mode
+click, not just a terminated one, breaking the "selecting a controller is
+just a selection, Run is what starts it" contract every other mode (and
+every other system) follows. Fixed by removing that call entirely from
+`selectControllerMode`; introduced `activeControllerMode`, a snapshot of
+`controllerMode` taken once in `resetRun()`, to drive the live run
+(`animate()`'s stepping branch, `currentForce()`'s manual-input gate, the
+panel label, the diagnostics-visibility gate) -- so switching the
+sidebar's selection mid-run no longer risks calling `advanceCtSac` against
+a `ctSacState` that's still `null` (the crash `runFromSidebar()` was
+papering over), and so a genuinely-still-running "None" run is left alone
+if the user clicks "ct_sac" without also clicking Reset/Run, exactly as
+seen live (t kept ticking, label stayed "Free").
+
+**2) Force & Work panel showed nothing at all in "None" mode --
+looked broken, not "waiting for input."** `drawPanels()` used to skip
+`drawTorquePanel` entirely whenever `controllerMode === "none"`, blanking
+the canvas instead. But zero force IS real data (nothing is pushing, which
+is correct and worth showing with axes), not an absence of data --
+`computeTorqueDomain`'s existing all-zero fallback (`[0, 1.0]`, from the
+earlier "wall of 0.000000 labels" fix) already handles this domain
+correctly. Now `drawTorquePanel` always runs, in every mode; only the
+`Work:`/`Force:` text overlay (`updateMetricsText`) stays gated on
+`activeControllerMode !== "none"`, since a literal "Work: 0.000 J" readout
+before anything has run is genuinely uninteresting, unlike the axes
+themselves.
+
+**3) The cart still looked far too small ("double it again") -- and this
+time the actual root cause was neither cart geometry nor camera framing
+(both already correct/tested), but the PANEL SHAPE itself.** Quantified
+before touching anything: `cameraHalfExtents` needs `halfWidth` to
+comfortably include the full +-2.4m track, which drives a required
+width:height aspect ratio of ~3.7-6.2 (shorter poles need relatively more
+width margin) depending on the Pole Length slider. The cart-pole scene
+panel, though, was sharing the same plain 2x2 `.panels-grid` as every
+other system, giving it a roughly square-ish real aspect (~1.5-2.6
+measured live) -- nowhere near wide enough, so the camera was forced to
+zoom out far past what the cart+pole alone need, just to keep the track's
+ends in frame. This is *why* the fill-fraction identity from the previous
+round (`1/margin`, 83.3% at margin=1.2) never showed up live: that
+identity only holds when height is the binding constraint, and a
+square-ish panel against a ~4-6:1 required aspect means width is always
+binding instead, capping real fill around 27-45% no matter how the camera
+math is written.
+
+Fix: `#cartpole-panels` gets its own grid override (`.cartpole-panels-banner`,
+scoped by ID so it doesn't touch the racket/pendulum's shared `.panels-grid`),
+reflowing from a plain 2x2 into a 3-column layout with the scene panel
+spanning the full top row as a short, wide banner (`grid-template-rows: 1fr
+2fr`) and Energy/Angle/Force sharing the row below, three across instead of
+two. Measured live: scene canvas aspect went from 2.56 (naive 3fr/2fr split,
+first attempt) to 5.13 (1fr/2fr) -- above the required aspect (4.70) at the
+default Pole Length, which flips the binding constraint to height and
+actually delivers the `1/margin` = 83.3% fill the previous round's math
+promised but the panel shape was silently preventing. Confirmed at the
+slider's extremes too, not just the default: 83.3% at Pole Length >= 1.0m,
+tapering to ~69% at the slider's minimum (0.4m, the most width-hungry
+case) -- still a large improvement over the old ~27-35% range, and no
+setting requires scrolling to see the full track.
+
+Verified live end-to-end: screenshot at default settings shows the cart
+filling most of the banner with the track visible edge-to-edge; Force &
+Work panel shows axes and a real "Work: 0.000 J / Force: 0.000 N" readout
+immediately after Reset in ct_sac mode, before Run is pressed; clicking
+ct_sac mid-run left an in-progress "None" run untouched (t kept advancing,
+label stayed "Free"); Reset-then-Run under ct_sac correctly waits at
+t=0.0s until Run is clicked, then drives normally.
+
+JS: 244/244 Vitest (unchanged -- this round's panel-layout fix was pure
+CSS/HTML, no new logic to test; the `activeControllerMode` and
+always-draw-torque-panel changes were exercised live rather than adding
+new unit tests, since both are UI-wiring behavior already covered
+indirectly by existing `drawTorquePanel`/`computeTorqueDomain` tests).
+
+## 2026-08-12 (cont.) — Correction: the banner layout was wrong; chase-cam instead
+
+User feedback on the banner layout, with a screenshot of the windy
+pendulum's plain 4-panel grid for comparison: "the point was to have four
+panels like this. Can we resize the panel so it's back that way? ... I'm
+ok if we have to scroll the background as the cart moves, but now it
+looks unnatural." Correct call -- the banner made cart-pole the one
+system on the whole site whose panel grid didn't match the others, and
+the previous entry's own trade-off analysis had already surfaced
+scrolling as an option (the user had said as much even earlier: "it's ok
+if we have to allow the display to scroll") without my actually
+pursuing it in favor of reshaping the grid instead. This round properly
+takes that earlier offer at face value.
+
+**Reverted**: `#cartpole-panels`/`.cartpole-scene-wrap`/
+`.cartpole-panels-banner` all removed from `index.html`; cart-pole is
+back on the exact same plain 2x2 `.panels-grid` as the racket and
+pendulum.
+
+**The actual fix: a chase-cam, not a scrollbar.** Re-examined what
+"scroll the background as the cart moves" most naturally means -- not a
+manually-dragged scrollbar on a wider-than-the-panel canvas, but the
+camera panning to keep the cart centered as it translates along the
+rail, the same convention as any side-scrolling game's camera. This
+also directly resolves the root tension from the previous entry: the
+ONLY reason `cameraHalfExtents`'s `halfWidth` ever needed to be so large
+(driving the ~4-6:1 required aspect ratio no plain grid cell can match)
+was showing the ENTIRE +-2.4m track at once, at every cart position
+simultaneously. A camera that instead follows the cart never needs that
+-- it only ever has to frame the cart+pole's own extent, which is a
+completely different, much more modest, aspect requirement (~1.6-2.5:1
+depending on Pole Length), comfortably satisfied by a plain, roughly
+square grid cell.
+
+Implementation: `cameraHalfExtents({poleHalfLength, margin})` dropped its
+`xThreshold` parameter entirely and no longer adds it to `halfWidth` --
+the function now only knows about the cart+pole, never the track's
+absolute extent (`CartPoleScene.js`'s docstring rewritten to explain
+this). `cartpoleMain.js` gained `updateCameraChase(x)`, called every
+frame right alongside `updateCartPoleFrame` (all 3 call sites: the
+paused-preview path, `resetRun()`, and the live `animate()` loop) --
+sets `cartpoleCamera.position.x = x` (a pure horizontal pan; THREE's
+ortho `left`/`right` are offsets relative to the camera's own position,
+so they don't need to change). The track/boundary-marker decoration
+(`createTrackDecoration`) is untouched -- it's still drawn across the
+full +-2.4m in world space, it just now scrolls past naturally as the
+chase-cam pans, including the boundary tick marks becoming visible
+exactly when the cart actually approaches them, which if anything
+communicates the failure boundary better than always having it in frame
+from the start.
+
+Verified live: at the default Starting Position (0), the cart fills the
+panel similarly to before. Set Starting Position to 2.0 (near the
++-2.4m boundary) and Reset -- the cart is rendered PERFECTLY centered in
+the panel regardless, confirming the pan tracks the cart's live position
+rather than assuming it starts at 0. (Animating a live run to watch the
+background visibly scroll frame-by-frame hit this tool's own
+already-documented `document.hidden`-linked RAF throttling -- see the
+existing note on this -- so this was confirmed via the reset path
+instead, which exercises the identical `updateCameraChase` call.)
+
+Test suite: rewrote the `cameraHalfExtents` describe block for the new
+content-only contract -- dropped all `xThreshold` args from existing
+assertions, and replaced the old "half-width exceeds the track boundary"
+test (no longer a meaningful thing to assert) with one confirming the
+new `halfWidth` is far smaller than the old xThreshold-inclusive formula
+would have produced for the same pole length. All other invariants (top
+scales with current pole length, bottom is cart-only and much smaller
+than top, the reachable +-90deg swing stays framed, the `1/margin` fill
+identity) still hold under the new formula and needed no logic changes,
+only dropping the now-removed parameter from their calls.
+
+JS: 245/245 Vitest (+1 net: replaced one test, added one new one for the
+dropped parameter).
+
+## 2026-08-12 (cont.) — Physics discussion: why extreme starting angles fail, and whether "hold at an arbitrary angle" is possible
+
+User question, discussed before touching any code: why doesn't starting
+the pole at a more extreme angle and letting ct_sac run show it actually
+*trying* to recover? And separately, could we add a "target angle" so it
+holds some arbitrary tilt instead of always upright?
+
+**Empirically checked, not guessed:** ran the real checkpoint closed-loop
+via a throwaway script calling `advanceCtSac` directly (deleted after),
+first with the normal termination check, then with it removed entirely
+just to watch the raw dynamics:
+
+- 5-12deg: recovers cleanly, holds for the full run (matches everything
+  already known about the cart-drift behavior).
+- **15deg: still recovers** -- theta reaches ~0 by 0.5s and stays there,
+  slightly beyond the policy's own stated +-12deg training envelope.
+- **20deg: falls off a cliff** -- initial force is weak (5.9N, not even
+  saturated), theta blows through 42deg by t=1s and keeps climbing into
+  uncontrolled full rotations (232deg, 300deg...), cart position diverges
+  past +-19m with the termination check removed. 30-90deg: same collapse.
+
+This matches `POLICY_SPEC.md` exactly: *"the pole is confined to +-12deg
+over a real episode... cos(theta) never leaves [0.9989, 1.0]... don't fix
+it, the network was trained that way."* Past ~15-20deg the input is so far
+outside the training distribution that the output stops being a
+controller and becomes close to noise -- a real cliff in the weights, not
+a bug in the port.
+
+Separately, identified TWO independent reasons extreme angles looked
+broken before this: (1) `THETA_THRESHOLD_RADIANS` (12deg, pinned from the
+coworker's gym env, `cartpoleDynamics.js`) is the actual termination
+boundary, but (2) the Starting Angle slider went to +-90deg -- a range
+chosen purely for camera-framing reasons several rounds ago, unrelated to
+what's survivable. Anything started past 12deg was already failing before
+the sim took a single step, which is what "doesn't even try" actually was.
+
+**Target angle, discussed and deferred (not enough time for a new
+controller, but the physics was worth working through):**
+1. The existing ct_sac network can't be repointed at a nonzero target --
+   its 48 inputs are `(cos theta, sin theta, x)` with no target channel;
+   the weights were optimized purely for theta->0. Feeding it
+   `(cos(theta-T), sin(theta-T))` as a hack is physically wrong: gravity's
+   torque depends on the true absolute angle, not a shifted proxy, so the
+   network would think it's balanced while actually falling.
+2. A literal static hold at any theta != 0, pi is impossible on this rail
+   regardless of controller: holding theta constant requires a sustained
+   constant cart acceleration (a pseudo-gravity term canceling real
+   gravity's torque at that angle, the same idea as a pendulum tilted
+   inside a constantly-accelerating train car) -- constant acceleration
+   means x grows without bound, which a finite +-2.4m rail can't sustain.
+   Upright and hanging are the system's only two true equilibria; this is
+   structural (one horizontal-force actuator, no direct pivot torque), not
+   a software gap. Left genuinely open: whether an oscillatory strategy
+   (cart swinging, pole wobbling around a nonzero mean angle) could hold
+   the *average* angle with bounded x -- not checked either way.
+3. Conclusion: a real "target angle" feature needs a new, purpose-built
+   controller, not a tweak to ct_sac's frozen weights. Out of scope for
+   now; parked as a real idea if there's ever time for it.
+
+**Decided, and implemented this round:** narrow the Starting Angle slider
+from +-90deg to +-20deg (`index.html`) -- past 90 was never meaningful
+(camera-driven, not physics-driven) and now the whole range is at least in
+the neighborhood of what's survivable. Added a standing warning readout
+(`#cartpole-angle-warning`, styled in the site's existing `--unstable`
+color, not a plain `.readout`) that appears whenever
+`|Starting Angle| > 15` -- the user's own chosen cutoff, sitting between
+the empirically-confirmed-good 15deg and the confirmed-collapses 20deg.
+Worth flagging explicitly: the warning's 15deg cutoff and the actual hard
+termination boundary (12deg) are two different numbers by design -- the
+warning is about ct_sac's trained envelope specifically (which tolerates a
+few degrees past 12 in practice), not a restatement of the environment's
+own pass/fail line, and it shows regardless of which Controller is
+selected (None/Manual don't care about ct_sac's training distribution,
+but the slider is shared and the user may switch modes after setting it).
+
+`CartPoleScene.js`'s `cameraHalfExtents` docstring updated to stop
+referencing the old +-90deg range (stale after this change) -- the
+underlying `cos(theta) >= 0` assumption is unaffected, just even more
+comfortably true now with a narrower slider.
+
+JS: 245/245 Vitest (no test changes needed -- this was a slider-range/UI
+change plus a physics discussion, not new library logic).
+
+## 2026-08-12 (cont.) — Relax the termination boundary so a ct_sac failure is actually watchable
+
+Follow-up to the previous entry's own flagged caveat: even with the
+Starting Angle slider widened to +-20deg and the >15deg warning added,
+anything past the real hard boundary (THETA_THRESHOLD_RADIANS, 12deg)
+still insta-terminated at t~0 -- so you'd never actually get to WATCH a
+15-20deg run diverge, only see it freeze immediately. User asked to relax
+this so the failure plays out on screen.
+
+**Design: two thresholds, not one.** `THETA_THRESHOLD_RADIANS` (12deg) in
+`cartpoleDynamics.js` is left completely unchanged -- it's the real,
+citable training/task boundary (still exactly what the angle-warning text
+and `POLICY_SPEC.md` reference), not something to fudge. Instead:
+- `isTerminated(z, thetaThreshold = THETA_THRESHOLD_RADIANS)` and
+  `advanceCtSac(..., thetaThreshold = THETA_THRESHOLD_RADIANS)` both gained
+  an optional trailing param (default unchanged, so every existing call
+  site/test needed zero changes).
+- `cartpoleMain.js` defines its own `VISUAL_THETA_THRESHOLD_RADIANS = 45deg`
+  and passes it at both of its call sites (the outer `animate()` check and
+  the `advanceCtSac` call) -- this is what the app actually treats as "run
+  over," independent of what the trained network's own pass/fail line is.
+
+**Why 45deg specifically:** confirmed against the same empirical probe
+from the previous entry -- at a 20deg start, theta is still only ~43deg by
+t=1.0s (not yet in the uncontrolled-rotation regime, which only kicks in
+around t=1.5s+), so 45deg lets a real divergence play out for close to a
+full second before ending, long enough to see the Angle/Force panels
+actually climb rather than freeze on frame one. It also stays safely
+inside the camera's `cos(theta) >= 0` assumption (valid to 90deg, with the
+narrowed +-20deg Starting Angle slider giving even more headroom) -- so
+the pole tip never dips below the pivot and needs no camera changes, and
+it's comfortably below the point where the render would start showing
+full uncontrolled rotations (visually confusing, and not what "watch it
+fail" was asking for).
+
+Verified live: Starting Angle=20, ct_sac, Run -- the pole visibly leans
+further and further (Angle panel climbing, Force panel saturating near
++-10N, Energy panel climbing well above the upright reference) for about a
+second, then freezes with "Terminated — survived 1.05s" in the Fragility
+Diagnostics readout. Exactly the "attempt, then visible failure" the
+slider-widening round couldn't actually show on its own.
+
+Test-first: added a test confirming `isTerminated` accepts and honors the
+override (default behavior provably unchanged), and a paired
+`advanceCtSac` test reusing the existing "stops early on termination" scenario's exact setup -- with the default threshold it stops after 4 of
+10.5 possible ticks (confirmed numerically, not assumed, same as the
+existing test's own diligence), and with a wide override it consumes all
+10 whole ticks with no early stop.
+
+JS: 247/247 Vitest (+2 net).
+
+## 2026-08-12 (cont.) — Per-mode termination, and diagnosing a real "why did this fail" question
+
+Two requests: let "None" mode fall the complete +-90deg (not just the
+45deg ct_sac now uses), and explain why a -20deg ct_sac run terminates
+even though "it seems to be doing good."
+
+**Diagnosed the second one empirically first** (a throwaway probe script
+against the real checkpoint, deleted after): at a -20deg start, theta
+recovers to near 0 within 0.3s and stays there, oscillating gently in a
++-1 to 7deg band, for the ENTIRE run -- the pole genuinely is "doing
+good," the whole time. What actually ends the run is `x`: the cart
+steadily wanders back and forth along the rail (ct_sac's own known weak
+x-regulation, already documented -- see the "oscillates... confirmed
+real" entry from the ct_sac wiring round), reaching -2.15m, drifting back
+out past +2.0m, and eventually crossing -2.4m at t=11.91s. **The pole
+never once came close to the angle boundary in this run -- it ran out of
+physical rail, not out of balance.** Confirmed this is the real mechanism,
+not a fluke, by logging both `xTerm`/`thetaTerm` flags at every step.
+
+This directly answers "what are the conditions for success": survive
+without EITHER `|x| > X_THRESHOLD` (2.4m, the physical rail) OR
+`|theta| > THETA_TERMINATION_RADIANS_BY_MODE[mode]`. For a
+well-recovered ct_sac run specifically, the rail is now the practically
+relevant constraint far more often than the angle ever is -- a real,
+somewhat sobering fact about this checkpoint: it cannot actually balance
+*indefinitely* on a finite track given its own trained behavior, only
+until its own wandering happens to cross the boundary. "Let it go on
+longer" is already happening here (12s, not an artificial cutoff) --
+there's no angle-side timeout left to relax for a good recovery. The only
+further lever would be widening X_THRESHOLD itself (the actual rail
+length) -- flagged to the user as a materially different, bigger change
+than the theta-threshold work above (X_THRESHOLD is a real physical
+parameter shared with camera framing, track decoration, and the Starting
+Position slider bounds, not a purely cosmetic display choice), left for a
+future round if wanted rather than decided unilaterally here.
+
+**Implemented the first request**: `THETA_TERMINATION_RADIANS_BY_MODE`
+replaces the single shared `VISUAL_THETA_THRESHOLD_RADIANS` constant --
+`{ none: 90deg, manual: 45deg, ctsac: 45deg }`. "None" gets the full
+90deg (confirmed via the same kind of probe: an F=0 free fall barely
+moves `x` at all -- under 5cm by the time theta reaches 90 -- so there's
+no risk of the rail cutting the fall short first) -- 90deg is also
+exactly the camera's own `cos(theta) >= 0` safe limit (see
+`cameraHalfExtents`'s docstring), so no camera changes needed. Manual and
+ct_sac keep last round's 45deg unchanged.
+
+Verified live: None mode, Starting Angle=20, Run -- the pole visibly
+swings all the way to and past horizontal before the run ends (a larger
+overshoot than expected was visible in THIS testing tool specifically,
+traced to its own severe requestAnimationFrame throttling -- a single
+throttled frame's clamped dtReal can be up to 0.1s, and `advance()` only
+checks termination once at the end of that whole clamped step, not per
+substep, so a fast-falling pole can swing tens of extra degrees past 90
+before the next check catches it. At a real 60fps, dtReal is ~0.016s per
+frame and this is imperceptible -- confirmed separately via the same
+probe technique used above, which found only a 0.35deg overshoot at a
+realistic substep size. Documented here rather than "fixed" since it's
+this tool's own known throttling limitation, same category as the
+already-documented `document.hidden` RAF note, not a real per-frame bug).
+
+JS: 247/247 Vitest (no test changes -- per-mode threshold selection is
+`cartpoleMain.js`-only UI wiring over the same already-tested
+`isTerminated`/`advanceCtSac` parameter from the previous entry).
+
+## 2026-08-12 (cont.) — Termination-cause readout, and Rail Length as a real slider
+
+Two follow-ups from the previous entry's diagnosis: show WHY a run
+terminated (rail vs. angle), and make rail length itself adjustable since
+it turned out to be the actual binding constraint for good ct_sac runs.
+
+**`terminationReason(z, thetaThreshold, xThreshold)`** added to
+`cartpoleScenarioRunner.js` alongside `isTerminated` (same default
+params, same reasoning for keeping them explicit args rather than folding
+into the physics `params` object -- these are task/termination concepts,
+not dynamics). Checks in the same priority as `isTerminated`'s own `||`:
+"rail" wins if both cross in the same tick, since the cart leaving the
+modeled world is the more fundamental fact. Returns `null` if not
+terminated, so callers don't need a separate `isTerminated` check first.
+
+**Rail Length**: `isTerminated`/`advanceCtSac` both gained a third
+`xThreshold` param (default X_THRESHOLD, same backward-compatible pattern
+as `thetaThreshold` -- every existing call/test needed zero changes).
+`index.html` gained a Rail Length slider under Cart-Pole Geometry (2.0-10.0m,
+default 4.8 -- exactly 2*X_THRESHOLD, so untouched it reproduces the
+canonical +-2.4m rail ct_sac actually trained on, same "full dimension in
+the UI, half in the physics" convention as Pole Length). `CartPoleScene.js`
+gained `updateTrackDecoration` (dispose-and-reassign, mirroring
+`resizePole` exactly) so the rendered rail/tick-marks can live-update
+while dragging, same as every other geometry slider -- convenient that
+the chase-cam (see two entries up) never framed the track at all, so
+widening/narrowing the rail needs zero camera changes.
+
+**Snapshotted at Reset, not read live**: added `activeXThreshold`,
+snapshotted in `resetRun()` exactly like `activeControllerMode` -- the
+Rail Length slider updates the VISUAL track live while dragging (a
+preview, matching Pole Length's own `resizePole` live-preview), but the
+boundary an in-progress run is actually checked against must not silently
+change out from under it just because the sidebar moved.
+
+**Display**: `formatDiagnostics()` now appends a second line under
+"Terminated — survived Xs" -- `(left the ±X.Xm rail)` or `(pole exceeded
+±Ndeg)` -- reading the same snapshotted `activeXThreshold` and
+`THETA_TERMINATION_RADIANS_BY_MODE[activeControllerMode]` the actual
+check used, so it can never describe a different boundary than the one
+genuinely crossed. New `.done-message-reason` CSS class (muted, smaller,
+not the bold `--stable` of the message above it) for the sub-detail.
+
+**Verified**: 256/256 Vitest, including new `terminationReason` tests and
+an `advanceCtSac` xThreshold early-stop test built the same way as the
+existing thetaThreshold one -- numerically probed first (a gentle
+constant push crosses a narrow xThreshold on tick 8 of 10.5), not
+assumed. Also reproduced the user's exact reported scenario directly (a
+throwaway script, deleted after): Starting Angle=-20, ct_sac, default
+rail -- confirmed `terminationReason` returns "angle" only once genuinely
+past the mode's threshold, "rail" well before that in the actual failing
+run. Shortening Rail Length to 2.0m in the same scenario terminates in
+1.1s via "rail" with theta at essentially 0deg at that moment -- a clean,
+fast repro of exactly the "it was doing great, it just ran out of track"
+story from the previous entry.
+
+**Not independently re-verified with a live animated run this round**:
+this session's browser tool reported `document.hidden=true` for the tab
+and the physics loop did not advance past its first frame no matter how
+long real time was allowed to pass -- worse than the milder RAF
+throttling noted in earlier entries, and not reproduced via the direct
+simulation checks above (which matched the exact reported scenario
+numerically). Logged here rather than chased further; the user was
+already interacting with the real page in parallel and can confirm the
+live rendering/label text directly.
+
+**Standing note for future rounds**: the user asked directly to hand
+visual-confirmation checks to them going forward rather than fighting this
+tool's RAF/visibility throttling -- for cart-pole specifically (whose
+whole rendering loop depends on real elapsed time), verify logic via
+targeted Node scripts/unit tests as usual, then ask the user to eyeball
+the actual pixels rather than spending turns on browser-tool waits.
+
+## 2026-08-13 — Motion cues: diagonal ground marks + rolling wheel spokes
+
+User feedback: with the chase-cam (see the two entries above) always
+keeping the cart centered and no rail-end ever in view, "there's almost
+no way to tell the motion of the cart." Asked for two fixes: diagonal
+ground marks, and wheels with spokes.
+
+**Ground marks** (`groundMarkPoints`, used by both `createTrackDecoration`
+and `updateTrackDecoration`): a run of short diagonal dashes at fixed
+0.4m (`GROUND_MARK_SPACING`) intervals across the full rail, built
+as ONE `THREE.LineSegments` (not individual `Line` objects, and not
+individually managed per-dash) so it's a single draw call regardless of
+rail length. The core idea: these sit at FIXED world-x positions, never
+attached to the cart -- so as the chase-cam pans to follow the cart, they
+scroll past exactly like a road's lane-divider dashes telling you your
+own speed, which is the entire point (a cart that's actually moving but
+always centered on screen has nothing else to move relative to). Track
+decoration's group gained a 4th child (`[rail, tickNeg, tickPos,
+groundMarks]`) -- `updateTrackDecoration` extended to dispose/rebuild it
+too, same pattern as the other three.
+
+Given a more visible color than reused: `trackMaterial`
+(`THEME.cartpoleTrack`, == `THEME.border`) is deliberately subtle -- fine
+for a rail that's not meant to draw the eye, wrong for something whose
+entire job IS to be noticed. Ground marks get their own `THEME.muted`
+material instead -- the closest already-in-palette color with real
+contrast against `panelBg` that isn't already claimed by the cart, pole,
+or wheels.
+
+**Wheel spokes**: `createCartPoleMesh` now also returns `wheelSpokes` (2
+`THREE.LineSegments`, `WHEEL_SPOKE_COUNT = 6` radial lines each, in
+`THEME.panelBg` for contrast against the wheel disc's own `THEME.border`
+fill), positioned to match each wheel exactly, a hair closer to the camera
+(`wheelZ + 0.001`) to avoid z-fighting with the disc. `updateCartPoleFrame`
+rotates them every frame: `rotation.z = -x / WHEEL_RADIUS` -- a genuine
+rolling-without-slipping relation (arc length = radius * angle), not a
+cosmetic guess, negated for the same right-handed-rotation reason the
+pole's own `-theta` already is (moving +x is a clockwise turn as drawn,
+i.e. negative in THREE's convention). The wheel DISC itself is a flat,
+uniformly-colored circle -- identical at any rotation -- so the spokes are
+the only thing that actually shows a wheel turning at all.
+
+Test-first: `createTrackDecoration`'s test extended for the new 4th
+child (dash count divisible by 6 -- 2 points * xyz per dash -- and every
+dash within its own half-width of the rail's actual extent, not a whole
+spacing past it); `createCartPoleMesh` gained a test that `wheelSpokes`
+is positioned to match its own wheel exactly; `updateCartPoleFrame`
+gained a rolling test confirming `rotation.z = -x/radius` at several `x`
+values, radius read from the wheel's own geometry (not a re-guessed
+constant).
+
+258/258 Vitest. Not independently screenshot-verified this round --
+per the user's own explicit request (mid-round), visual confirmation
+jobs go to them from now on rather than burning turns on this session's
+already-documented RAF/visibility throttling.
