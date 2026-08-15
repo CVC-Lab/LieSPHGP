@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Racket Viz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* "Blueprint" theme -- technical drafting-table, deep navy with chalk-white
+       ink. Every color used by the canvas/WebGL scenes lives in src/theme.js;
+       these are the same values, kept in sync by hand (see theme.js's own
+       note), for the surrounding chrome (backgrounds, borders, sidebar
+       controls) that CSS owns instead. */
+    :root {
+      --bg: #0b1e33;
+      --panel-bg: #0f2743;
+      --border: #2a4d73;
+      --text: #eaf6ff;
+      --muted: #9db6d1;
+      --sidebar-bg: #0d233d;
+      --stable: #5ec8e0;
+      --unstable: #ff8a75;
+      --imax: #f4b942;
+      --current: #ffe27a;
+      --target: #e0a85c;
+      --trajectory: #3a7ca8;
+      --separatrix: #d97a4d;
+      --font: 'IBM Plex Mono', ui-monospace, monospace;
+    }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+    /* Multi-system carousel: #system-viewport clips to one slide's width;
+       #system-track is the row of slides that actually translates; each
+       .system-slide is a full self-contained system (its own #app-layout,
+       panels, sidebar). Sliding via `transform`, NOT display:none/block --
+       an off-screen slide stays laid out with real clientWidth/Height, so
+       its canvases never hit the "0-size while hidden" bug the 3D/torque
+       panels already had to work around for their own display:none toggles
+       (see resize2DCanvas call sites) -- nothing extra needed here for that.
+       Sized for N slides, not hardcoded to 2, so a third system later is
+       just another .system-slide + track width. */
+    #system-viewport { position: relative; height: 100vh; overflow: hidden; }
+    #system-track { display: flex; height: 100%; transition: transform 0.5s ease; }
+    .system-slide { flex: 0 0 100%; width: 100%; height: 100%; min-width: 0; }
+    #system-nav {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10;
+      display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted);
+      background: var(--sidebar-bg); border: 1px solid var(--border); border-radius: 20px;
+      padding: 4px 6px 4px 10px;
+    }
+    #system-nav button {
+      background: transparent; border: none; color: var(--text); cursor: pointer;
+      font-family: var(--font); font-size: 15px; line-height: 1; padding: 2px 8px; border-radius: 50%;
+    }
+    #system-nav button:hover { color: var(--imax); }
+    #system-nav button:disabled { color: var(--border); cursor: default; }
+
+    .app-layout { display: flex; height: 100%; }
+    .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .controls-bar { padding: 8px 12px; display: flex; gap: 12px; align-items: center; flex-shrink: 0; color: var(--muted); }
+    .panels-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; flex: 1; min-height: 0; gap: 20px; padding: 20px; box-sizing: border-box; }
+    /* min-height/width: 0 is required here -- grid items otherwise default to
+       min-height: auto, which for a <canvas> child equals its own width/height
+       attribute. Since those attributes are set from this panel's clientHeight
+       (see resize2DCanvas in main.js), that creates a feedback loop: a single
+       bad resize can inflate the canvas attribute, which inflates the grid
+       row's min-content size, which inflates the next resize, runaway. */
+    /* Each grid cell is a label (outside, in the buffer) stacked above the
+       bordered panel itself -- min-height/width: 0 needed on BOTH the grid
+       item (.panel-wrap) and the flex item (.panel) for the same reason as
+       below: a canvas's own height attribute would otherwise inflate their
+       auto min-size and feed back into the next resize. */
+    .panel-wrap { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+    /* Label + Explain toggle share one row, outside the bordered box entirely
+       -- keeping the toggle out here (not inside .flip-outer) means it never
+       takes part in the 3D flip transform, so it stays crisp and clickable
+       instead of blurring/rotating along with the panel mid-flip. */
+    .panel-label-row { flex-shrink: 0; min-height: 16px; padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .panel-label { font-size: 13px; font-weight: 500; color: var(--muted); }
+    /* Fixed (not min-) height so a legend that happens to wrap to 2 lines
+       doesn't shrink its own panel more than a sibling panel's legend that
+       fits on 1 line -- all 4 panels stay the same visual size regardless of
+       how many legend items each one happens to have. */
+    .panel-legend { flex-shrink: 0; height: 32px; overflow: hidden; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 4px 12px; padding-top: 6px; font-size: 11px; color: var(--muted); }
+    .legend-item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    /* Stacks on top of a panel's normal-flow canvas (e.g. control-canvas'
+       2D/3D pair) so a single JS-toggled display:none/block swaps which one
+       shows, instead of needing separate layout for each. */
+    canvas.overlay-canvas { position: absolute; top: 0; left: 0; display: none; }
+    /* "3D" toggle etc, INSIDE a flip-face -- flips away with its own face,
+       unlike .explain-toggle below which sits on the persistent outer layer. */
+    .panel-toggle {
+      position: absolute; top: 8px; right: 10px; display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--muted); z-index: 2;
+    }
+    /* Native <input> checkboxes ignore backface-visibility in some browsers
+       (a known Chrome/WebKit quirk), so the front face's "3D" toggle can
+       still bleed through once .flip-inner has rotated to show the back --
+       hide it explicitly rather than relying on backface-visibility alone. */
+    .flip-inner.flipped .panel-toggle { display: none; }
+    /* Same corner as .panel-toggle, for a small read-only text readout
+       instead of a toggle (the pendulum's work/torque numbers) -- lives
+       INSIDE the flip-face like .panel-toggle, not in .panel-label-row like
+       .explain-toggle, since it's per-face content (torque is only ever
+       meaningful on the live front face), not a persistent control. */
+    .panel-readout {
+      position: absolute; top: 8px; right: 10px; z-index: 2;
+      font-size: 11px; color: var(--muted); text-align: right; line-height: 1.6;
+    }
+    /* !important: pendulumMain.js's refreshSubfieldVisibility() sets this
+       element's inline style.display directly (to show/hide it with the
+       Control toggle, independent of the flip state) -- an inline style
+       always beats a class selector, so without !important this rule loses
+       and the readout bleeds through onto the explanation side whenever
+       Control is on. */
+    .flip-inner.flipped .panel-readout { display: none !important; }
+
+    /* Flip-card mechanic ("Explain" toggle): .flip-outer is the flex/grid
+       sizing box (replaces the old plain .panel), holding a perspective for
+       the 3D rotation. .flip-inner is what actually rotates 180deg; its two
+       .flip-face children (front = the live canvas, back = the explanation
+       text) are each full-size and backface-hidden, so exactly one is ever
+       visible. .explain-toggle lives in .panel-label-row, entirely outside
+       .flip-outer, so it never takes part in the 3D rotation -- flipping to
+       the explanation would otherwise blur/rotate the only control that can
+       flip back away with it. */
+    .flip-outer { position: relative; flex: 1; min-height: 0; min-width: 0; perspective: 1600px; }
+    .flip-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.6s ease; }
+    .flip-inner.flipped { transform: rotateY(180deg); }
+    .flip-face {
+      position: absolute; inset: 0; backface-visibility: hidden; overflow: hidden;
+      background: var(--panel-bg); border: 1px solid var(--border); box-sizing: border-box;
+    }
+    .flip-face canvas { display: block; width: 100%; height: 100%; }
+    .flip-back {
+      transform: rotateY(180deg); overflow-y: auto; box-sizing: border-box;
+      padding: 14px 16px; font-size: 12px; line-height: 1.6; color: var(--text);
+    }
+    .flip-back p { margin: 0; }
+    /* Larger + centered reads better for the 3 shorter explanations; the
+       Casimir sphere's is longer (more concepts to cover) so it stays at the
+       base size/left-aligned, tightened for length instead -- see index.html. */
+    .flip-back.centered { text-align: center; font-size: 14px; }
+    /* Pendulum's angular-velocity explanation is longer than the other
+       centered panels (more axes to cover) -- 14px overflows and forces a
+       scrollbar, so it drops to the same 12px the Casimir panel already
+       uses for the same reason (see .flip-back's own base font-size). */
+    #pendulum-omega-flip .flip-back.centered { font-size: 12px; }
+    /* Same overflow problem, smaller overflow -- the Hamiltonian explanation
+       just barely doesn't fit at 14px (274px of text in a 249px box), so it
+       only needs to drop to 13.5px, not all the way to 12px like the omega
+       panel above. */
+    #pendulum-energy-flip .flip-back.centered { font-size: 13.5px; }
+    /* IDA-PBC explanation is the longest of the four pendulum panels --
+       needs 12.5px (same as the Hamiltonian panel) to fit without a
+       scrollbar. */
+    #pendulum-torque-flip .flip-back.centered { font-size: 12.5px; }
+    .explain-toggle { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+
+    .app-sidebar {
+      width: 300px; flex-shrink: 0; background: var(--sidebar-bg); border-left: 1px solid var(--border);
+      padding: 14px; overflow-y: auto; box-sizing: border-box;
+      display: flex; flex-direction: column; gap: 14px; font-size: 13px; color: var(--text); font-family: var(--font);
+    }
+    .app-sidebar h3 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--imax); }
+    .field { display: flex; flex-direction: column; gap: 3px; }
+    .field label { display: flex; justify-content: space-between; color: var(--muted); }
+    .field input[type="range"] { width: 100%; }
+    .field-range { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); opacity: 0.8; }
+    .toggle-row { display: flex; align-items: center; gap: 8px; }
+    .sub-fields { padding-left: 4px; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+    /* 3-way controller selector (cart-pole's Controller field) -- a discrete
+       segmented control, not a boolean switch or a dropdown: all 3 options
+       (none/manual/ct_sac) are always valid and worth showing at a glance,
+       matching the coworker's own live demo's own control layout. */
+    .segmented { display: flex; gap: 2px; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px; }
+    .seg-btn { flex: 1; padding: 8px 4px; border-radius: 3px; border: none; font-size: 12px; font-family: var(--font); cursor: pointer; background: transparent; color: var(--muted); }
+    .seg-btn.active { background: var(--border); color: var(--imax); }
+    .seg-btn:disabled { color: var(--border); cursor: not-allowed; }
+    #cartpole-ctsac-loading { display: none; font-size: 11px; color: var(--muted); margin-top: -4px; }
+    /* Distinct from the plain .readout boxes -- this is a caution, not just
+       info, so it borrows the same --unstable color already used for the
+       unstable-axis/falling-pole cues elsewhere on the site. */
+    #cartpole-angle-warning { border-color: var(--unstable); color: var(--unstable); margin-top: -8px; }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+    .presets button { flex: 1 1 45%; font-size: 11px; padding: 6px 4px; }
+    .sidebar-action { display: block; width: 100%; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; box-sizing: border-box; }
+    select, button, input { background: var(--panel-bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; font-family: var(--font); }
+    .run-button { background: var(--imax); color: var(--bg); border-color: var(--imax); font-weight: 600; }
+    .readout {
+      background: var(--panel-bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px;
+      font-size: 12px; color: var(--text); line-height: 1.6;
+    }
+    #torque-canvas { display: block; width: 100%; height: 70px; background: var(--panel-bg); border-radius: 4px; }
+    #control-readout { display: none; flex-direction: column; gap: 8px; }
+    .done-message { color: var(--stable); font-weight: 600; }
+    .done-message-reason { color: var(--muted); font-weight: 400; font-size: 11px; }
+
+    /* Rectangular tick-marked sliders: a thin track with tick marks baked in
+       at the quarter-points via a repeating gradient, and a rectangular
+       (not round) thumb -- matches the mockups the user picked from. */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 16px;
+      background: transparent;
+      margin: 0;
+      cursor: pointer;
+      border: none;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 3px;
+      border-radius: 1px;
+      background-color: var(--border);
+      background-image: repeating-linear-gradient(to right, var(--muted) 0, var(--muted) 1.5px, transparent 1.5px, transparent 25%);
+    }
+    input[type="range"]::-moz-range-track {
+      height: 3px;
+      border-radius: 1px;
+      background-color: var(--border);
+      background-image: repeating-linear-gradient(to right, var(--muted) 0, var(--muted) 1.5px, transparent 1.5px, transparent 25%);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 4px;
+      height: 16px;
+      border-radius: 1px;
+      background: var(--imax);
+      margin-top: -6.5px;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 4px;
+      height: 16px;
+      border-radius: 1px;
+      background: var(--imax);
+      border: none;
+    }
+
+    /* Toggle switch (Control / Wind / per-panel toggles) */
+    .switch { position: relative; display: inline-block; width: 34px; height: 19px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch .slider {
+      position: absolute; inset: 0; cursor: pointer; background: var(--panel-bg);
+      border: 1px solid var(--border); border-radius: 20px; transition: background-color 0.15s;
+    }
+    .switch .slider::before {
+      content: ""; position: absolute; height: 13px; width: 13px; left: 2px; bottom: 2px;
+      background: var(--muted); border-radius: 50%; transition: transform 0.15s, background-color 0.15s;
+    }
+    .switch input:checked + .slider { background: var(--border); border-color: var(--imax); }
+    .switch input:checked + .slider::before { background: var(--imax); transform: translateX(15px); }
+    .switch.small { width: 28px; height: 16px; }
+    .switch.small .slider::before { height: 11px; width: 11px; }
+    .switch.small input:checked + .slider::before { transform: translateX(12px); }
+  </style>
+</head>
+<body>
+  <div id="system-viewport">
+    <div id="system-nav">
+      <button id="system-prev" aria-label="Previous system">&#8249;</button>
+      <span id="system-label">Tennis Racket</span>
+      <button id="system-next" aria-label="Next system">&#8250;</button>
+    </div>
+    <div id="system-track">
+      <div class="system-slide" data-system="racket" data-label="Tennis Racket">
+  <div id="app-layout" class="app-layout">
+    <div id="main-content" class="main-content">
+      <div id="controls" class="controls-bar">
+        <span id="time-readout"></span>
+      </div>
+      <div id="panels" class="panels-grid">
+        <div class="panel-wrap">
+          <div class="panel-label-row">
+            <div class="panel-label" id="racket-label"></div>
+            <div class="explain-toggle">
+              <span>Explain</span>
+              <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="racket-flip" /><span class="slider"></span></label>
+            </div>
+          </div>
+          <div class="flip-outer">
+            <div class="flip-inner" id="racket-flip">
+              <div class="flip-face flip-front">
+                <canvas id="racket-canvas"></canvas>
+              </div>
+              <div class="flip-face flip-back centered">
+                <p>This is a live 3D render of the racket's actual orientation — not a canned animation. Its shape comes directly from the geometry sliders. The rotation each frame comes from numerically solving the real rigid-body equations of motion (Euler's equations) for the spin it started with. If Control is off, you're watching the raw spin of the racket. If Control is on, an attitude controller is actively steering it toward the chosen target axis.</p>
+              </div>
+            </div>
+          </div>
+          <div class="panel-legend"></div>
+        </div>
+        <div class="panel-wrap">
+          <div class="panel-label-row">
+            <div class="panel-label" id="control-panel-label">Hamiltonian Energy (H)</div>
+            <div class="explain-toggle">
+              <span>Explain</span>
+              <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="control-flip" /><span class="slider"></span></label>
+            </div>
+          </div>
+          <div class="flip-outer">
+            <div class="flip-inner" id="control-flip">
+              <div class="flip-face flip-front">
+                <canvas id="control-canvas"></canvas>
+                <canvas id="control-3d-canvas" class="overlay-canvas"></canvas>
+                <div class="panel-toggle">
+                  <span>3D</span>
+                  <label class="switch small"><input type="checkbox" id="hamiltonianViewToggle" /><span class="slider"></span></label>
+                </div>
+              </div>
+              <div class="flip-face flip-back centered">
+                <p>The Hamiltonian represents the total energy of the system, in this case, the racket's rotational kinetic energy. The dashed lines show the energy the racket would have if spinning purely about each of its three axes. The racket's actual energy (solid line) stays trapped between the smallest and largest of these forever. With Control on, the dashed line becomes the chosen target energy instead, and the solid line is no longer flat — it climbs or falls as the controller does real work to get there.</p>
+              </div>
+            </div>
+          </div>
+          <div class="panel-legend" id="control-panel-legend"></div>
+        </div>
+        <div class="panel-wrap">
+          <div class="panel-label-row">
+            <div class="panel-label">Angular Velocity</div>
+            <div class="explain-toggle">
+              <span>Explain</span>
+              <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="omega-flip" /><span class="slider"></span></label>
+            </div>
+          </div>
+          <div class="flip-outer">
+            <div class="flip-inner" id="omega-flip">
+              <div class="flip-face flip-front">
+                <canvas id="omega-canvas"></canvas>
+              </div>
+              <div class="flip-face flip-back centered">
+                <p>This display shows the spin rate (radians/second) about each of the racket's principal axes, over time — long, intermediate, and short. Near the intermediate axis, all three swing through large, coupled oscillations instead of settling down, which is the visible signature of the instability. Near a stable axis (long or short), one component dominates while the other two stay as small, bounded wobbles.</p>
+              </div>
+            </div>
+          </div>
+          <div class="panel-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:var(--stable)"></span>Long Axis</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--unstable)"></span>Intermediate Axis</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--imax)"></span>Short Axis</span>
+          </div>
+        </div>
+        <div class="panel-wrap">
+          <div class="panel-label-row">
+            <div class="panel-label">Casimir Sphere</div>
+            <div class="explain-toggle">
+              <span>Explain</span>
+              <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="sphere-flip" /><span class="slider"></span></label>
+            </div>
+          </div>
+          <div class="flip-outer">
+            <div class="flip-inner" id="sphere-flip">
+              <div class="flip-face flip-front">
+                <canvas id="sphere-canvas"></canvas>
+              </div>
+              <div class="flip-face flip-back">
+                <p>A Casimir is a conserved quantity, built into the physics itself rather than something we choose — here, it's the racket's total angular momentum. Since it never changes during a free spin, every trajectory stays confined to this sphere's surface. The light-blue and coral dots are the six equilibrium spins (stable and unstable); starting exactly on one, undisturbed, leaves the state frozen forever, since every derivative vanishes there. The orange separatrices pass exactly through the unstable points, marking the boundary between the nearby blue wobbling loops and a full flip. The yellow dot is the racket's actual state right now — under Control or Wind it can leave this sphere entirely, since angular momentum is only conserved for a truly free spin.</p>
+              </div>
+            </div>
+          </div>
+          <div class="panel-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:var(--current)"></span>Current State</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--stable)"></span>Stable Fixed Point</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--unstable)"></span>Unstable Fixed Point</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--trajectory)"></span>Trajectory</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--separatrix)"></span>Separatrix</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="sidebar" class="app-sidebar">
+      <!-- Presets temporarily removed (2026) -- not intuitive as buttons; kept
+           here commented out (and in main.js) to restore later rather than
+           rebuild from scratch.
+      <h3>Presets</h3>
+      <div class="presets">
+        <button id="preset-free">Free flip</button>
+        <button id="preset-imin">Control -&gt; imin</button>
+        <button id="preset-imax">Control -&gt; imax</button>
+        <button id="preset-align">Alignment</button>
+      </div>
+      -->
+
+      <h3>Racket Geometry</h3>
+      <div class="field">
+        <label>Handle Length <span id="handleLength-val"></span></label>
+        <input type="range" id="handleLength" min="0.5" max="2.0" step="0.05" value="1.0" />
+        <div class="field-range"><span>0.5</span><span>2.0</span></div>
+      </div>
+      <div class="field">
+        <label>Hoop Length <span id="hoopLength-val"></span></label>
+        <input type="range" id="hoopLength" min="1.0" max="3.0" step="0.05" value="2.0" />
+        <div class="field-range"><span>1.0</span><span>3.0</span></div>
+      </div>
+      <div class="field">
+        <label>Hoop Width <span id="hoopWidth-val"></span></label>
+        <input type="range" id="hoopWidth" min="0.5" max="2.0" step="0.05" value="1.0" />
+        <div class="field-range"><span>0.5</span><span>2.0</span></div>
+      </div>
+      <div class="field">
+        <label>Total Mass <span id="totalMass-val"></span></label>
+        <input type="range" id="totalMass" min="0.3" max="3.0" step="0.05" value="1.0" />
+        <div class="field-range"><span>0.3</span><span>3.0</span></div>
+      </div>
+      <div class="field">
+        <label>Head-to-Handle Mass Ratio <span id="hoopFraction-val"></span></label>
+        <input type="range" id="hoopFraction" min="0.2" max="0.8" step="0.05" value="0.6" />
+        <div class="field-range"><span>0.2</span><span>0.8</span></div>
+      </div>
+
+      <div class="readout" id="inertia-readout">Moments of Inertia (short, intermediate, long axes): ...</div>
+
+      <h3>Motion</h3>
+      <div class="field">
+        <label>Starting Axis</label>
+        <select id="startAxis">
+          <option value="imin">Long Axis (Stable)</option>
+          <option value="imid" selected>Intermediate Axis (Unstable)</option>
+          <option value="imax">Short Axis (Stable)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Starting Perturbation <span id="startingPerturbation-val"></span></label>
+        <input type="range" id="startingPerturbation" min="0" max="0.1" step="0.002" value="0.02" />
+        <div class="field-range"><span>0</span><span>0.1</span></div>
+      </div>
+      <!-- Duration slider temporarily removed -- didn't make sense as a
+           control; runs now default to a long fixed duration (see main.js's
+           DEFAULT_DURATION_SECONDS) and are stopped manually via the Stop
+           button below instead of a preset cutoff.
+      <div class="field">
+        <label>Duration (s) <span id="duration-val"></span></label>
+        <input type="range" id="duration" min="2" max="30" step="1" value="10" />
+      </div>
+      -->
+
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="controlOn" /><span class="slider"></span></label>
+        <span>Control</span>
+      </div>
+      <div class="sub-fields" id="control-subfields">
+        <div class="field">
+          <label>Ending Axis</label>
+          <select id="endAxis">
+            <option value="imin">Long Axis</option>
+            <option value="imid">Intermediate Axis</option>
+            <option value="imax" selected>Short Axis</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="control-readout">
+        <h3>Control Function</h3>
+        <canvas id="torque-canvas"></canvas>
+        <div class="readout" id="control-metrics-text"></div>
+      </div>
+
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="windOn" /><span class="slider"></span></label>
+        <span>Wind</span>
+      </div>
+      <div class="sub-fields" id="wind-subfields">
+        <div class="field">
+          <label>Wind Strength (std) <span id="windStd-val"></span></label>
+          <input type="range" id="windStd" min="0" max="0.3" step="0.01" value="0.05" />
+          <div class="field-range"><span>0</span><span>0.3</span></div>
+        </div>
+      </div>
+
+      <button id="run-button" class="sidebar-action run-button">Run</button>
+      <button id="pause-button" class="sidebar-action">Pause</button>
+      <button id="reset-button" class="sidebar-action">Reset</button>
+    </div>
+  </div>
+      </div>
+      <div class="system-slide" data-system="pendulum" data-label="Windy Pendulum">
+  <div id="pendulum-app-layout" class="app-layout">
+    <div id="pendulum-main-content" class="main-content">
+    <div id="pendulum-controls" class="controls-bar">
+      <span id="pendulum-time-readout"></span>
+    </div>
+    <div id="pendulum-panels" class="panels-grid">
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label" id="pendulum-label">Free Swing</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="pendulum-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="pendulum-flip">
+            <div class="flip-face flip-front">
+              <canvas id="pendulum-canvas"></canvas>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>A live 3D render of the pendulum's orientation, driven by Euler's equations for a rigid body, with gravity, friction, and the control torque. Since this rod and bob pivot about a fixed point, gravity is constantly pulling the pendulum toward hanging straight down. If Control is off, you're watching it swing freely. If Control is on, an attitude controller actively cancels gravity and steers it to the chosen target.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend"></div>
+      </div>
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label" id="pendulum-energy-label">Energy (H)</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="pendulum-energy-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="pendulum-energy-flip">
+            <div class="flip-face flip-front">
+              <canvas id="pendulum-energy-canvas"></canvas>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>The Hamiltonian represents the total energy of the system — for this pendulum, that's kinetic energy plus gravitational potential energy. With no friction and no control, this value stays constant, since gravity alone conserves it. Friction removes energy from the system slowly, causing the line to drift downward over time. With Control on, the dashed line is the target energy, and the solid line (energy of the system) climbs or falls as the controller does real work to get there.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend" id="pendulum-energy-legend"></div>
+      </div>
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label">Angular Velocity</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="pendulum-omega-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="pendulum-omega-flip">
+            <div class="flip-face flip-front">
+              <canvas id="pendulum-omega-canvas"></canvas>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>This plot displays the spin rate (radians/second) about each of the pendulum's three principal axes, all measured through the pivot. The axial axis runs along the rod itself — spin about it is like twirling the rod between your fingers, not swinging it anywhere. It's nearly free, since only the bob's own small radius resists it. Transverse 1 and Transverse 2 are perpendicular to the rod and to each other, spanning the plane the bob can actually move in. By the bob's spherical symmetry they're identical to each other, and together they carry almost all of the pendulum's real swinging motion.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--stable)"></span>Axial</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--unstable)"></span>Transverse 1</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--imax)"></span>Transverse 2</span>
+        </div>
+      </div>
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label">Control Torque &amp; Work</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="pendulum-torque-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="pendulum-torque-flip">
+            <div class="flip-face flip-front">
+              <canvas id="pendulum-torque-canvas"></canvas>
+              <div class="panel-readout" id="pendulum-metrics-text" style="display:none;"></div>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>IDA-PBC (Interconnection and Damping Assignment Passivity-Based Control) is the technique steering the pendulum when Control is on. It reshapes the pendulum's energy landscape so the target orientation becomes the new low point. It cancels gravity's pull at the current orientation, then adds a spring-like pull toward the target (plus damping that removes leftover spin) so the pendulum settles instead of oscillating forever. The torque line shows the magnitude of that push; the work total is the real energy spent to get there.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend" id="pendulum-torque-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--target)"></span>Torque Magnitude</span>
+        </div>
+      </div>
+    </div>
+    </div>
+
+  <div id="pendulum-sidebar" class="app-sidebar">
+    <h3>Pendulum Geometry</h3>
+    <div class="field">
+      <label>Rod Length <span id="rodLength-val"></span></label>
+      <input type="range" id="rodLength" min="0.5" max="2.0" step="0.05" value="1.0" />
+      <div class="field-range"><span>0.5</span><span>2.0</span></div>
+    </div>
+    <div class="field">
+      <label>Bob Radius <span id="bobRadius-val"></span></label>
+      <input type="range" id="bobRadius" min="0.05" max="0.3" step="0.01" value="0.15" />
+      <div class="field-range"><span>0.05</span><span>0.3</span></div>
+    </div>
+    <div class="field">
+      <label>Total Mass <span id="pendulumTotalMass-val"></span></label>
+      <input type="range" id="pendulumTotalMass" min="0.3" max="3.0" step="0.05" value="1.0" />
+      <div class="field-range"><span>0.3</span><span>3.0</span></div>
+    </div>
+    <div class="field">
+      <label>Bob-to-Rod Mass Ratio <span id="bobFraction-val"></span></label>
+      <input type="range" id="bobFraction" min="0.5" max="0.95" step="0.05" value="0.8" />
+      <div class="field-range"><span>0.5</span><span>0.95</span></div>
+    </div>
+
+    <div class="readout" id="pendulum-inertia-readout">Moments of Inertia: ...</div>
+
+    <h3>Motion</h3>
+    <div class="field">
+      <label>Starting Angle <span id="startingAngleDeg-val"></span></label>
+      <input type="range" id="startingAngleDeg" min="-80" max="80" step="1" value="25" />
+      <div class="field-range"><span>-80</span><span>80</span></div>
+    </div>
+    <div class="field">
+      <label>Friction <span id="frictionCoeff-val"></span></label>
+      <input type="range" id="frictionCoeff" min="0" max="0.1" step="0.005" value="0.02" />
+      <div class="field-range"><span>0</span><span>0.1</span></div>
+    </div>
+
+    <div class="toggle-row">
+      <label class="switch"><input type="checkbox" id="pendulumControlOn" /><span class="slider"></span></label>
+      <span>Control</span>
+    </div>
+    <div class="sub-fields" id="pendulum-control-subfields">
+      <div class="field">
+        <label>Target Angle <span id="pendulumTargetAngleDeg-val"></span></label>
+        <input type="range" id="pendulumTargetAngleDeg" min="-180" max="180" step="1" value="180" />
+        <div class="field-range"><span>-180</span><span>180</span></div>
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <label class="switch"><input type="checkbox" id="pendulumWindOn" /><span class="slider"></span></label>
+      <span>Wind</span>
+    </div>
+    <div class="sub-fields" id="pendulum-wind-subfields">
+      <div class="field">
+        <label>Wind Strength (std) <span id="pendulumWindStd-val"></span></label>
+        <input type="range" id="pendulumWindStd" min="0" max="0.3" step="0.01" value="0.05" />
+        <div class="field-range"><span>0</span><span>0.3</span></div>
+      </div>
+    </div>
+
+    <button id="pendulum-run-button" class="sidebar-action run-button">Run</button>
+    <button id="pendulum-pause-button" class="sidebar-action">Pause</button>
+    <button id="pendulum-reset-button" class="sidebar-action">Reset</button>
+  </div>
+  </div>
+      </div>
+      <div class="system-slide" data-system="cartpole" data-label="Windy Cart-Pole">
+  <div id="cartpole-app-layout" class="app-layout">
+    <div id="cartpole-main-content" class="main-content">
+    <div id="cartpole-controls" class="controls-bar">
+      <span id="cartpole-time-readout"></span>
+    </div>
+    <div id="cartpole-panels" class="panels-grid">
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label" id="cartpole-label">Free</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="cartpole-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="cartpole-flip">
+            <div class="flip-face flip-front">
+              <canvas id="cartpole-canvas"></canvas>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>A cart on a frictionless rail carries an unactuated pole, free to rotate about a pivot. The state is the cart's position and the pole's angle, plus their momenta — not their raw velocities, since the two are coupled: pushing the cart also changes how fast the pole tips, and vice versa. Upright (pole straight up) is an unstable balance point; the smallest push sends it falling. If Control is off, nothing pushes back. If Control is on, you're driving the cart yourself with the arrow keys or watching a trained policy take effect.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend"></div>
+      </div>
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label" id="cartpole-energy-label">Energy (H)</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="cartpole-energy-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="cartpole-energy-flip">
+            <div class="flip-face flip-front">
+              <canvas id="cartpole-energy-canvas"></canvas>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>The Hamiltonian represents the total energy of the system: the cart and pole's kinetic energy, plus the pole's gravitational potential energy (highest when it's balanced straight up). With no force and no wind, this stays exactly constant — the frictionless rail never removes energy on its own. Pushing the cart does real work on the system, so H climbs or falls while you're actively driving it. Wind gusts nudge it too, in small, random amounts.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend" id="cartpole-energy-legend"></div>
+      </div>
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label">Angle &amp; Angular Velocity</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="cartpole-theta-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="cartpole-theta-flip">
+            <div class="flip-face flip-front">
+              <canvas id="cartpole-theta-canvas"></canvas>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>This plot tracks the pole's tilt away from straight up (theta, in radians) and how fast that tilt is changing (theta-dot, in radians/second). Near upright, both stay small; once the pole starts to fall, theta grows quickly and theta-dot grows even faster, since the tipping accelerates as gravity pulls harder the further it leans. The episode ends once theta passes a certain threshold or the cart goes off the rail.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--imax)"></span>θ (Angle)</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--stable)"></span>θ̇ (Angular Velocity)</span>
+        </div>
+      </div>
+      <div class="panel-wrap">
+        <div class="panel-label-row">
+          <div class="panel-label">Force &amp; Work</div>
+          <div class="explain-toggle">
+            <span>Explain</span>
+            <label class="switch small"><input type="checkbox" class="explain-switch" data-flip="cartpole-force-flip" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="flip-outer">
+          <div class="flip-inner" id="cartpole-force-flip">
+            <div class="flip-face flip-front">
+              <canvas id="cartpole-force-canvas"></canvas>
+              <div class="panel-readout" id="cartpole-metrics-text" style="display:none;"></div>
+            </div>
+            <div class="flip-face flip-back centered">
+              <p>This shows the magnitude of the force pushing the cart, left or right, over time — zero whenever nothing is actively driving it. The work total is the real energy delivered to the cart-pole system by that force so far, the same running total that shows up as a change in the Hamiltonian panel.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel-legend" id="cartpole-force-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--target)"></span>Force Magnitude</span>
+        </div>
+      </div>
+    </div>
+    </div>
+
+  <div id="cartpole-sidebar" class="app-sidebar">
+    <h3>Cart-Pole Geometry</h3>
+    <div class="field">
+      <label>Pole Mass <span id="poleMass-val"></span></label>
+      <input type="range" id="poleMass" min="0.02" max="1.0" step="0.01" value="0.10" />
+      <div class="field-range"><span>0.02</span><span>1.0</span></div>
+    </div>
+    <div class="field">
+      <label>Cart Mass <span id="cartMass-val"></span></label>
+      <input type="range" id="cartMass" min="0.3" max="3.0" step="0.05" value="1.00" />
+      <div class="field-range"><span>0.3</span><span>3.0</span></div>
+    </div>
+    <div class="field">
+      <label>Pole Length <span id="poleLength-val"></span></label>
+      <input type="range" id="poleLength" min="0.4" max="2.0" step="0.05" value="1.00" />
+      <div class="field-range"><span>0.4</span><span>2.0</span></div>
+    </div>
+    <div class="field">
+      <label>Gravity <span id="gravity-val"></span></label>
+      <input type="range" id="gravity" min="1.0" max="20.0" step="0.1" value="9.8" />
+      <div class="field-range"><span>1.0</span><span>20.0</span></div>
+    </div>
+    <div class="field">
+      <label>Force Limit <span id="forceLimit-val"></span></label>
+      <input type="range" id="forceLimit" min="1.0" max="30.0" step="0.5" value="10.0" />
+      <div class="field-range"><span>1.0</span><span>30.0</span></div>
+    </div>
+    <div class="field">
+      <label>Rail Length <span id="railLength-val"></span></label>
+      <input type="range" id="railLength" min="2.0" max="10.0" step="0.2" value="4.8" />
+      <div class="field-range"><span>2.0</span><span>10.0</span></div>
+    </div>
+
+    <h3>Motion</h3>
+    <div class="field">
+      <label>Starting Angle <span id="cartpoleStartingAngleDeg-val"></span></label>
+      <input type="range" id="cartpoleStartingAngleDeg" min="-20" max="20" step="1" value="5" />
+      <div class="field-range"><span>-20</span><span>20</span></div>
+    </div>
+    <div class="readout" id="cartpole-angle-warning" style="display:none;">ct_sac was only ever trained within +-12&deg; of upright. Past +-15&deg;, expect it to fail to recover, not just struggle.</div>
+    <div class="field">
+      <label>Starting Position <span id="cartpoleStartingX-val"></span></label>
+      <input type="range" id="cartpoleStartingX" min="-2.0" max="2.0" step="0.1" value="0.0" />
+      <div class="field-range"><span>-2.0</span><span>2.0</span></div>
+    </div>
+
+    <h3>Controller</h3>
+    <div class="segmented" id="cartpole-controller-segmented">
+      <button type="button" class="seg-btn active" data-mode="none">None</button>
+      <button type="button" class="seg-btn" data-mode="manual">Manual</button>
+      <button type="button" class="seg-btn" data-mode="ctsac" id="cartpole-ctsac-btn" disabled>ct_sac</button>
+    </div>
+    <div class="readout" id="cartpole-ctsac-loading">Loading weights&hellip;</div>
+
+    <div class="sub-fields" id="cartpole-none-subfields">
+      <div class="readout">No force is applied. The pole falls under gravity and wind alone.</div>
+    </div>
+    <div class="sub-fields" id="cartpole-manual-subfields" style="display:none;">
+      <div class="readout">Use the ← / → arrow keys to push the cart.</div>
+    </div>
+    <div class="sub-fields" id="cartpole-ctsac-subfields" style="display:none;">
+      <div class="readout">A small neural network, trained by reinforcement learning (Soft Actor-Critic) to balance the pole: it watches the last 0.16s of the pole's angle and the cart's position, and outputs a continuous push, left or right. Trained only near-upright and on the default slider values. If the system starts too far off vertical, or with different configurations, it will visibly degrade.</div>
+    </div>
+
+    <div id="cartpole-diagnostics" style="display:none;">
+      <h3>Fragility Diagnostics</h3>
+      <div class="readout" id="cartpole-diagnostics-text"></div>
+    </div>
+
+    <div class="toggle-row">
+      <label class="switch"><input type="checkbox" id="cartpoleWindOn" /><span class="slider"></span></label>
+      <span>Wind</span>
+    </div>
+    <div class="sub-fields" id="cartpole-wind-subfields">
+      <div class="field">
+        <label>σ Gust <span id="sigmaGust-val"></span></label>
+        <input type="range" id="sigmaGust" min="0" max="0.02" step="0.001" value="0.002" />
+        <div class="field-range"><span>0</span><span>0.02</span></div>
+      </div>
+      <div class="field">
+        <label>σ Turbulence <span id="sigmaTurb-val"></span></label>
+        <input type="range" id="sigmaTurb" min="0" max="0.01" step="0.0005" value="0.001" />
+        <div class="field-range"><span>0</span><span>0.01</span></div>
+      </div>
+    </div>
+
+    <button id="cartpole-run-button" class="sidebar-action run-button">Run</button>
+    <button id="cartpole-pause-button" class="sidebar-action">Pause</button>
+    <button id="cartpole-reset-button" class="sidebar-action">Reset</button>
+  </div>
+  </div>
+      </div>
+      <!-- Additional .system-slide elements appended here as more systems land. -->
+    </div>
+  </div>
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>
