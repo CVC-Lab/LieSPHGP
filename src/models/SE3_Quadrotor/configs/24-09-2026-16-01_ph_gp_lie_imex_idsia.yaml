@@ -1,0 +1,153 @@
+schema_version: 1
+created_at: '2026-09-24T16:00:00-05:00'
+model:
+  name: ph_gp_lie_imex_idsia
+  family: gp
+  solver: lie-imex
+  hidden_dim: null
+  activation: null
+  initialization_gain: null
+  dissipation_enabled: true
+  mass_epsilon: 0.01
+  mass_factor_epsilon: null
+  optional_subnetwork: null
+  integration_substeps: 2
+data:
+  dataset_path: datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_rotor2_clean.pkl
+  window_points: 51
+  window_stride: 10
+  time_varying_controls: true
+  max_train_windows: null
+  max_test_windows: null
+  observation_noise_override: null
+training:
+  seed: 0
+  total_steps: 3000
+  batch_size: 256
+  eval_every: 250
+  checkpoint_every: 500
+  loss: se3-nll
+  loss_scale: 1.0
+  mass_pretrain_steps: 0
+  mass_pretrain_learning_rate: 0.001
+  mass_pretrain_samples: 4096
+  initial_checkpoint: null
+  resume_checkpoint: null
+  long_horizon_test_seconds:
+  - 1.0
+  - 3.0
+  latent_initial_state: true
+  latent_initial_state_sigma: learned
+  latent_initial_state_learning_rate: 0.01
+  latent_initial_state_kl_weight: 1.0
+  latent_initial_state_std_floor: 0.0
+  latent_initial_state_sample: false
+  continuity_weight: 0.0
+optimizer:
+  name: prodigy-per-subnetwork-v2
+  learning_rate: 0.001
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  weight_decay: 0.0
+  gradient_clip_norm: 10.0
+  level_learning_rate: 0.25
+  prodigy_weight_learning_rate: 1.0
+  prodigy_d_coef: 0.1
+gp:
+  enabled: true
+  kernel: matern
+  matern_smoothness: 2.5
+  model_backend: utils-gp-model
+  matern_length_scale: 1.0
+  period: 6.283185307179586
+  periodic_length_scale: 0.5
+  periodic_harmonics: 5
+  periodic_dimension: 0
+  mass_1_feature_count: 20
+  mass_2_feature_budget: 20
+  dissipation_v_feature_count: 20
+  dissipation_w_feature_count: 20
+  potential_position_feature_count: 20
+  potential_rotation_feature_budget: 11
+  potential_include_rotation: false
+  control_position_feature_count: 20
+  control_rotation_feature_budget: 11
+  initial_log_standard_deviation: -5.0
+  inverse_mass_2_initial_value: 1.0
+  dissipation_v_initial_value: 1.0
+  dissipation_w_initial_value: 1.0
+  kl_beta_max: 1.0
+  kl_anneal_steps: 1000
+  data_fit: se3-nll
+  initial_observation_sigma: 0.3
+  fixed_observation_sigma: null
+  nll_squared_error_scale: 1.0
+  direct_control_map: false
+  optional_mean_subnetwork: null
+  known_gravity: 9.81
+  gravity_level_prior: false
+  gravity_penalty_weight: 0.0
+  gravity_penalty_points: 1024
+  structured_potential: false
+  actuation_penalty_weight: 0.0
+  control_initial_mean_scale: 0.0
+  control_level_initial:
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+runtime:
+  device: gpu
+  device_index: 0
+  require_gpu: true
+  jax_enable_x64: false
+  matmul_precision: highest
+  enable_compilation_cache: true
+  compilation_cache_dir: experiments/quadrotor/.jax_cache
+experiment:
+  root: experiments/quadrotor/train_runs
+  name_suffix: gp-lieimex-ODE-PRODIGYv2-dcoef0p1-IDSIA-rotor2-ONEINIT-stage1-K50-3k-nopriors-fp32-nopretrain-h0p005
+  history_file: experiments/quadrotor/experiment_history.txt
+  changes:
+  - 'PH-GP-LieIMEX-ODE-Prodigy-v2: identical to 22-09-2026-13-01_ph_gp_lie_imex_idsia.yaml except the optimizer.'
+  - 'optimizer.name = prodigy-per-subnetwork-v2: 12 independent optax Prodigy instances -- one per subnetwork for its GP weights
+    (mean + log_std together: M1, M2, V, g, Dv, Dw) and a separate one per subnetwork for its level (lambda) term. Level groups
+    keep the previous settings (level_learning_rate 0.25, estim_lr0 1e-3); weight groups use learning_rate 1.0 with prodigy_d_coef
+    0.1 (the setting that stopped the PH-NN Prodigy NaNs). Likelihood noise scales stay on Adam at optimizer.learning_rate.
+    Previously the GP weights shared one Adam.'
+  - integration_substeps 2 (h = 0.005 s), rotor2, all inits 1, no pre-training, float32, priors as in 22-09-2026-13-01_ph_gp_lie_imex_idsia.yaml.
+  - 'This run: gp-lieimex-ODE-PRODIGYv2-dcoef0p1-IDSIA-rotor2-ONEINIT-stage1-K50-3k-nopriors-fp32-nopretrain-h0p005.'
+report:
+  enabled: false
+  auto_generate: false
+  generator: src.models.SE3_Quadrotor.comparision.generate_report
+  exact_pages: 47
+  output_name: model_report_47_pages.pdf
+  title: PH-GP Lie-IMEX V2 JAX model report
+  trajectory_count: 10
+  random_seed: 42
+  dpi: 150
+  experiment_dirs: null
+  evaluation_dataset: datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_rotor2_clean.pkl
+  controller_use_dissipation: true

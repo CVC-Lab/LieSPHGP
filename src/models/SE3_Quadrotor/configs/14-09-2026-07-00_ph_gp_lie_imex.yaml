@@ -1,0 +1,156 @@
+schema_version: 1
+created_at: '2026-09-14T07:00:00-05:00'
+model:
+  name: ph_gp_lie_imex
+  family: gp
+  solver: lie-imex
+  hidden_dim: null
+  activation: null
+  initialization_gain: null
+  dissipation_enabled: true
+  mass_epsilon: 0.01
+  mass_factor_epsilon: null
+  optional_subnetwork: null
+data:
+  dataset_path: datasets/QUADROTOR-DATASET-HARD-V5-LINEAR/HARDV5LIN_CF2P_10s_h0p01_train-obs-noise-absolute0p1.pkl
+  window_points: 51
+  window_stride: 10
+  time_varying_controls: true
+  max_train_windows: null
+  max_test_windows: null
+  observation_noise_override: null
+training:
+  seed: 0
+  total_steps: 3000
+  batch_size: 256
+  eval_every: 250
+  checkpoint_every: 500
+  loss: se3-nll
+  loss_scale: 1.0
+  mass_pretrain_steps: 0
+  mass_pretrain_learning_rate: 0.001
+  mass_pretrain_samples: 4096
+  initial_checkpoint: null
+  resume_checkpoint: null
+  long_horizon_test_seconds:
+  - 1.0
+  - 3.0
+  latent_initial_state: true
+  latent_initial_state_sigma: learned
+  latent_initial_state_learning_rate: 0.01
+  latent_initial_state_kl_weight: 1.0
+  latent_initial_state_std_floor: 0.0
+  latent_initial_state_sample: false
+  continuity_weight: 0.0
+optimizer:
+  name: prodigy-levels-per-subnetwork
+  learning_rate: 0.001
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  weight_decay: 0.0
+  gradient_clip_norm: 10.0
+  level_learning_rate: 0.5
+gp:
+  enabled: true
+  kernel: matern
+  matern_smoothness: 2.5
+  model_backend: utils-gp-model
+  matern_length_scale: 1.0
+  period: 6.283185307179586
+  periodic_length_scale: 0.5
+  periodic_harmonics: 5
+  periodic_dimension: 0
+  mass_1_feature_count: 220
+  mass_2_feature_budget: 220
+  dissipation_v_feature_count: 225
+  dissipation_w_feature_count: 220
+  potential_position_feature_count: 20
+  potential_rotation_feature_budget: 11
+  potential_include_rotation: false
+  control_position_feature_count: 20
+  control_rotation_feature_budget: 11
+  initial_log_standard_deviation: -5.0
+  inverse_mass_2_initial_value: 1000.0
+  dissipation_v_initial_value: 1.0
+  dissipation_w_initial_value: 0.001
+  kl_beta_max: 1.0
+  kl_anneal_steps: 1000
+  data_fit: se3-nll
+  initial_observation_sigma: 0.3
+  fixed_observation_sigma: null
+  nll_squared_error_scale: 1.0
+  direct_control_map: false
+  optional_mean_subnetwork: null
+  known_gravity: 9.81
+  gravity_level_prior: false
+  gravity_penalty_weight: 30.0
+  gravity_penalty_points: 1024
+  structured_potential: false
+  actuation_penalty_weight: 30.0
+runtime:
+  device: gpu
+  device_index: 0
+  require_gpu: true
+  jax_enable_x64: false
+  matmul_precision: highest
+  enable_compilation_cache: true
+  compilation_cache_dir: experiments/quadrotor/.jax_cache
+experiment:
+  root: experiments/quadrotor/train_runs
+  name_suffix: levels-nll-noise0p1-HARDV5LIN-v5linF1-stage1-K50-3k-scratch-latentx0MAP-blindsigma-gravpen30-actpen30-lvl0p5
+  history_file: experiments/quadrotor/experiment_history.txt
+  changes:
+  - Learned levels (no dataset physics) for M1^-1, M2^-1, Dv, Dw, and g; GP residuals on top.
+  - 'Potential V(x) = lambda_V^T x + GP(x): learned linear level (zero init, outside the KL, own Prodigy group).'
+  - SE(3) negative log-likelihood with learned per-block sigma; KL spread over all training transitions (beta 1).
+    Standard single-term window loss (no multi-horizon term).
+  - Per-subnetwork Prodigy (eta=0.5, d0=1e-3, safeguard warm-up) on the level scalars only; Adam 1e-3 for GP weight
+    means, log-stds and likelihood sigmas; global-norm gradient clipping at 10. Fresh optimizer state at every curriculum
+    stage (initial_checkpoint, parameters only).
+  - 1 s and 3 s open-loop position RMS on the clean test flights logged at every evaluation (test_long1s_* / test_long3s_*
+    in training_stats.npz).
+  - 'Soft known-gravity penalty: L_g = w/g^2 * mean_x ||mu(x) grad V(x) - g e3||^2 on 1024 batch states per step
+    with the full GP-including mu and V (gp.gravity_penalty_weight=30, gp.known_gravity=9.81); hard level prior
+    OFF (gp.gravity_level_prior=false); lambda_V fully learned.'
+  - 'Report controller: reference law WITH the learned damping feedforward +Dv v_b, +Dw omega_b (report.controller_use_dissipation=true).'
+  - 'Latent initial state per training window (training.latent_initial_state=true): variational q(x0_i)=N(x0_obs+m_i,
+    s_i^2) on the 12 SE(3) tangent coordinates, prior N(x0_obs, 0.1^2) (=observation noise), KL in the ELBO, Adam
+    1e-2 on (m_i, log s_i), fresh per stage. Errors-in-variables treatment so the damping/thrust/gravity products
+    are not biased by the noisy window starts.'
+  - 'Training data: QUADROTOR-DATASET-HARD-V3 = HARD-V2 protocol (gusts off, kick torque recorded) plus yaw-rate
+    excitation: new yaw_kick segment (impulsive J_zz*rate torque about body z, rate 3-6 rad/s, weight 1.2) and yaw_turn
+    weight 1.0; 50 train / 10 test flights of 10 s at h=0.01 s, absolute observation noise 0.1 on the training flights,
+    test split clean.'
+  - 'Observation noise NOT assumed known: the four likelihood sigmas start at a neutral 0.3 for every noise level
+    and are learned; the latent initial-state prior uses the learned per-block sigma with its log-sigma term (training.latent_initial_state_sigma=learned),
+    i.e. the window likelihood''s missing -log p(x0_obs | x0) term. No noise value enters training.'
+  - 'Actuation-direction prior on the learned input map (gp.actuation_penalty_weight=30): the thrust command must
+    produce no lateral body force and no torque, penalty E_x[|mu g_xy e1 u_h|^2 + |M2^-1 g_tau e1 u_h|^2]/g^2 on
+    1024 batch poses (u_h = mean thrust of the batch); direction only, all gains and the position dependence stay
+    learned. Motivation: the noise-blind stage-2 models leak hover thrust into torque (0.2-0.4 rad/s^2) and lateral
+    force, which drives the open-loop drift after ~2 s of hover and props up the yaw damping.'
+  - 'LINEAR-damping dataset HARD-V3-LINEAR (same HARD-V3 flight protocol; PyBullet built-in damping off, external
+    force -c m v and torque -c J omega with c=0.5 every physics step). Truth: mu*Dv = c I, M2^-1 Dw = c I (speed
+    independent). Report on the linear-damping 3 s D0 reference flight; controller simulated with the same external
+    linear damping.'
+  - 'Final recipe: learned sigma from 0.3, MAP latent x0 with learned sigma, learned V + gravity penalty 30, actuation-direction
+    prior 30, curriculum K=50 (3k) -> K=100 (3k); the 2 s stage is dropped (net negative in every nonlinear-damping
+    run).'
+  - 'HARD-V5 data: HARD-V4 shifted to 1-3 m/s (figure-eight/circle 1-3 m/s radius 1-2 m, hops up to 3.5 m, vertical
+    steps 1.5-2.5 m, coasts entered at 2-3 m/s and cut at 1.5-2.5 s, no hover segment, initial speed up to 2 m/s,
+    envelope +-3.5 m): mean |v| 1.05 m/s, 46% of samples in 1-3 m/s, 24% below 0.25 m/s. Linear damping law.'
+  - 'This run: levels-nll-noise0p1-HARDV5LIN-v5linF1-stage1-K50-3k-scratch-latentx0MAP-blindsigma-gravpen30-actpen30-lvl0p5.'
+report:
+  enabled: false
+  auto_generate: false
+  generator: src.models.SE3_Quadrotor.comparision.generate_report
+  exact_pages: 47
+  output_name: model_report_47_pages.pdf
+  title: PH-GP Lie-IMEX V2 JAX model report
+  trajectory_count: 10
+  random_seed: 42
+  dpi: 150
+  experiment_dirs: null
+  evaluation_dataset: datasets/data/pybullet_quadrotor/D0_CF2P_PID_contact-free_linear-damping-c0p5_3s_seed0.pkl
+  controller_use_dissipation: true

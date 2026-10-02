@@ -1,0 +1,21 @@
+==== obs=0 ====
+  estimated β  NN=0.1162  GP=0.3258  SDE=0.9975
+  Writing PDF: ../../../reports_3way_sdeDIFF_260627/report_3way_obs0_wind0p5_randu7_G0p5-0p7-0p1_sdeDIFF_260627.pdf
+  Done.
+==== obs=0.01 ====
+  estimated β  NN=0.1195  GP=0.3306  SDE=0.9980
+  Writing PDF: ../../../reports_3way_sdeDIFF_260627/report_3way_obs0.01_wind0p5_randu7_G0p5-0p7-0p1_sdeDIFF_260627.pdf
+  Done.
+==== obs=0.05 ====
+  estimated β  NN=0.1103  GP=0.2972  SDE=0.9981
+  Writing PDF: ../../../reports_3way_sdeDIFF_260627/report_3way_obs0.05_wind0p5_randu7_G0p5-0p7-0p1_sdeDIFF_260627.pdf
+  Done.
+==== obs=0.1 ====
+  estimated β  NN=0.1277  GP=0.2872  SDE=0.9507
+  Writing PDF: ../../../reports_3way_sdeDIFF_260627/report_3way_obs0.1_wind0p5_randu7_G0p5-0p7-0p1_sdeDIFF_260627.pdf
+  Done.
+==== obs=0.25 ====
+  estimated β  NN=0.1095  GP=0.2855  SDE=0.6765
+  Writing PDF: ../../../reports_3way_sdeDIFF_260627/report_3way_obs0.25_wind0p5_randu7_G0p5-0p7-0p1_sdeDIFF_260627.pdf
+  Done.
+ALL DONE

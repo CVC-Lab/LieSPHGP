@@ -1,0 +1,291 @@
+_note: 'QUADROTOR-DATASET-WIND: the HARD dataset (same plant, actuator, DSL PID, 9
+  training families, seeds 300-304 train / 399 val, gates, noise variants) with the
+  Ornstein-Uhlenbeck body-frame gust ENABLED: tau = 0.5 s, sigma = 10 % of the weight,
+  applied with applyExternalForce and unobserved by the models (u is the commanded
+  wrench). Held-out split = the EVALSET library (8 shapes disjoint from training),
+  seed 499. Purpose: PH-NODE-RK4 vs PH-GP-LieIMEX-ODE vs PH-GP-LieIMEX-SDE under an
+  unobserved stochastic disturbance, i.e. the case the SDE''s process noise is meant
+  to represent.'
+actuator:
+  input_mode: wrench
+  motor_gain_spread: 0.0
+  motor_lag_seconds: 0.0
+audits:
+  horizons_seconds:
+  - 0.1
+  - 0.25
+  - 0.5
+  - 1.0
+  - 2.0
+controller:
+  gain_scale: 0.5
+  type: dsl_pid
+envelope:
+  max_angular_rate: 6.0
+  max_speed: 3.0
+  max_tilt_deg: 45
+  position_box:
+    x:
+    - -3.5
+    - 3.5
+    y:
+    - -3.5
+    - 3.5
+    z:
+    - 0.5
+    - 5.0
+environment:
+  builtin_damping_coefficient: 0.5
+  contact_free: true
+  drone_model: CF2P
+  physics: PYB
+  physics_hz: 1000
+  sample_hz: 100
+flight:
+  duration_seconds: 10.0
+gates:
+  envelope_margin: 0.5
+  max_attempts: 20
+  max_saturation_fraction: 0.05
+  max_tilt_deg: 90
+  min_altitude: 0.3
+gusts:
+  enabled: true
+  time_constant_seconds: 0.5
+  sigma_fraction_of_weight: 0.1
+initial_state:
+  max_angular_rate: 1.0
+  max_speed: 2.0
+  max_tilt_deg: 30
+  position_box:
+    x:
+    - -2.0
+    - 2.0
+    y:
+    - -2.0
+    - 2.0
+    z:
+    - 1.5
+    - 4.0
+manoeuvres:
+  library:
+    aggressive_recovery:
+      duration:
+      - 1.5
+      - 2.0
+      kick_seconds: 0.1
+      rate:
+      - 3.0
+      - 5.0
+      weight: 0.7
+    circle:
+      duration:
+      - 3.0
+      - 4.0
+      radius:
+      - 1.0
+      - 2.0
+      speed:
+      - 1.0
+      - 3.0
+      weight: 1.0
+    coast:
+      duration:
+      - 1.5
+      - 2.5
+      entry_radius: 1.5
+      entry_seconds: 2.0
+      entry_speed:
+      - 2.0
+      - 3.0
+      kd: 0.00027
+      kp: 0.0015
+      weight: 1.3
+    coast_yaw:
+      duration:
+      - 1.5
+      - 2.5
+      entry_radius: 1.5
+      entry_seconds: 1.5
+      entry_speed:
+      - 1.5
+      - 2.5
+      kd: 0.00027
+      kick_seconds: 0.1
+      kp: 0.0015
+      rate:
+      - 2.0
+      - 4.0
+      weight: 0.8
+    figure_eight:
+      duration:
+      - 3.0
+      - 4.0
+      radius:
+      - 1.0
+      - 2.0
+      speed:
+      - 1.0
+      - 3.0
+      weight: 1.0
+    vertical_step:
+      duration:
+      - 1.5
+      - 2.0
+      height:
+      - 1.5
+      - 2.5
+      weight: 0.8
+    waypoint_hop:
+      duration:
+      - 1.5
+      - 2.5
+      max_distance: 3.5
+      weight: 1.0
+    yaw_kick:
+      duration:
+      - 1.5
+      - 2.5
+      kick_seconds: 0.1
+      rate:
+      - 3.0
+      - 6.0
+      weight: 1.2
+    yaw_turn:
+      duration:
+      - 1.0
+      - 2.0
+      rate:
+      - 1.0
+      - 4.0
+      weight: 1.0
+  segments_per_flight:
+  - 3
+  - 5
+  heldout_library:
+    bounce:
+      duration:
+      - 3.0
+      - 4.0
+      height:
+      - 0.3
+      - 0.6
+      period:
+      - 1.0
+      - 1.6
+      weight: 1.0
+    chirp:
+      amplitude:
+      - 0.5
+      - 1.0
+      duration:
+      - 3.0
+      - 4.0
+      f0: 0.2
+      f1: 1.5
+      weight: 1.0
+      yaw_amplitude:
+      - 0.2
+      - 0.4
+    dash:
+      duration:
+      - 2.0
+      - 3.0
+      speed:
+      - 0.5
+      - 3.2
+      weight: 2.0
+    disturbed_hover:
+      duration:
+      - 1.0
+      - 2.0
+      gust_multiplier: 3.0
+      weight: 1.0
+    helix:
+      climb_rate:
+      - 0.3
+      - 0.5
+      duration:
+      - 3.0
+      - 4.0
+      radius:
+      - 1.5
+      - 2.0
+      speed:
+      - 2.0
+      - 3.4
+      weight: 1.5
+    slalom:
+      amplitude:
+      - 0.3
+      - 0.5
+      duration:
+      - 3.0
+      - 4.0
+      period:
+      - 2.5
+      - 3.5
+      speed:
+      - 2.0
+      - 3.4
+      weight: 1.2
+    thrust_pulse:
+      cut_seconds:
+      - 0.35
+      - 0.5
+      duration:
+      - 1.8
+      - 2.5
+      kd: 0.00027
+      kp: 0.0015
+      min_altitude: 1.5
+      thrust_fraction:
+      - 0.25
+      - 0.45
+      weight: 2.0
+    tumble:
+      duration:
+      - 2.0
+      - 3.0
+      gap_seconds: 0.4
+      kick_seconds: 0.1
+      rate:
+      - 3.0
+      - 5.0
+      weight: 0.7
+noise:
+  absolute_levels:
+  - 0.05
+  - 0.1
+  - 0.25
+  - 0.5
+  sensor:
+    attitude_sigma_deg: 1.0
+    enabled: true
+    gyro_bias_random_walk: 0.0001
+    gyro_white_sigma: 0.01
+    position_sigma: 0.005
+    savitzky_golay_window: 7
+    velocity_from: central_difference
+  test_noise_seed: 1999
+  train_noise_seed: 0
+output:
+  directory: datasets/QUADROTOR-DATASET-WIND
+  tag: WIND
+  window_points: 6
+  window_stride: 5
+  write_pdf: true
+  pdf_example_flights: 4
+splits:
+  train_seeds:
+  - 300
+  - 301
+  - 302
+  - 303
+  - 304
+  val_seeds:
+  - 399
+  heldout_seeds:
+  - 499
+  flights_per_seed: 10
+  flight_seed_base: 7000000

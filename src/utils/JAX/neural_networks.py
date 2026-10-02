@@ -1,7 +1,7 @@
 """JAX/Equinox port of src/utils/ode_nn_models.py.
 
 MLP, PSD, MatrixNet — same architectures and orthogonal init as the PyTorch
-versions used by ph_nn_ode_fp32. All modules operate on a *single* sample
+versions used by ph_nn_ode. All modules operate on a *single* sample
 (no batch dim); use jax.vmap to batch externally.
 """
 from __future__ import annotations

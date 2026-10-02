@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SE(3) quadrotor — STOCHASTIC (pH-SDE) environment config
+#
+#   Both diffusion channels of notes/quadrotor-se3-ph-system.md §9.2 are on:
+#
+#       d p  = (...) dt + sigma_f   R^T o dW_f     (multiplicative, force)
+#       d Pi = (...) dt + sigma_tau     o dW_tau   (additive, body torque)
+#
+#   Stratonovich ("o"), integrated by the Lie-group Heun scheme of §14.  This
+#   is the headline configuration for the LieSPHGP benchmark and its SDE
+#   baselines (ph_gp_sde, ph_nn_sde, neural_sde).
+#
+# Identical to ode.yaml except for the three noise blocks flagged below.
+# Keys map 1:1 onto quadrotor_se3.__init__ (notes §22).  Keys beginning with
+# "_" are metadata; unknown keys are a hard error.
+#
+# Override any value from the command line, e.g.
+#   --wind_force_std 0.8 --external_force_type random
+# ─────────────────────────────────────────────────────────────────────────────
+_name: quadrotor_se3_sde
+_description: Stochastic SE(3) quadrotor - both Brownian channels + obs noise.
+
+# ── Rigid body (§4.1, §22.1) ────────────────────────────────────────────────
+g: 9.81
+m: 1.0
+J_diag: [0.5, 0.5, 1.0]
+arm: 1.0
+dt: 0.05
+
+# ── Rotor / damping coefficients (§7, §8, §22.2) ────────────────────────────
+# The *_std entries stay 0 for the headline runs: parameter jitter acts as
+# extra process noise the model would fold into its diffusion (§18.3).  Raise
+# them (with resample_coeffs_every_step) only for the robustness ablation.
+kf_coeff: 1.0
+kf_std: 0.0
+km_coeff: 0.1
+km_std: 0.0
+linear_damping_coeff: 0.5
+linear_damping_std: 0.0
+angular_damping_coeff: 0.5
+angular_damping_std: 0.0
+resample_coeffs_every_step: false   # true = per-step jitter, false = per-episode
+
+# ── Wind (§9, §22.3) ────────────────────────────────────────────────────────
+external_force_type: sine
+external_force_std: 0.0            # deterministic wind OFF - unmodelled port (§18.4)
+external_force_direction: [1.0, 0.0, 0.0]
+wind_force_std: 0.5                # <-- sigma_f   : STOCHASTIC force channel ON
+wind_torque_std: 0.1               # <-- sigma_tau : STOCHASTIC torque channel ON
+
+# ── Observation / action API (§15.1, §22.4) ─────────────────────────────────
+obs_noise_std: 0.05                # <-- geometric obs noise (project convention)
+max_u: 25.0
+ori_rep: rotmat
+
+# ── Rendering and seeding (§22.5) ───────────────────────────────────────────
+render_mode: null
+render_backend: pybullet
+seed: 0

@@ -1,0 +1,1436 @@
+Run dir : /mnt/data/thribhuvan/Projects/stochastic_port_hamiltonian/Final/SPHNP v2/src/models/3D_SO3_Windy_Pendulum/ph_gp_sde/data/run_wp3d_jax/obs0p25_fric0p5_wind0p5_ext0-sine_lr0p001_s10000_np5_smp64_T20_seed0_randu7_G0p5-0p7-0p1_260627-053541
+model contains 11582 parameters
+Loaded data from /mnt/data/thribhuvan/Projects/stochastic_port_hamiltonian/Final/SPHNP v2/datasets/data/windy_pendulum_3d/wp3d_dataset_extforce-sine-std0p0_fric0p5_var_fricFalse_obs_noise0p25_wind_force0p5_random_uTrue_uScale7p0_G_0p5_0p7_0p1_steps20.pkl
+  dt = 0.0500  h = 0.0050  n_outer (per window) = 4  n_substeps = 10
+  train batch B = 2560, test batch B = 2560, T_obs = 5, N (= B·(T−1)) = 10240
+
+Pretraining M_net for 200 steps (lr=0.001, target = 1.000·I₃)
+  using 12800 q samples drawn from training data
+  pretrain step    0: loss=2.049e+00
+  pretrain step   20: loss=1.925e+00
+  pretrain step   40: loss=1.793e+00
+  pretrain step   60: loss=1.654e+00
+  pretrain step   80: loss=1.517e+00
+  pretrain step  100: loss=1.385e+00
+  pretrain step  120: loss=1.261e+00
+  pretrain step  140: loss=1.145e+00
+  pretrain step  160: loss=1.038e+00
+  pretrain step  180: loss=9.392e-01
+  pretrain step  199: loss=8.540e-01
+  pretrain done. initial loss=2.049e+00  final loss=8.540e-01  max|M(q₀) − target|=2.230e+00
+[step      0]
+  train: −ELBO=1.3930e+06  NLL=1.3930e+06  NLL_R=1.9231e+05  NLL_ω=1.2007e+06  MSE_R=3.8465e-01  MSE_ω=2.4015e+00
+  test : −ELBO=9.0075e+05  NLL=9.0075e+05  NLL_R=7.2482e+03  NLL_ω=8.9350e+05  MSE_R=1.4561e-02  MSE_ω=1.7906e+00
+  sigma: σ_R=1.0000e-03  σ_ω=1.0000e-03  β=0.0000e+00
+  PL   : train=8.8382e+00  test=-1.1756e+00  σ_φ̄(train)=6.9947e-01  σ_φ̄(test)=6.9182e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.003e+03  V=3.320e+02  Dw=1.992e+03  g=2.988e+03  sigma=3.320e+02  total=7.647e+03
+  subnet MSE  M=8.664e-01  V=2.709e+01  Dw=6.555e-03  g=3.285e-01
+[step     50]
+  train: −ELBO=1.0073e+06  NLL=1.0073e+06  NLL_R=1.7433e+05  NLL_ω=8.3294e+05  MSE_R=3.7921e-01  MSE_ω=1.8080e+00
+  test : −ELBO=6.0248e+05  NLL=6.0248e+05  NLL_R=4.7494e+03  NLL_ω=5.9773e+05  MSE_R=1.0384e-02  MSE_ω=1.2992e+00
+  sigma: σ_R=1.0428e-03  σ_ω=1.0418e-03  β=0.0000e+00
+  PL   : train=1.5203e+01  test=2.9557e-01  σ_φ̄(train)=5.5420e-01  σ_φ̄(test)=5.4476e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.011e+03  V=3.334e+02  Dw=1.995e+03  g=3.002e+03  sigma=3.340e+02  total=7.675e+03
+  subnet MSE  M=5.045e-01  V=2.684e+01  Dw=1.052e-02  g=2.786e-01
+[step    100]
+  train: −ELBO=8.2929e+05  NLL=8.2926e+05  NLL_R=1.6181e+05  NLL_ω=6.6745e+05  MSE_R=3.7699e-01  MSE_ω=1.5396e+00
+  test : −ELBO=4.6359e+05  NLL=4.6359e+05  NLL_R=3.5893e+03  NLL_ω=4.6000e+05  MSE_R=8.4121e-03  MSE_ω=1.0621e+00
+  sigma: σ_R=1.0793e-03  σ_ω=1.0739e-03  β=0.0000e+00
+  PL   : train=3.2102e+01  test=3.9210e+00  σ_φ̄(train)=4.1363e-01  σ_φ̄(test)=4.0357e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.017e+03  V=3.339e+02  Dw=1.996e+03  g=3.008e+03  sigma=3.349e+02  total=7.690e+03
+  subnet MSE  M=3.882e-01  V=2.669e+01  Dw=1.650e-02  g=2.809e-01
+[step    150]
+  train: −ELBO=7.0948e+05  NLL=7.0940e+05  NLL_R=1.4986e+05  NLL_ω=5.5953e+05  MSE_R=3.7555e-01  MSE_ω=1.3704e+00
+  test : −ELBO=3.7394e+05  NLL=3.7392e+05  NLL_R=2.8208e+03  NLL_ω=3.7110e+05  MSE_R=7.1259e-03  MSE_ω=9.1037e-01
+  sigma: σ_R=1.1193e-03  σ_ω=1.1066e-03  β=0.0000e+00
+  PL   : train=7.8537e+01  test=1.4635e+01  σ_φ̄(train)=2.8539e-01  σ_φ̄(test)=2.7262e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.021e+03  V=3.344e+02  Dw=1.998e+03  g=3.012e+03  sigma=3.359e+02  total=7.702e+03
+  subnet MSE  M=3.849e-01  V=2.628e+01  Dw=3.305e-02  g=2.831e-01
+[step    200]
+  train: −ELBO=6.0895e+05  NLL=6.0876e+05  NLL_R=1.3691e+05  NLL_ω=4.7185e+05  MSE_R=3.7376e-01  MSE_ω=1.2383e+00
+  test : −ELBO=3.1215e+05  NLL=3.1211e+05  NLL_R=2.3009e+03  NLL_ω=3.0981e+05  MSE_R=6.3379e-03  MSE_ω=8.1402e-01
+  sigma: σ_R=1.1682e-03  σ_ω=1.1455e-03  β=0.0000e+00
+  PL   : train=1.8879e+02  test=4.1952e+01  σ_φ̄(train)=1.8497e-01  σ_φ̄(test)=1.7399e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.025e+03  V=3.352e+02  Dw=2.001e+03  g=3.016e+03  sigma=3.368e+02  total=7.714e+03
+  subnet MSE  M=4.599e-01  V=2.568e+01  Dw=6.211e-02  g=2.773e-01
+[step    250]
+  train: −ELBO=5.4816e+05  NLL=5.4787e+05  NLL_R=1.2779e+05  NLL_ω=4.2008e+05  MSE_R=3.7309e-01  MSE_ω=1.1620e+00
+  test : −ELBO=2.7551e+05  NLL=2.7544e+05  NLL_R=1.9938e+03  NLL_ω=2.7345e+05  MSE_R=5.8788e-03  MSE_ω=7.5725e-01
+  sigma: σ_R=1.2081e-03  σ_ω=1.1760e-03  β=0.0000e+00
+  PL   : train=2.8950e+02  test=6.7598e+01  σ_φ̄(train)=1.4082e-01  σ_φ̄(test)=1.3119e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.028e+03  V=3.360e+02  Dw=2.003e+03  g=3.018e+03  sigma=3.372e+02  total=7.722e+03
+  subnet MSE  M=5.426e-01  V=2.514e+01  Dw=6.860e-02  g=2.828e-01
+[step    300]
+  train: −ELBO=4.7367e+05  NLL=4.7320e+05  NLL_R=1.1500e+05  NLL_ω=3.5820e+05  MSE_R=3.7162e-01  MSE_ω=1.0740e+00
+  test : −ELBO=2.2503e+05  NLL=2.2492e+05  NLL_R=1.5938e+03  NLL_ω=2.2332e+05  MSE_R=5.2142e-03  MSE_ω=6.7058e-01
+  sigma: σ_R=1.2710e-03  σ_ω=1.2244e-03  β=0.0000e+00
+  PL   : train=4.7018e+02  test=1.1566e+02  σ_φ̄(train)=9.7561e-02  σ_φ̄(test)=8.9522e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.030e+03  V=3.373e+02  Dw=2.006e+03  g=3.021e+03  sigma=3.378e+02  total=7.732e+03
+  subnet MSE  M=6.886e-01  V=2.393e+01  Dw=6.951e-02  g=2.856e-01
+[step    350]
+  train: −ELBO=4.2974e+05  NLL=4.2911e+05  NLL_R=1.0727e+05  NLL_ω=3.2185e+05  MSE_R=3.7079e-01  MSE_ω=1.0177e+00
+  test : −ELBO=1.9660e+05  NLL=1.9645e+05  NLL_R=1.3708e+03  NLL_ω=1.9507e+05  MSE_R=4.8016e-03  MSE_ω=6.1736e-01
+  sigma: σ_R=1.3146e-03  σ_ω=1.2574e-03  β=0.0000e+00
+  PL   : train=6.2336e+02  test=1.5836e+02  σ_φ̄(train)=7.3567e-02  σ_φ̄(test)=6.7146e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.031e+03  V=3.382e+02  Dw=2.007e+03  g=3.023e+03  sigma=3.383e+02  total=7.738e+03
+  subnet MSE  M=7.757e-01  V=2.307e+01  Dw=7.770e-02  g=2.826e-01
+[step    400]
+  train: −ELBO=3.9079e+05  NLL=3.9002e+05  NLL_R=1.0001e+05  NLL_ω=2.9002e+05  MSE_R=3.6955e-01  MSE_ω=9.6612e-01
+  test : −ELBO=1.7059e+05  NLL=1.7040e+05  NLL_R=1.1741e+03  NLL_ω=1.6923e+05  MSE_R=4.4096e-03  MSE_ω=5.6462e-01
+  sigma: σ_R=1.3592e-03  σ_ω=1.2906e-03  β=0.0000e+00
+  PL   : train=7.6715e+02  test=1.9155e+02  σ_φ̄(train)=5.5552e-02  σ_φ̄(test)=5.0472e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.032e+03  V=3.389e+02  Dw=2.009e+03  g=3.025e+03  sigma=3.387e+02  total=7.743e+03
+  subnet MSE  M=8.782e-01  V=2.200e+01  Dw=8.579e-02  g=2.893e-01
+[step    450]
+  train: −ELBO=3.6497e+05  NLL=3.6416e+05  NLL_R=9.3852e+04  NLL_ω=2.7031e+05  MSE_R=3.6915e-01  MSE_ω=9.4522e-01
+  test : −ELBO=1.5890e+05  NLL=1.5869e+05  NLL_R=1.0796e+03  NLL_ω=1.5761e+05  MSE_R=4.3183e-03  MSE_ω=5.5178e-01
+  sigma: σ_R=1.4023e-03  σ_ω=1.3222e-03  β=0.0000e+00
+  PL   : train=8.1445e+02  test=2.0382e+02  σ_φ̄(train)=4.9790e-02  σ_φ̄(test)=4.4565e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.033e+03  V=3.396e+02  Dw=2.010e+03  g=3.026e+03  sigma=3.389e+02  total=7.747e+03
+  subnet MSE  M=9.060e-01  V=2.163e+01  Dw=1.326e-01  g=2.959e-01
+[step    500]
+  train: −ELBO=3.3792e+05  NLL=3.3708e+05  NLL_R=8.7509e+04  NLL_ω=2.4957e+05  MSE_R=3.6863e-01  MSE_ω=9.2109e-01
+  test : −ELBO=1.4400e+05  NLL=1.4378e+05  NLL_R=9.6959e+02  NLL_ω=1.4281e+05  MSE_R=4.1596e-03  MSE_ω=5.2761e-01
+  sigma: σ_R=1.4511e-03  σ_ω=1.3584e-03  β=0.0000e+00
+  PL   : train=8.3997e+02  test=2.1357e+02  σ_φ̄(train)=4.5331e-02  σ_φ̄(test)=4.0578e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.034e+03  V=3.403e+02  Dw=2.011e+03  g=3.027e+03  sigma=3.389e+02  total=7.750e+03
+  subnet MSE  M=9.888e-01  V=2.107e+01  Dw=1.968e-01  g=3.011e-01
+[step    550]
+  train: −ELBO=3.1342e+05  NLL=3.1253e+05  NLL_R=8.2012e+04  NLL_ω=2.3052e+05  MSE_R=3.6799e-01  MSE_ω=8.9444e-01
+  test : −ELBO=1.2804e+05  NLL=1.2782e+05  NLL_R=8.5022e+02  NLL_ω=1.2697e+05  MSE_R=3.8935e-03  MSE_ω=4.9313e-01
+  sigma: σ_R=1.4977e-03  σ_ω=1.3928e-03  β=0.0000e+00
+  PL   : train=8.9350e+02  test=2.1965e+02  σ_φ̄(train)=3.9601e-02  σ_φ̄(test)=3.5467e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.035e+03  V=3.410e+02  Dw=2.012e+03  g=3.027e+03  sigma=3.390e+02  total=7.754e+03
+  subnet MSE  M=1.056e+00  V=2.039e+01  Dw=1.541e-01  g=2.995e-01
+[step    600]
+  train: −ELBO=2.9079e+05  NLL=2.8984e+05  NLL_R=7.6346e+04  NLL_ω=2.1349e+05  MSE_R=3.6777e-01  MSE_ω=8.7689e-01
+  test : −ELBO=1.1714e+05  NLL=1.1691e+05  NLL_R=7.6618e+02  NLL_ω=1.1614e+05  MSE_R=3.7739e-03  MSE_ω=4.7744e-01
+  sigma: σ_R=1.5518e-03  σ_ω=1.4330e-03  β=0.0000e+00
+  PL   : train=9.4981e+02  test=2.3413e+02  σ_φ̄(train)=3.3850e-02  σ_φ̄(test)=3.0513e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.035e+03  V=3.416e+02  Dw=2.013e+03  g=3.028e+03  sigma=3.391e+02  total=7.758e+03
+  subnet MSE  M=1.096e+00  V=2.019e+01  Dw=1.575e-01  g=2.963e-01
+[step    650]
+  train: −ELBO=2.7636e+05  NLL=2.7538e+05  NLL_R=7.2472e+04  NLL_ω=2.0291e+05  MSE_R=3.6765e-01  MSE_ω=8.6901e-01
+  test : −ELBO=1.0986e+05  NLL=1.0962e+05  NLL_R=7.0889e+02  NLL_ω=1.0891e+05  MSE_R=3.6838e-03  MSE_ω=4.6692e-01
+  sigma: σ_R=1.5924e-03  σ_ω=1.4633e-03  β=0.0000e+00
+  PL   : train=9.8054e+02  test=2.4099e+02  σ_φ̄(train)=3.1257e-02  σ_φ̄(test)=2.7920e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.036e+03  V=3.421e+02  Dw=2.014e+03  g=3.029e+03  sigma=3.392e+02  total=7.759e+03
+  subnet MSE  M=1.101e+00  V=2.003e+01  Dw=1.258e-01  g=2.924e-01
+[step    700]
+  train: −ELBO=2.6342e+05  NLL=2.6243e+05  NLL_R=6.9280e+04  NLL_ω=1.9315e+05  MSE_R=3.6726e-01  MSE_ω=8.5734e-01
+  test : −ELBO=1.0168e+05  NLL=1.0143e+05  NLL_R=6.5003e+02  NLL_ω=1.0078e+05  MSE_R=3.5357e-03  MSE_ω=4.4770e-01
+  sigma: σ_R=1.6279e-03  σ_ω=1.4897e-03  β=0.0000e+00
+  PL   : train=9.9608e+02  test=2.4982e+02  σ_φ̄(train)=3.0348e-02  σ_φ̄(test)=2.6948e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.036e+03  V=3.424e+02  Dw=2.014e+03  g=3.029e+03  sigma=3.391e+02  total=7.761e+03
+  subnet MSE  M=1.143e+00  V=1.978e+01  Dw=8.965e-02  g=2.870e-01
+[step    750]
+  train: −ELBO=2.4708e+05  NLL=2.4608e+05  NLL_R=6.5111e+04  NLL_ω=1.8097e+05  MSE_R=3.6694e-01  MSE_ω=8.4458e-01
+  test : −ELBO=9.2319e+04  NLL=9.2089e+04  NLL_R=5.8178e+02  NLL_ω=9.1507e+04  MSE_R=3.3761e-03  MSE_ω=4.2770e-01
+  sigma: σ_R=1.6784e-03  σ_ω=1.5275e-03  β=0.0000e+00
+  PL   : train=9.9577e+02  test=2.3019e+02  σ_φ̄(train)=2.8805e-02  σ_φ̄(test)=2.5460e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.037e+03  V=3.431e+02  Dw=2.015e+03  g=3.030e+03  sigma=3.391e+02  total=7.764e+03
+  subnet MSE  M=1.126e+00  V=1.954e+01  Dw=8.327e-02  g=2.959e-01
+[step    800]
+  train: −ELBO=2.2967e+05  NLL=2.2864e+05  NLL_R=6.0736e+04  NLL_ω=1.6791e+05  MSE_R=3.6653e-01  MSE_ω=8.2937e-01
+  test : −ELBO=8.2953e+04  NLL=8.2723e+04  NLL_R=5.1567e+02  NLL_ω=8.2207e+04  MSE_R=3.2122e-03  MSE_ω=4.0639e-01
+  sigma: σ_R=1.7368e-03  σ_ω=1.5715e-03  β=0.0000e+00
+  PL   : train=1.0254e+03  test=2.3060e+02  σ_φ̄(train)=2.5034e-02  σ_φ̄(test)=2.2290e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.038e+03  V=3.438e+02  Dw=2.016e+03  g=3.031e+03  sigma=3.393e+02  total=7.768e+03
+  subnet MSE  M=1.142e+00  V=1.925e+01  Dw=1.001e-01  g=2.965e-01
+[step    850]
+  train: −ELBO=2.1876e+05  NLL=2.1773e+05  NLL_R=5.7510e+04  NLL_ω=1.6022e+05  MSE_R=3.6641e-01  MSE_ω=8.2829e-01
+  test : −ELBO=7.8352e+04  NLL=7.8125e+04  NLL_R=4.8283e+02  NLL_ω=7.7642e+04  MSE_R=3.1818e-03  MSE_ω=4.0175e-01
+  sigma: σ_R=1.7846e-03  σ_ω=1.6076e-03  β=0.0000e+00
+  PL   : train=1.0284e+03  test=2.2741e+02  σ_φ̄(train)=2.4450e-02  σ_φ̄(test)=2.1792e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.038e+03  V=3.442e+02  Dw=2.017e+03  g=3.032e+03  sigma=3.394e+02  total=7.770e+03
+  subnet MSE  M=1.174e+00  V=1.915e+01  Dw=9.809e-02  g=3.008e-01
+[step    900]
+  train: −ELBO=2.0738e+05  NLL=2.0635e+05  NLL_R=5.4225e+04  NLL_ω=1.5213e+05  MSE_R=3.6649e-01  MSE_ω=8.2707e-01
+  test : −ELBO=7.4731e+04  NLL=7.4501e+04  NLL_R=4.5556e+02  NLL_ω=7.4045e+04  MSE_R=3.1904e-03  MSE_ω=4.0296e-01
+  sigma: σ_R=1.8380e-03  σ_ω=1.6487e-03  β=0.0000e+00
+  PL   : train=1.0268e+03  test=2.2994e+02  σ_φ̄(train)=2.5137e-02  σ_φ̄(test)=2.2207e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.039e+03  V=3.446e+02  Dw=2.017e+03  g=3.032e+03  sigma=3.394e+02  total=7.772e+03
+  subnet MSE  M=1.154e+00  V=1.926e+01  Dw=8.052e-02  g=2.942e-01
+[step    950]
+  train: −ELBO=1.9704e+05  NLL=1.9601e+05  NLL_R=5.1446e+04  NLL_ω=1.4456e+05  MSE_R=3.6663e-01  MSE_ω=8.2258e-01
+  test : −ELBO=7.1726e+04  NLL=7.1491e+04  NLL_R=4.3335e+02  NLL_ω=7.1057e+04  MSE_R=3.2063e-03  MSE_ω=4.0487e-01
+  sigma: σ_R=1.8874e-03  σ_ω=1.6866e-03  β=0.0000e+00
+  PL   : train=1.0376e+03  test=2.3524e+02  σ_φ̄(train)=2.4020e-02  σ_φ̄(test)=2.1056e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.039e+03  V=3.450e+02  Dw=2.018e+03  g=3.033e+03  sigma=3.396e+02  total=7.775e+03
+  subnet MSE  M=1.137e+00  V=1.919e+01  Dw=8.594e-02  g=2.911e-01
+[step   1000]
+  train: −ELBO=1.8667e+05  NLL=1.8561e+05  NLL_R=4.8463e+04  NLL_ω=1.3714e+05  MSE_R=3.6623e-01  MSE_ω=8.2118e-01
+  test : −ELBO=6.7110e+04  NLL=6.6879e+04  NLL_R=4.0166e+02  NLL_ω=6.6477e+04  MSE_R=3.1577e-03  MSE_ω=3.9840e-01
+  sigma: σ_R=1.9435e-03  σ_ω=1.7302e-03  β=0.0000e+00
+  PL   : train=1.0591e+03  test=2.3106e+02  σ_φ̄(train)=2.2846e-02  σ_φ̄(test)=2.0256e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.040e+03  V=3.453e+02  Dw=2.019e+03  g=3.033e+03  sigma=3.396e+02  total=7.777e+03
+  subnet MSE  M=1.134e+00  V=1.899e+01  Dw=7.368e-02  g=2.945e-01
+[step   1050]
+  train: −ELBO=1.7460e+05  NLL=1.7356e+05  NLL_R=4.4807e+04  NLL_ω=1.2875e+05  MSE_R=3.6559e-01  MSE_ω=8.2499e-01
+  test : −ELBO=5.9470e+04  NLL=5.9242e+04  NLL_R=3.5231e+02  NLL_ω=5.8889e+04  MSE_R=3.0064e-03  MSE_ω=3.7779e-01
+  sigma: σ_R=2.0194e-03  σ_ω=1.7898e-03  β=0.0000e+00
+  PL   : train=1.0448e+03  test=2.2819e+02  σ_φ̄(train)=2.4122e-02  σ_φ̄(test)=2.1559e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.040e+03  V=3.458e+02  Dw=2.020e+03  g=3.034e+03  sigma=3.396e+02  total=7.780e+03
+  subnet MSE  M=1.235e+00  V=1.839e+01  Dw=6.565e-02  g=2.884e-01
+[step   1100]
+  train: −ELBO=1.6197e+05  NLL=1.6092e+05  NLL_R=4.1873e+04  NLL_ω=1.1904e+05  MSE_R=3.6561e-01  MSE_ω=8.1082e-01
+  test : −ELBO=5.5180e+04  NLL=5.4949e+04  NLL_R=3.2349e+02  NLL_ω=5.4625e+04  MSE_R=2.9643e-03  MSE_ω=3.7249e-01
+  sigma: σ_R=2.0890e-03  σ_ω=1.8453e-03  β=0.0000e+00
+  PL   : train=1.0483e+03  test=2.3104e+02  σ_φ̄(train)=2.2919e-02  σ_φ̄(test)=2.0161e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.041e+03  V=3.464e+02  Dw=2.021e+03  g=3.034e+03  sigma=3.398e+02  total=7.783e+03
+  subnet MSE  M=1.217e+00  V=1.854e+01  Dw=7.596e-02  g=2.890e-01
+[step   1150]
+  train: −ELBO=1.5052e+05  NLL=1.4945e+05  NLL_R=3.9103e+04  NLL_ω=1.1035e+05  MSE_R=3.6554e-01  MSE_ω=7.9893e-01
+  test : −ELBO=5.0990e+04  NLL=5.0758e+04  NLL_R=2.9574e+02  NLL_ω=5.0462e+04  MSE_R=2.9128e-03  MSE_ω=3.6573e-01
+  sigma: σ_R=2.1615e-03  σ_ω=1.9025e-03  β=0.0000e+00
+  PL   : train=1.0627e+03  test=2.3230e+02  σ_φ̄(train)=2.1825e-02  σ_φ̄(test)=1.9308e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.042e+03  V=3.469e+02  Dw=2.023e+03  g=3.035e+03  sigma=3.398e+02  total=7.786e+03
+  subnet MSE  M=1.251e+00  V=1.852e+01  Dw=7.942e-02  g=2.854e-01
+[step   1200]
+  train: −ELBO=1.4146e+05  NLL=1.4037e+05  NLL_R=3.6645e+04  NLL_ω=1.0372e+05  MSE_R=3.6555e-01  MSE_ω=7.9604e-01
+  test : −ELBO=4.7434e+04  NLL=4.7189e+04  NLL_R=2.7234e+02  NLL_ω=4.6916e+04  MSE_R=2.8743e-03  MSE_ω=3.6055e-01
+  sigma: σ_R=2.2329e-03  σ_ω=1.9588e-03  β=0.0000e+00
+  PL   : train=1.0948e+03  test=2.4529e+02  σ_φ̄(train)=1.9092e-02  σ_φ̄(test)=1.6796e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.042e+03  V=3.474e+02  Dw=2.023e+03  g=3.036e+03  sigma=3.399e+02  total=7.789e+03
+  subnet MSE  M=1.203e+00  V=1.833e+01  Dw=7.867e-02  g=2.794e-01
+[step   1250]
+  train: −ELBO=1.3097e+05  NLL=1.2986e+05  NLL_R=3.3953e+04  NLL_ω=9.5904e+04  MSE_R=3.6539e-01  MSE_ω=7.8839e-01
+  test : −ELBO=4.2725e+04  NLL=4.2478e+04  NLL_R=2.4204e+02  NLL_ω=4.2236e+04  MSE_R=2.7739e-03  MSE_ω=3.4777e-01
+  sigma: σ_R=2.3191e-03  σ_ω=2.0272e-03  β=0.0000e+00
+  PL   : train=1.1159e+03  test=2.4666e+02  σ_φ̄(train)=1.7200e-02  σ_φ̄(test)=1.5030e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.044e+03  V=3.480e+02  Dw=2.025e+03  g=3.036e+03  sigma=3.399e+02  total=7.793e+03
+  subnet MSE  M=1.202e+00  V=1.811e+01  Dw=7.203e-02  g=2.804e-01
+[step   1300]
+  train: −ELBO=1.2217e+05  NLL=1.2111e+05  NLL_R=3.1882e+04  NLL_ω=8.9229e+04  MSE_R=3.6492e-01  MSE_ω=7.7574e-01
+  test : −ELBO=3.9067e+04  NLL=3.8849e+04  NLL_R=2.1870e+02  NLL_ω=3.8630e+04  MSE_R=2.6801e-03  MSE_ω=3.3620e-01
+  sigma: σ_R=2.3917e-03  σ_ω=2.0847e-03  β=0.0000e+00
+  PL   : train=1.0611e+03  test=2.1836e+02  σ_φ̄(train)=2.0951e-02  σ_φ̄(test)=1.8323e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.044e+03  V=3.484e+02  Dw=2.026e+03  g=3.038e+03  sigma=3.397e+02  total=7.796e+03
+  subnet MSE  M=1.207e+00  V=1.778e+01  Dw=6.563e-02  g=2.931e-01
+[step   1350]
+  train: −ELBO=1.1843e+05  NLL=1.1738e+05  NLL_R=3.0593e+04  NLL_ω=8.6786e+04  MSE_R=3.6477e-01  MSE_ω=7.8315e-01
+  test : −ELBO=3.7595e+04  NLL=3.7380e+04  NLL_R=2.0929e+02  NLL_ω=3.7171e+04  MSE_R=2.6795e-03  MSE_ω=3.3587e-01
+  sigma: σ_R=2.4410e-03  σ_ω=2.1239e-03  β=0.0000e+00
+  PL   : train=1.0476e+03  test=2.1452e+02  σ_φ̄(train)=2.1682e-02  σ_φ̄(test)=1.8953e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.045e+03  V=3.487e+02  Dw=2.026e+03  g=3.038e+03  sigma=3.397e+02  total=7.797e+03
+  subnet MSE  M=1.224e+00  V=1.764e+01  Dw=6.123e-02  g=2.953e-01
+[step   1400]
+  train: −ELBO=1.1134e+05  NLL=1.1032e+05  NLL_R=2.8851e+04  NLL_ω=8.1465e+04  MSE_R=3.6505e-01  MSE_ω=7.7636e-01
+  test : −ELBO=3.6083e+04  NLL=3.5872e+04  NLL_R=1.9854e+02  NLL_ω=3.5674e+04  MSE_R=2.7067e-03  MSE_ω=3.4048e-01
+  sigma: σ_R=2.5146e-03  σ_ω=2.1827e-03  β=0.0000e+00
+  PL   : train=1.0238e+03  test=2.1042e+02  σ_φ̄(train)=2.3682e-02  σ_φ̄(test)=2.0592e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.046e+03  V=3.492e+02  Dw=2.027e+03  g=3.039e+03  sigma=3.396e+02  total=7.800e+03
+  subnet MSE  M=1.164e+00  V=1.798e+01  Dw=5.548e-02  g=2.929e-01
+[step   1450]
+  train: −ELBO=1.0352e+05  NLL=1.0247e+05  NLL_R=2.6777e+04  NLL_ω=7.5691e+04  MSE_R=3.6510e-01  MSE_ω=7.7276e-01
+  test : −ELBO=3.3428e+04  NLL=3.3205e+04  NLL_R=1.8235e+02  NLL_ω=3.3023e+04  MSE_R=2.6946e-03  MSE_ω=3.3772e-01
+  sigma: σ_R=2.6103e-03  σ_ω=2.2591e-03  β=0.0000e+00
+  PL   : train=1.0501e+03  test=2.2295e+02  σ_φ̄(train)=2.1801e-02  σ_φ̄(test)=1.9174e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.047e+03  V=3.498e+02  Dw=2.028e+03  g=3.039e+03  sigma=3.398e+02  total=7.804e+03
+  subnet MSE  M=1.228e+00  V=1.801e+01  Dw=5.902e-02  g=2.874e-01
+[step   1500]
+  train: −ELBO=9.4576e+04  NLL=9.3535e+04  NLL_R=2.4494e+04  NLL_ω=6.9041e+04  MSE_R=3.6500e-01  MSE_ω=7.6545e-01
+  test : −ELBO=3.0686e+04  NLL=3.0460e+04  NLL_R=1.6491e+02  NLL_ω=3.0295e+04  MSE_R=2.6823e-03  MSE_ω=3.3641e-01
+  sigma: σ_R=2.7288e-03  σ_ω=2.3542e-03  β=0.0000e+00
+  PL   : train=1.0404e+03  test=2.2599e+02  σ_φ̄(train)=2.2751e-02  σ_φ̄(test)=1.9879e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.048e+03  V=3.502e+02  Dw=2.030e+03  g=3.040e+03  sigma=3.398e+02  total=7.808e+03
+  subnet MSE  M=1.235e+00  V=1.792e+01  Dw=6.445e-02  g=2.845e-01
+[step   1550]
+  train: −ELBO=8.9447e+04  NLL=8.8404e+04  NLL_R=2.2947e+04  NLL_ω=6.5458e+04  MSE_R=3.6485e-01  MSE_ω=7.7105e-01
+  test : −ELBO=2.9344e+04  NLL=2.9109e+04  NLL_R=1.5673e+02  NLL_ω=2.8952e+04  MSE_R=2.7307e-03  MSE_ω=3.4165e-01
+  sigma: σ_R=2.8186e-03  σ_ω=2.4266e-03  β=0.0000e+00
+  PL   : train=1.0429e+03  test=2.3440e+02  σ_φ̄(train)=2.3493e-02  σ_φ̄(test)=2.0665e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.048e+03  V=3.506e+02  Dw=2.031e+03  g=3.041e+03  sigma=3.398e+02  total=7.811e+03
+  subnet MSE  M=1.267e+00  V=1.768e+01  Dw=7.136e-02  g=2.817e-01
+[step   1600]
+  train: −ELBO=8.3203e+04  NLL=8.2131e+04  NLL_R=2.1341e+04  NLL_ω=6.0790e+04  MSE_R=3.6485e-01  MSE_ω=7.6683e-01
+  test : −ELBO=2.7354e+04  NLL=2.7115e+04  NLL_R=1.4482e+02  NLL_ω=2.6970e+04  MSE_R=2.7303e-03  MSE_ω=3.4081e-01
+  sigma: σ_R=2.9227e-03  σ_ω=2.5111e-03  β=0.0000e+00
+  PL   : train=1.0723e+03  test=2.3894e+02  σ_φ̄(train)=2.0299e-02  σ_φ̄(test)=1.7773e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.049e+03  V=3.511e+02  Dw=2.032e+03  g=3.042e+03  sigma=3.401e+02  total=7.814e+03
+  subnet MSE  M=1.285e+00  V=1.759e+01  Dw=7.410e-02  g=2.840e-01
+[step   1650]
+  train: −ELBO=7.8614e+04  NLL=7.7572e+04  NLL_R=1.9993e+04  NLL_ω=5.7579e+04  MSE_R=3.6487e-01  MSE_ω=7.7284e-01
+  test : −ELBO=2.6486e+04  NLL=2.6243e+04  NLL_R=1.3966e+02  NLL_ω=2.6103e+04  MSE_R=2.8179e-03  MSE_ω=3.5092e-01
+  sigma: σ_R=3.0197e-03  σ_ω=2.5902e-03  β=0.0000e+00
+  PL   : train=1.0419e+03  test=2.4267e+02  σ_φ̄(train)=2.5100e-02  σ_φ̄(test)=2.2214e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.050e+03  V=3.517e+02  Dw=2.032e+03  g=3.043e+03  sigma=3.399e+02  total=7.816e+03
+  subnet MSE  M=1.275e+00  V=1.749e+01  Dw=7.036e-02  g=2.763e-01
+[step   1700]
+  train: −ELBO=7.4341e+04  NLL=7.3343e+04  NLL_R=1.8730e+04  NLL_ω=5.4613e+04  MSE_R=3.6462e-01  MSE_ω=7.8008e-01
+  test : −ELBO=2.4976e+04  NLL=2.4749e+04  NLL_R=1.3068e+02  NLL_ω=2.4618e+04  MSE_R=2.8288e-03  MSE_ω=3.5222e-01
+  sigma: σ_R=3.1186e-03  σ_ω=2.6721e-03  β=0.0000e+00
+  PL   : train=9.9827e+02  test=2.2744e+02  σ_φ̄(train)=2.8700e-02  σ_φ̄(test)=2.5290e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.051e+03  V=3.522e+02  Dw=2.033e+03  g=3.043e+03  sigma=3.399e+02  total=7.819e+03
+  subnet MSE  M=1.245e+00  V=1.727e+01  Dw=6.339e-02  g=2.813e-01
+[step   1750]
+  train: −ELBO=6.9566e+04  NLL=6.8581e+04  NLL_R=1.7590e+04  NLL_ω=5.0992e+04  MSE_R=3.6452e-01  MSE_ω=7.7411e-01
+  test : −ELBO=2.3571e+04  NLL=2.3356e+04  NLL_R=1.2213e+02  NLL_ω=2.3234e+04  MSE_R=2.8312e-03  MSE_ω=3.5319e-01
+  sigma: σ_R=3.2177e-03  σ_ω=2.7547e-03  β=0.0000e+00
+  PL   : train=9.8441e+02  test=2.1486e+02  σ_φ̄(train)=2.8794e-02  σ_φ̄(test)=2.5452e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.051e+03  V=3.524e+02  Dw=2.033e+03  g=3.044e+03  sigma=3.402e+02  total=7.821e+03
+  subnet MSE  M=1.239e+00  V=1.730e+01  Dw=6.848e-02  g=2.877e-01
+[step   1800]
+  train: −ELBO=6.7368e+04  NLL=6.6399e+04  NLL_R=1.6842e+04  NLL_ω=4.9557e+04  MSE_R=3.6455e-01  MSE_ω=7.8497e-01
+  test : −ELBO=2.3045e+04  NLL=2.2826e+04  NLL_R=1.1916e+02  NLL_ω=2.2707e+04  MSE_R=2.8910e-03  MSE_ω=3.6013e-01
+  sigma: σ_R=3.2884e-03  σ_ω=2.8138e-03  β=0.0000e+00
+  PL   : train=9.6932e+02  test=2.1890e+02  σ_φ̄(train)=3.1271e-02  σ_φ̄(test)=2.7706e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.051e+03  V=3.528e+02  Dw=2.034e+03  g=3.044e+03  sigma=3.401e+02  total=7.822e+03
+  subnet MSE  M=1.246e+00  V=1.713e+01  Dw=7.204e-02  g=2.833e-01
+[step   1850]
+  train: −ELBO=6.3233e+04  NLL=6.2250e+04  NLL_R=1.5989e+04  NLL_ω=4.6261e+04  MSE_R=3.6475e-01  MSE_ω=7.7139e-01
+  test : −ELBO=2.1639e+04  NLL=2.1417e+04  NLL_R=1.1112e+02  NLL_ω=2.1305e+04  MSE_R=2.8637e-03  MSE_ω=3.5597e-01
+  sigma: σ_R=3.3758e-03  σ_ω=2.8870e-03  β=0.0000e+00
+  PL   : train=9.8295e+02  test=2.2202e+02  σ_φ̄(train)=2.9734e-02  σ_φ̄(test)=2.6542e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.052e+03  V=3.531e+02  Dw=2.034e+03  g=3.045e+03  sigma=3.403e+02  total=7.825e+03
+  subnet MSE  M=1.270e+00  V=1.725e+01  Dw=6.596e-02  g=2.816e-01
+[step   1900]
+  train: −ELBO=5.9312e+04  NLL=5.8324e+04  NLL_R=1.4918e+04  NLL_ω=4.3405e+04  MSE_R=3.6488e-01  MSE_ω=7.7444e-01
+  test : −ELBO=2.0692e+04  NLL=2.0469e+04  NLL_R=1.0516e+02  NLL_ω=2.0364e+04  MSE_R=2.9197e-03  MSE_ω=3.6383e-01
+  sigma: σ_R=3.4953e-03  σ_ω=2.9863e-03  β=0.0000e+00
+  PL   : train=9.8833e+02  test=2.2341e+02  σ_φ̄(train)=2.9317e-02  σ_φ̄(test)=2.6088e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.053e+03  V=3.535e+02  Dw=2.035e+03  g=3.046e+03  sigma=3.404e+02  total=7.828e+03
+  subnet MSE  M=1.260e+00  V=1.743e+01  Dw=6.361e-02  g=2.820e-01
+[step   1950]
+  train: −ELBO=5.5855e+04  NLL=5.4959e+04  NLL_R=1.3884e+04  NLL_ω=4.1075e+04  MSE_R=3.6484e-01  MSE_ω=7.8644e-01
+  test : −ELBO=1.9826e+04  NLL=1.9624e+04  NLL_R=1.0018e+02  NLL_ω=1.9524e+04  MSE_R=3.0044e-03  MSE_ω=3.7449e-01
+  sigma: σ_R=3.6229e-03  σ_ω=3.0935e-03  β=0.0000e+00
+  PL   : train=8.9654e+02  test=2.0250e+02  σ_φ̄(train)=3.9701e-02  σ_φ̄(test)=3.6474e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.055e+03  V=3.541e+02  Dw=2.036e+03  g=3.047e+03  sigma=3.403e+02  total=7.832e+03
+  subnet MSE  M=1.261e+00  V=1.749e+01  Dw=6.719e-02  g=2.800e-01
+[step   2000]
+  train: −ELBO=5.3001e+04  NLL=5.2262e+04  NLL_R=1.3156e+04  NLL_ω=3.9106e+04  MSE_R=3.6493e-01  MSE_ω=7.9005e-01
+  test : −ELBO=1.8830e+04  NLL=1.8676e+04  NLL_R=9.4694e+01  NLL_ω=1.8582e+04  MSE_R=3.0155e-03  MSE_ω=3.7593e-01
+  sigma: σ_R=3.7222e-03  σ_ω=3.1777e-03  β=0.0000e+00
+  PL   : train=7.3921e+02  test=1.5353e+02  σ_φ̄(train)=5.9374e-02  σ_φ̄(test)=5.4871e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.056e+03  V=3.545e+02  Dw=2.037e+03  g=3.048e+03  sigma=3.403e+02  total=7.835e+03
+  subnet MSE  M=1.281e+00  V=1.739e+01  Dw=7.118e-02  g=2.834e-01
+[step   2050]
+  train: −ELBO=4.8126e+04  NLL=4.7308e+04  NLL_R=1.2176e+04  NLL_ω=3.5132e+04  MSE_R=3.6486e-01  MSE_ω=7.6630e-01
+  test : −ELBO=1.6821e+04  NLL=1.6647e+04  NLL_R=8.2789e+01  NLL_ω=1.6564e+04  MSE_R=2.9000e-03  MSE_ω=3.6219e-01
+  sigma: σ_R=3.8685e-03  σ_ω=3.3018e-03  β=0.0000e+00
+  PL   : train=8.1841e+02  test=1.7454e+02  σ_φ̄(train)=4.6220e-02  σ_φ̄(test)=4.0977e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.057e+03  V=3.550e+02  Dw=2.038e+03  g=3.049e+03  sigma=3.407e+02  total=7.839e+03
+  subnet MSE  M=1.270e+00  V=1.743e+01  Dw=7.072e-02  g=2.850e-01
+[step   2100]
+  train: −ELBO=4.4850e+04  NLL=4.3898e+04  NLL_R=1.1245e+04  NLL_ω=3.2653e+04  MSE_R=3.6469e-01  MSE_ω=7.6908e-01
+  test : −ELBO=1.5553e+04  NLL=1.5336e+04  NLL_R=7.5431e+01  NLL_ω=1.5261e+04  MSE_R=2.8949e-03  MSE_ω=3.6022e-01
+  sigma: σ_R=4.0244e-03  σ_ω=3.4310e-03  β=0.0000e+00
+  PL   : train=9.5194e+02  test=2.1731e+02  σ_φ̄(train)=3.3310e-02  σ_φ̄(test)=3.0064e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.058e+03  V=3.554e+02  Dw=2.039e+03  g=3.050e+03  sigma=3.411e+02  total=7.843e+03
+  subnet MSE  M=1.301e+00  V=1.722e+01  Dw=7.336e-02  g=2.770e-01
+[step   2150]
+  train: −ELBO=4.3418e+04  NLL=4.2456e+04  NLL_R=1.0636e+04  NLL_ω=3.1820e+04  MSE_R=3.6480e-01  MSE_ω=7.9221e-01
+  test : −ELBO=1.5684e+04  NLL=1.5453e+04  NLL_R=7.6430e+01  NLL_ω=1.5377e+04  MSE_R=3.0902e-03  MSE_ω=3.8336e-01
+  sigma: σ_R=4.1385e-03  σ_ω=3.5274e-03  β=0.0000e+00
+  PL   : train=9.6266e+02  test=2.3117e+02  σ_φ̄(train)=3.4117e-02  σ_φ̄(test)=3.0851e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.059e+03  V=3.559e+02  Dw=2.038e+03  g=3.052e+03  sigma=3.411e+02  total=7.846e+03
+  subnet MSE  M=1.282e+00  V=1.705e+01  Dw=6.443e-02  g=2.745e-01
+[step   2200]
+  train: −ELBO=4.0927e+04  NLL=4.0047e+04  NLL_R=1.0090e+04  NLL_ω=2.9958e+04  MSE_R=3.6482e-01  MSE_ω=7.8671e-01
+  test : −ELBO=1.4481e+04  NLL=1.4277e+04  NLL_R=6.9890e+01  NLL_ω=1.4207e+04  MSE_R=3.0217e-03  MSE_ω=3.7404e-01
+  sigma: σ_R=4.2491e-03  σ_ω=3.6227e-03  β=0.0000e+00
+  PL   : train=8.7945e+02  test=2.0399e+02  σ_φ̄(train)=4.0800e-02  σ_φ̄(test)=3.7369e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.060e+03  V=3.564e+02  Dw=2.039e+03  g=3.053e+03  sigma=3.409e+02  total=7.849e+03
+  subnet MSE  M=1.250e+00  V=1.704e+01  Dw=6.282e-02  g=2.768e-01
+[step   2250]
+  train: −ELBO=3.7327e+04  NLL=3.6422e+04  NLL_R=9.3700e+03  NLL_ω=2.7052e+04  MSE_R=3.6441e-01  MSE_ω=7.6347e-01
+  test : −ELBO=1.2609e+04  NLL=1.2395e+04  NLL_R=5.8633e+01  NLL_ω=1.2337e+04  MSE_R=2.8052e-03  MSE_ω=3.4878e-01
+  sigma: σ_R=4.4065e-03  σ_ω=3.7555e-03  β=0.0000e+00
+  PL   : train=9.0502e+02  test=2.1365e+02  σ_φ̄(train)=3.6203e-02  σ_φ̄(test)=3.2864e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.061e+03  V=3.569e+02  Dw=2.039e+03  g=3.054e+03  sigma=3.410e+02  total=7.852e+03
+  subnet MSE  M=1.189e+00  V=1.690e+01  Dw=6.731e-02  g=2.870e-01
+[step   2300]
+  train: −ELBO=3.5247e+04  NLL=3.4360e+04  NLL_R=8.8355e+03  NLL_ω=2.5525e+04  MSE_R=3.6429e-01  MSE_ω=7.6256e-01
+  test : −ELBO=1.1743e+04  NLL=1.1559e+04  NLL_R=5.3597e+01  NLL_ω=1.1505e+04  MSE_R=2.7624e-03  MSE_ω=3.4432e-01
+  sigma: σ_R=4.5370e-03  σ_ω=3.8639e-03  β=0.0000e+00
+  PL   : train=8.8693e+02  test=1.8458e+02  σ_φ̄(train)=3.7441e-02  σ_φ̄(test)=3.4328e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.063e+03  V=3.573e+02  Dw=2.040e+03  g=3.055e+03  sigma=3.410e+02  total=7.855e+03
+  subnet MSE  M=1.184e+00  V=1.664e+01  Dw=6.765e-02  g=2.949e-01
+[step   2350]
+  train: −ELBO=3.2595e+04  NLL=3.1736e+04  NLL_R=8.2724e+03  NLL_ω=2.3464e+04  MSE_R=3.6440e-01  MSE_ω=7.4747e-01
+  test : −ELBO=1.0820e+04  NLL=1.0641e+04  NLL_R=4.8392e+01  NLL_ω=1.0593e+04  MSE_R=2.7188e-03  MSE_ω=3.3820e-01
+  sigma: σ_R=4.6893e-03  σ_ω=3.9898e-03  β=0.0000e+00
+  PL   : train=8.5884e+02  test=1.7858e+02  σ_φ̄(train)=3.9476e-02  σ_φ̄(test)=3.6416e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.064e+03  V=3.577e+02  Dw=2.041e+03  g=3.055e+03  sigma=3.410e+02  total=7.859e+03
+  subnet MSE  M=1.214e+00  V=1.689e+01  Dw=6.851e-02  g=2.939e-01
+[step   2400]
+  train: −ELBO=3.0611e+04  NLL=2.9796e+04  NLL_R=7.7079e+03  NLL_ω=2.2088e+04  MSE_R=3.6433e-01  MSE_ω=7.5317e-01
+  test : −ELBO=1.0279e+04  NLL=1.0103e+04  NLL_R=4.5380e+01  NLL_ω=1.0058e+04  MSE_R=2.7682e-03  MSE_ω=3.4356e-01
+  sigma: σ_R=4.8573e-03  σ_ω=4.1278e-03  β=0.0000e+00
+  PL   : train=8.1505e+02  test=1.7549e+02  σ_φ̄(train)=4.4815e-02  σ_φ̄(test)=4.0788e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.065e+03  V=3.581e+02  Dw=2.042e+03  g=3.056e+03  sigma=3.411e+02  total=7.862e+03
+  subnet MSE  M=1.276e+00  V=1.661e+01  Dw=6.571e-02  g=2.891e-01
+[step   2450]
+  train: −ELBO=2.9241e+04  NLL=2.8378e+04  NLL_R=7.3258e+03  NLL_ω=2.1052e+04  MSE_R=3.6407e-01  MSE_ω=7.5383e-01
+  test : −ELBO=1.0011e+04  NLL=9.8182e+03  NLL_R=4.3899e+01  NLL_ω=9.7743e+03  MSE_R=2.8353e-03  MSE_ω=3.5090e-01
+  sigma: σ_R=4.9804e-03  σ_ω=4.2299e-03  β=0.0000e+00
+  PL   : train=8.6315e+02  test=1.9309e+02  σ_φ̄(train)=4.1628e-02  σ_φ̄(test)=3.8518e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.066e+03  V=3.586e+02  Dw=2.043e+03  g=3.057e+03  sigma=3.413e+02  total=7.865e+03
+  subnet MSE  M=1.260e+00  V=1.653e+01  Dw=6.575e-02  g=2.840e-01
+[step   2500]
+  train: −ELBO=2.7486e+04  NLL=2.6811e+04  NLL_R=6.8883e+03  NLL_ω=1.9923e+04  MSE_R=3.6412e-01  MSE_ω=7.5760e-01
+  test : −ELBO=9.3097e+03  NLL=9.1727e+03  NLL_R=4.0087e+01  NLL_ω=9.1326e+03  MSE_R=2.8061e-03  MSE_ω=3.4782e-01
+  sigma: σ_R=5.1362e-03  σ_ω=4.3589e-03  β=0.0000e+00
+  PL   : train=6.7467e+02  test=1.3696e+02  σ_φ̄(train)=6.1186e-02  σ_φ̄(test)=5.7570e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.067e+03  V=3.589e+02  Dw=2.043e+03  g=3.058e+03  sigma=3.412e+02  total=7.868e+03
+  subnet MSE  M=1.213e+00  V=1.643e+01  Dw=6.650e-02  g=2.921e-01
+[step   2550]
+  train: −ELBO=2.6778e+04  NLL=2.6126e+04  NLL_R=6.6507e+03  NLL_ω=1.9475e+04  MSE_R=3.6435e-01  MSE_ω=7.6716e-01
+  test : −ELBO=9.2809e+03  NLL=9.1430e+03  NLL_R=3.9876e+01  NLL_ω=9.1031e+03  MSE_R=2.8944e-03  MSE_ω=3.5926e-01
+  sigma: σ_R=5.2286e-03  σ_ω=4.4364e-03  β=0.0000e+00
+  PL   : train=6.5154e+02  test=1.3793e+02  σ_φ̄(train)=6.3058e-02  σ_φ̄(test)=5.8328e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.067e+03  V=3.591e+02  Dw=2.044e+03  g=3.059e+03  sigma=3.414e+02  total=7.870e+03
+  subnet MSE  M=1.205e+00  V=1.650e+01  Dw=6.757e-02  g=2.885e-01
+[step   2600]
+  train: −ELBO=2.5959e+04  NLL=2.5431e+04  NLL_R=6.3250e+03  NLL_ω=1.9106e+04  MSE_R=3.6478e-01  MSE_ω=7.9218e-01
+  test : −ELBO=9.3289e+03  NLL=9.2233e+03  NLL_R=4.0521e+01  NLL_ω=9.1828e+03  MSE_R=3.0799e-03  MSE_ω=3.8150e-01
+  sigma: σ_R=5.3645e-03  σ_ω=4.5515e-03  β=0.0000e+00
+  PL   : train=5.2828e+02  test=1.0558e+02  σ_φ̄(train)=8.0482e-02  σ_φ̄(test)=7.5569e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.068e+03  V=3.595e+02  Dw=2.045e+03  g=3.059e+03  sigma=3.414e+02  total=7.873e+03
+  subnet MSE  M=1.184e+00  V=1.663e+01  Dw=7.226e-02  g=2.905e-01
+[step   2650]
+  train: −ELBO=2.4117e+04  NLL=2.3588e+04  NLL_R=5.9332e+03  NLL_ω=1.7655e+04  MSE_R=3.6477e-01  MSE_ω=7.8116e-01
+  test : −ELBO=8.6836e+03  NLL=8.5789e+03  NLL_R=3.6873e+01  NLL_ω=8.5420e+03  MSE_R=3.0539e-03  MSE_ω=3.7886e-01
+  sigma: σ_R=5.5384e-03  σ_ω=4.7017e-03  β=0.0000e+00
+  PL   : train=5.2838e+02  test=1.0464e+02  σ_φ̄(train)=7.8931e-02  σ_φ̄(test)=7.4034e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.070e+03  V=3.598e+02  Dw=2.046e+03  g=3.060e+03  sigma=3.415e+02  total=7.876e+03
+  subnet MSE  M=1.223e+00  V=1.670e+01  Dw=7.537e-02  g=2.981e-01
+[step   2700]
+  train: −ELBO=2.1878e+04  NLL=2.1291e+04  NLL_R=5.4563e+03  NLL_ω=1.5834e+04  MSE_R=3.6456e-01  MSE_ω=7.6138e-01
+  test : −ELBO=7.4919e+03  NLL=7.3729e+03  NLL_R=3.0138e+01  NLL_ω=7.3428e+03  MSE_R=2.8596e-03  MSE_ω=3.5386e-01
+  sigma: σ_R=5.7732e-03  σ_ω=4.9012e-03  β=0.0000e+00
+  PL   : train=5.8704e+02  test=1.1900e+02  σ_φ̄(train)=6.9045e-02  σ_φ̄(test)=6.4566e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.071e+03  V=3.602e+02  Dw=2.047e+03  g=3.061e+03  sigma=3.419e+02  total=7.881e+03
+  subnet MSE  M=1.294e+00  V=1.670e+01  Dw=6.891e-02  g=2.989e-01
+[step   2750]
+  train: −ELBO=2.0205e+04  NLL=1.9647e+04  NLL_R=4.9847e+03  NLL_ω=1.4662e+04  MSE_R=3.6456e-01  MSE_ω=7.7104e-01
+  test : −ELBO=7.0101e+03  NLL=6.8947e+03  NLL_R=2.7545e+01  NLL_ω=6.8671e+03  MSE_R=2.9313e-03  MSE_ω=3.6208e-01
+  sigma: σ_R=6.0395e-03  σ_ω=5.1254e-03  β=0.0000e+00
+  PL   : train=5.5769e+02  test=1.1549e+02  σ_φ̄(train)=7.3368e-02  σ_φ̄(test)=6.8185e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.073e+03  V=3.607e+02  Dw=2.048e+03  g=3.063e+03  sigma=3.421e+02  total=7.886e+03
+  subnet MSE  M=1.260e+00  V=1.672e+01  Dw=6.934e-02  g=2.938e-01
+[step   2800]
+  train: −ELBO=1.8691e+04  NLL=1.8191e+04  NLL_R=4.6689e+03  NLL_ω=1.3522e+04  MSE_R=3.6466e-01  MSE_ω=7.5893e-01
+  test : −ELBO=6.5370e+03  NLL=6.4376e+03  NLL_R=2.4871e+01  NLL_ω=6.4127e+03  MSE_R=2.9123e-03  MSE_ω=3.6073e-01
+  sigma: σ_R=6.2408e-03  σ_ω=5.2949e-03  β=0.0000e+00
+  PL   : train=5.0040e+02  test=9.9389e+01  σ_φ̄(train)=8.0713e-02  σ_φ̄(test)=7.6614e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.074e+03  V=3.610e+02  Dw=2.049e+03  g=3.064e+03  sigma=3.423e+02  total=7.891e+03
+  subnet MSE  M=1.231e+00  V=1.681e+01  Dw=7.342e-02  g=2.957e-01
+[step   2850]
+  train: −ELBO=1.7739e+04  NLL=1.7279e+04  NLL_R=4.3971e+03  NLL_ω=1.2882e+04  MSE_R=3.6495e-01  MSE_ω=7.6757e-01
+  test : −ELBO=6.2967e+03  NLL=6.2064e+03  NLL_R=2.3606e+01  NLL_ω=6.1828e+03  MSE_R=2.9815e-03  MSE_ω=3.6919e-01
+  sigma: σ_R=6.4329e-03  σ_ω=5.4556e-03  β=0.0000e+00
+  PL   : train=4.6050e+02  test=9.0274e+01  σ_φ̄(train)=8.7421e-02  σ_φ̄(test)=8.3082e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.076e+03  V=3.613e+02  Dw=2.050e+03  g=3.065e+03  sigma=3.425e+02  total=7.895e+03
+  subnet MSE  M=1.250e+00  V=1.701e+01  Dw=7.275e-02  g=2.941e-01
+[step   2900]
+  train: −ELBO=1.7778e+04  NLL=1.7338e+04  NLL_R=4.1353e+03  NLL_ω=1.3203e+04  MSE_R=3.6615e-01  MSE_ω=8.4004e-01
+  test : −ELBO=6.4775e+03  NLL=6.3885e+03  NLL_R=2.5178e+01  NLL_ω=6.3633e+03  MSE_R=3.3123e-03  MSE_ω=4.0596e-01
+  sigma: σ_R=6.6439e-03  σ_ω=5.6375e-03  β=0.0000e+00
+  PL   : train=4.3959e+02  test=8.8995e+01  σ_φ̄(train)=9.4562e-02  σ_φ̄(test)=9.0128e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.078e+03  V=3.617e+02  Dw=2.052e+03  g=3.067e+03  sigma=3.428e+02  total=7.900e+03
+  subnet MSE  M=1.232e+00  V=1.703e+01  Dw=1.003e-01  g=2.913e-01
+[step   2950]
+  train: −ELBO=1.6144e+04  NLL=1.5613e+04  NLL_R=3.8074e+03  NLL_ω=1.1805e+04  MSE_R=3.6580e-01  MSE_ω=8.1937e-01
+  test : −ELBO=5.7004e+03  NLL=5.5878e+03  NLL_R=2.0708e+01  NLL_ω=5.5671e+03  MSE_R=3.1532e-03  MSE_ω=3.8755e-01
+  sigma: σ_R=6.9199e-03  σ_ω=5.8878e-03  β=0.0000e+00
+  PL   : train=5.3180e+02  test=1.1263e+02  σ_φ̄(train)=7.9154e-02  σ_φ̄(test)=7.5142e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.080e+03  V=3.622e+02  Dw=2.053e+03  g=3.068e+03  sigma=3.433e+02  total=7.907e+03
+  subnet MSE  M=1.241e+00  V=1.688e+01  Dw=8.984e-02  g=2.915e-01
+[step   3000]
+  train: −ELBO=1.5470e+04  NLL=1.5033e+04  NLL_R=3.5795e+03  NLL_ω=1.1453e+04  MSE_R=3.6644e-01  MSE_ω=8.4959e-01
+  test : −ELBO=5.6271e+03  NLL=5.5388e+03  NLL_R=2.0656e+01  NLL_ω=5.5182e+03  MSE_R=3.3433e-03  MSE_ω=4.1044e-01
+  sigma: σ_R=7.1424e-03  σ_ω=6.0868e-03  β=0.0000e+00
+  PL   : train=4.3767e+02  test=8.8323e+01  σ_φ̄(train)=9.6090e-02  σ_φ̄(test)=9.2698e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.082e+03  V=3.626e+02  Dw=2.054e+03  g=3.069e+03  sigma=3.434e+02  total=7.911e+03
+  subnet MSE  M=1.271e+00  V=1.696e+01  Dw=9.728e-02  g=2.895e-01
+[step   3050]
+  train: −ELBO=1.4725e+04  NLL=1.4209e+04  NLL_R=3.3583e+03  NLL_ω=1.0850e+04  MSE_R=3.6662e-01  MSE_ω=8.6268e-01
+  test : −ELBO=5.1683e+03  NLL=5.0626e+03  NLL_R=1.8201e+01  NLL_ω=5.0444e+03  MSE_R=3.2848e-03  MSE_ω=4.0197e-01
+  sigma: σ_R=7.3749e-03  σ_ω=6.3015e-03  β=0.0000e+00
+  PL   : train=5.1690e+02  test=1.0569e+02  σ_φ̄(train)=8.4682e-02  σ_φ̄(test)=8.0900e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.083e+03  V=3.630e+02  Dw=2.056e+03  g=3.071e+03  sigma=3.438e+02  total=7.916e+03
+  subnet MSE  M=1.209e+00  V=1.687e+01  Dw=1.055e-01  g=2.928e-01
+[step   3100]
+  train: −ELBO=1.4677e+04  NLL=1.4189e+04  NLL_R=3.2090e+03  NLL_ω=1.0980e+04  MSE_R=3.6790e-01  MSE_ω=9.2119e-01
+  test : −ELBO=5.4236e+03  NLL=5.3217e+03  NLL_R=2.0560e+01  NLL_ω=5.3012e+03  MSE_R=3.7114e-03  MSE_ω=4.4581e-01
+  sigma: σ_R=7.5573e-03  σ_ω=6.4730e-03  β=0.0000e+00
+  PL   : train=4.8731e+02  test=1.0187e+02  σ_φ̄(train)=9.6499e-02  σ_φ̄(test)=9.2702e-02  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.085e+03  V=3.633e+02  Dw=2.056e+03  g=3.072e+03  sigma=3.442e+02  total=7.920e+03
+  subnet MSE  M=1.217e+00  V=1.706e+01  Dw=1.470e-01  g=2.939e-01
+[step   3150]
+  train: −ELBO=1.4168e+04  NLL=1.3691e+04  NLL_R=3.0415e+03  NLL_ω=1.0649e+04  MSE_R=3.6859e-01  MSE_ω=9.5133e-01
+  test : −ELBO=5.1863e+03  NLL=5.0964e+03  NLL_R=2.0117e+01  NLL_ω=5.0763e+03  MSE_R=3.8585e-03  MSE_ω=4.5456e-01
+  sigma: σ_R=7.7691e-03  σ_ω=6.6795e-03  β=0.0000e+00
+  PL   : train=4.7763e+02  test=8.9888e+01  σ_φ̄(train)=1.1206e-01  σ_φ̄(test)=1.0781e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.086e+03  V=3.634e+02  Dw=2.057e+03  g=3.073e+03  sigma=3.443e+02  total=7.924e+03
+  subnet MSE  M=1.225e+00  V=1.709e+01  Dw=2.226e-01  g=2.921e-01
+[step   3200]
+  train: −ELBO=1.3359e+04  NLL=1.2872e+04  NLL_R=2.8369e+03  NLL_ω=1.0035e+04  MSE_R=3.6878e-01  MSE_ω=9.7289e-01
+  test : −ELBO=4.8951e+03  NLL=4.8007e+03  NLL_R=1.9455e+01  NLL_ω=4.7812e+03  MSE_R=4.0408e-03  MSE_ω=4.6498e-01
+  sigma: σ_R=8.0455e-03  σ_ω=6.9581e-03  β=0.0000e+00
+  PL   : train=4.8653e+02  test=9.4388e+01  σ_φ̄(train)=1.1480e-01  σ_φ̄(test)=1.1018e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.086e+03  V=3.638e+02  Dw=2.059e+03  g=3.074e+03  sigma=3.447e+02  total=7.928e+03
+  subnet MSE  M=1.283e+00  V=1.683e+01  Dw=2.695e-01  g=2.977e-01
+[step   3250]
+  train: −ELBO=1.2454e+04  NLL=1.2064e+04  NLL_R=2.6613e+03  NLL_ω=9.4029e+03  MSE_R=3.6916e-01  MSE_ω=9.8157e-01
+  test : −ELBO=4.5546e+03  NLL=4.4822e+03  NLL_R=1.7534e+01  NLL_ω=4.4647e+03  MSE_R=4.0296e-03  MSE_ω=4.6727e-01
+  sigma: σ_R=8.3100e-03  σ_ω=7.2200e-03  β=0.0000e+00
+  PL   : train=3.8974e+02  test=7.2328e+01  σ_φ̄(train)=1.2820e-01  σ_φ̄(test)=1.2139e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.088e+03  V=3.642e+02  Dw=2.061e+03  g=3.075e+03  sigma=3.451e+02  total=7.933e+03
+  subnet MSE  M=1.221e+00  V=1.678e+01  Dw=2.449e-01  g=2.974e-01
+[step   3300]
+  train: −ELBO=1.1971e+04  NLL=1.1561e+04  NLL_R=2.5329e+03  NLL_ω=9.0281e+03  MSE_R=3.6919e-01  MSE_ω=9.9721e-01
+  test : −ELBO=4.3896e+03  NLL=4.3091e+03  NLL_R=1.6833e+01  NLL_ω=4.2922e+03  MSE_R=4.1213e-03  MSE_ω=4.7542e-01
+  sigma: σ_R=8.5175e-03  σ_ω=7.4266e-03  β=0.0000e+00
+  PL   : train=4.1003e+02  test=8.0572e+01  σ_φ̄(train)=1.2790e-01  σ_φ̄(test)=1.2053e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.089e+03  V=3.645e+02  Dw=2.062e+03  g=3.076e+03  sigma=3.455e+02  total=7.937e+03
+  subnet MSE  M=1.247e+00  V=1.667e+01  Dw=2.866e-01  g=2.827e-01
+[step   3350]
+  train: −ELBO=1.1752e+04  NLL=1.1258e+04  NLL_R=2.3899e+03  NLL_ω=8.8684e+03  MSE_R=3.7034e-01  MSE_ω=1.0517e+00
+  test : −ELBO=4.7072e+03  NLL=4.5953e+03  NLL_R=1.9694e+01  NLL_ω=4.5756e+03  MSE_R=4.8108e-03  MSE_ω=5.4440e-01
+  sigma: σ_R=8.7813e-03  σ_ω=7.6951e-03  β=0.0000e+00
+  PL   : train=4.9362e+02  test=1.1187e+02  σ_φ̄(train)=1.2116e-01  σ_φ̄(test)=1.1397e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.090e+03  V=3.647e+02  Dw=2.063e+03  g=3.078e+03  sigma=3.457e+02  total=7.942e+03
+  subnet MSE  M=1.271e+00  V=1.695e+01  Dw=3.861e-01  g=2.819e-01
+[step   3400]
+  train: −ELBO=1.0668e+04  NLL=1.0343e+04  NLL_R=2.2246e+03  NLL_ω=8.1182e+03  MSE_R=3.7000e-01  MSE_ω=1.0462e+00
+  test : −ELBO=4.2254e+03  NLL=4.1580e+03  NLL_R=1.6779e+01  NLL_ω=4.1412e+03  MSE_R=4.6630e-03  MSE_ω=5.3577e-01
+  sigma: σ_R=9.0961e-03  σ_ω=8.0215e-03  β=0.0000e+00
+  PL   : train=3.2567e+02  test=6.7466e+01  σ_φ̄(train)=1.4489e-01  σ_φ̄(test)=1.3563e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.091e+03  V=3.651e+02  Dw=2.065e+03  g=3.079e+03  sigma=3.460e+02  total=7.946e+03
+  subnet MSE  M=1.274e+00  V=1.679e+01  Dw=3.652e-01  g=2.893e-01
+[step   3450]
+  train: −ELBO=9.4666e+03  NLL=9.0648e+03  NLL_R=2.0044e+03  NLL_ω=7.0604e+03  MSE_R=3.6978e-01  MSE_ω=1.0230e+00
+  test : −ELBO=3.5753e+03  NLL=3.4912e+03  NLL_R=1.2962e+01  NLL_ω=3.4782e+03  MSE_R=4.4367e-03  MSE_ω=5.0568e-01
+  sigma: σ_R=9.5775e-03  σ_ω=8.5048e-03  β=0.0000e+00
+  PL   : train=4.0176e+02  test=8.4053e+01  σ_φ̄(train)=1.2510e-01  σ_φ̄(test)=1.1484e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.093e+03  V=3.656e+02  Dw=2.066e+03  g=3.081e+03  sigma=3.467e+02  total=7.953e+03
+  subnet MSE  M=1.233e+00  V=1.656e+01  Dw=3.505e-01  g=2.956e-01
+[step   3500]
+  train: −ELBO=8.5267e+03  NLL=8.2744e+03  NLL_R=1.8444e+03  NLL_ω=6.4300e+03  MSE_R=3.6885e-01  MSE_ω=1.0170e+00
+  test : −ELBO=3.0871e+03  NLL=3.0405e+03  NLL_R=9.7562e+00  NLL_ω=3.0307e+03  MSE_R=4.1432e-03  MSE_ω=4.8080e-01
+  sigma: σ_R=9.9696e-03  σ_ω=8.8850e-03  β=0.0000e+00
+  PL   : train=2.5227e+02  test=4.6641e+01  σ_φ̄(train)=1.5462e-01  σ_φ̄(test)=1.4472e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.094e+03  V=3.661e+02  Dw=2.067e+03  g=3.083e+03  sigma=3.472e+02  total=7.958e+03
+  subnet MSE  M=1.220e+00  V=1.601e+01  Dw=2.627e-01  g=2.979e-01
+[step   3550]
+  train: −ELBO=8.3330e+03  NLL=8.0447e+03  NLL_R=1.7484e+03  NLL_ω=6.2962e+03  MSE_R=3.6944e-01  MSE_ω=1.0575e+00
+  test : −ELBO=3.1797e+03  NLL=3.1197e+03  NLL_R=1.0994e+01  NLL_ω=3.1087e+03  MSE_R=4.6227e-03  MSE_ω=5.2408e-01
+  sigma: σ_R=1.0246e-02  σ_ω=9.1556e-03  β=0.0000e+00
+  PL   : train=2.8831e+02  test=6.0025e+01  σ_φ̄(train)=1.5345e-01  σ_φ̄(test)=1.4183e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.095e+03  V=3.664e+02  Dw=2.069e+03  g=3.084e+03  sigma=3.474e+02  total=7.962e+03
+  subnet MSE  M=1.199e+00  V=1.588e+01  Dw=4.262e-01  g=2.949e-01
+[step   3600]
+  train: −ELBO=7.4121e+03  NLL=7.1535e+03  NLL_R=1.6101e+03  NLL_ω=5.5434e+03  MSE_R=3.6974e-01  MSE_ω=1.0189e+00
+  test : −ELBO=2.7330e+03  NLL=2.6833e+03  NLL_R=8.0852e+00  NLL_ω=2.6752e+03  MSE_R=4.3276e-03  MSE_ω=4.9355e-01
+  sigma: σ_R=1.0679e-02  σ_ω=9.5770e-03  β=0.0000e+00
+  PL   : train=2.5866e+02  test=4.9730e+01  σ_φ̄(train)=1.6099e-01  σ_φ̄(test)=1.5085e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.096e+03  V=3.669e+02  Dw=2.071e+03  g=3.085e+03  sigma=3.477e+02  total=7.966e+03
+  subnet MSE  M=1.213e+00  V=1.624e+01  Dw=4.045e-01  g=2.924e-01
+[step   3650]
+  train: −ELBO=6.6566e+03  NLL=6.3722e+03  NLL_R=1.4744e+03  NLL_ω=4.8978e+03  MSE_R=3.6888e-01  MSE_ω=9.8431e-01
+  test : −ELBO=2.3434e+03  NLL=2.2887e+03  NLL_R=5.2336e+00  NLL_ω=2.2835e+03  MSE_R=3.9701e-03  MSE_ω=4.6062e-01
+  sigma: σ_R=1.1144e-02  σ_ω=1.0013e-02  β=0.0000e+00
+  PL   : train=2.8440e+02  test=5.4740e+01  σ_φ̄(train)=1.4487e-01  σ_φ̄(test)=1.3520e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.097e+03  V=3.675e+02  Dw=2.071e+03  g=3.086e+03  sigma=3.483e+02  total=7.970e+03
+  subnet MSE  M=1.180e+00  V=1.610e+01  Dw=2.863e-01  g=2.902e-01
+[step   3700]
+  train: −ELBO=6.2066e+03  NLL=5.9342e+03  NLL_R=1.3518e+03  NLL_ω=4.5825e+03  MSE_R=3.6924e-01  MSE_ω=1.0068e+00
+  test : −ELBO=2.3127e+03  NLL=2.2562e+03  NLL_R=5.5024e+00  NLL_ω=2.2507e+03  MSE_R=4.3732e-03  MSE_ω=4.9675e-01
+  sigma: σ_R=1.1641e-02  σ_ω=1.0469e-02  β=0.0000e+00
+  PL   : train=2.7233e+02  test=5.6443e+01  σ_φ̄(train)=1.5685e-01  σ_φ̄(test)=1.4704e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.099e+03  V=3.679e+02  Dw=2.073e+03  g=3.087e+03  sigma=3.488e+02  total=7.975e+03
+  subnet MSE  M=1.244e+00  V=1.633e+01  Dw=5.256e-01  g=2.885e-01
+[step   3750]
+  train: −ELBO=5.7072e+03  NLL=5.4358e+03  NLL_R=1.2443e+03  NLL_ω=4.1916e+03  MSE_R=3.6922e-01  MSE_ω=1.0019e+00
+  test : −ELBO=2.1609e+03  NLL=2.1047e+03  NLL_R=4.5651e+00  NLL_ω=2.1001e+03  MSE_R=4.4344e-03  MSE_ω=5.0420e-01
+  sigma: σ_R=1.2130e-02  σ_ω=1.0918e-02  β=0.0000e+00
+  PL   : train=2.7143e+02  test=5.6227e+01  σ_φ̄(train)=1.5570e-01  σ_φ̄(test)=1.4590e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.100e+03  V=3.682e+02  Dw=2.073e+03  g=3.089e+03  sigma=3.494e+02  total=7.980e+03
+  subnet MSE  M=1.201e+00  V=1.634e+01  Dw=5.316e-01  g=2.940e-01
+[step   3800]
+  train: −ELBO=5.3365e+03  NLL=5.1105e+03  NLL_R=1.1503e+03  NLL_ω=3.9602e+03  MSE_R=3.6978e-01  MSE_ω=1.0275e+00
+  test : −ELBO=2.1414e+03  NLL=2.0943e+03  NLL_R=4.5977e+00  NLL_ω=2.0897e+03  MSE_R=4.7732e-03  MSE_ω=5.4452e-01
+  sigma: σ_R=1.2621e-02  σ_ω=1.1375e-02  β=0.0000e+00
+  PL   : train=2.2597e+02  test=4.7166e+01  σ_φ̄(train)=1.7318e-01  σ_φ̄(test)=1.6346e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.101e+03  V=3.685e+02  Dw=2.075e+03  g=3.090e+03  sigma=3.499e+02  total=7.984e+03
+  subnet MSE  M=1.160e+00  V=1.644e+01  Dw=5.755e-01  g=2.927e-01
+[step   3850]
+  train: −ELBO=4.9819e+03  NLL=4.7619e+03  NLL_R=1.0655e+03  NLL_ω=3.6964e+03  MSE_R=3.6998e-01  MSE_ω=1.0384e+00
+  test : −ELBO=2.0651e+03  NLL=2.0168e+03  NLL_R=4.2962e+00  NLL_ω=2.0126e+03  MSE_R=5.0048e-03  MSE_ω=5.6721e-01
+  sigma: σ_R=1.3113e-02  σ_ω=1.1835e-02  β=0.0000e+00
+  PL   : train=2.1999e+02  test=4.8299e+01  σ_φ̄(train)=1.8081e-01  σ_φ̄(test)=1.7077e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.102e+03  V=3.689e+02  Dw=2.077e+03  g=3.091e+03  sigma=3.503e+02  total=7.989e+03
+  subnet MSE  M=1.125e+00  V=1.620e+01  Dw=7.085e-01  g=2.945e-01
+[step   3900]
+  train: −ELBO=4.6693e+03  NLL=4.4666e+03  NLL_R=1.0105e+03  NLL_ω=3.4561e+03  MSE_R=3.6997e-01  MSE_ω=1.0253e+00
+  test : −ELBO=1.8682e+03  NLL=1.8290e+03  NLL_R=2.7656e+00  NLL_ω=1.8262e+03  MSE_R=4.6916e-03  MSE_ω=5.4376e-01
+  sigma: σ_R=1.3463e-02  σ_ω=1.2161e-02  β=0.0000e+00
+  PL   : train=2.0269e+02  test=3.9167e+01  σ_φ̄(train)=1.8038e-01  σ_φ̄(test)=1.7083e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.103e+03  V=3.691e+02  Dw=2.078e+03  g=3.092e+03  sigma=3.507e+02  total=7.993e+03
+  subnet MSE  M=1.032e+00  V=1.632e+01  Dw=5.272e-01  g=2.971e-01
+[step   3950]
+  train: −ELBO=4.4163e+03  NLL=4.2274e+03  NLL_R=9.6294e+02  NLL_ω=3.2645e+03  MSE_R=3.6920e-01  MSE_ω=1.0150e+00
+  test : −ELBO=1.7547e+03  NLL=1.7180e+03  NLL_R=2.1244e+00  NLL_ω=1.7159e+03  MSE_R=4.6419e-03  MSE_ω=5.3562e-01
+  sigma: σ_R=1.3774e-02  σ_ω=1.2449e-02  β=0.0000e+00
+  PL   : train=1.8889e+02  test=3.6668e+01  σ_φ̄(train)=1.8655e-01  σ_φ̄(test)=1.7554e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.104e+03  V=3.694e+02  Dw=2.079e+03  g=3.092e+03  sigma=3.510e+02  total=7.996e+03
+  subnet MSE  M=1.099e+00  V=1.602e+01  Dw=6.318e-01  g=2.999e-01
+[step   4000]
+  train: −ELBO=4.0067e+03  NLL=3.7917e+03  NLL_R=8.8949e+02  NLL_ω=2.9022e+03  MSE_R=3.6844e-01  MSE_ω=9.7444e-01
+  test : −ELBO=1.5155e+03  NLL=1.4721e+03  NLL_R=5.0978e-01  NLL_ω=1.4716e+03  MSE_R=4.3059e-03  MSE_ω=4.9684e-01
+  sigma: σ_R=1.4311e-02  σ_ω=1.2934e-02  β=0.0000e+00
+  PL   : train=2.1502e+02  test=4.3336e+01  σ_φ̄(train)=1.6888e-01  σ_φ̄(test)=1.5907e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.106e+03  V=3.698e+02  Dw=2.080e+03  g=3.093e+03  sigma=3.513e+02  total=8.000e+03
+  subnet MSE  M=1.099e+00  V=1.569e+01  Dw=6.224e-01  g=2.998e-01
+[step   4050]
+  train: −ELBO=3.8234e+03  NLL=3.6594e+03  NLL_R=8.2940e+02  NLL_ω=2.8300e+03  MSE_R=3.6924e-01  MSE_ω=1.0202e+00
+  test : −ELBO=1.5765e+03  NLL=1.5429e+03  NLL_R=1.1866e+00  NLL_ω=1.5417e+03  MSE_R=4.8734e-03  MSE_ω=5.5833e-01
+  sigma: σ_R=1.4832e-02  σ_ω=1.3402e-02  β=0.0000e+00
+  PL   : train=1.6396e+02  test=3.3650e+01  σ_φ̄(train)=2.0237e-01  σ_φ̄(test)=1.9231e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.107e+03  V=3.701e+02  Dw=2.081e+03  g=3.094e+03  sigma=3.516e+02  total=8.004e+03
+  subnet MSE  M=1.085e+00  V=1.596e+01  Dw=7.576e-01  g=2.950e-01
+[step   4100]
+  train: −ELBO=3.5490e+03  NLL=3.3518e+03  NLL_R=7.7033e+02  NLL_ω=2.5815e+03  MSE_R=3.6969e-01  MSE_ω=1.0038e+00
+  test : −ELBO=1.4161e+03  NLL=1.3745e+03  NLL_R=1.3105e-01  NLL_ω=1.3743e+03  MSE_R=4.6943e-03  MSE_ω=5.3687e-01
+  sigma: σ_R=1.5393e-02  σ_ω=1.3917e-02  β=0.0000e+00
+  PL   : train=1.9717e+02  test=4.1624e+01  σ_φ̄(train)=1.8520e-01  σ_φ̄(test)=1.7299e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.108e+03  V=3.704e+02  Dw=2.083e+03  g=3.095e+03  sigma=3.522e+02  total=8.008e+03
+  subnet MSE  M=1.018e+00  V=1.617e+01  Dw=8.275e-01  g=2.967e-01
+[step   4150]
+  train: −ELBO=3.3090e+03  NLL=3.1318e+03  NLL_R=7.1909e+02  NLL_ω=2.4127e+03  MSE_R=3.6998e-01  MSE_ω=1.0053e+00
+  test : −ELBO=1.3313e+03  NLL=1.2949e+03  NLL_R=-4.0969e-01  NLL_ω=1.2953e+03  MSE_R=4.7009e-03  MSE_ω=5.4220e-01
+  sigma: σ_R=1.5932e-02  σ_ω=1.4404e-02  β=0.0000e+00
+  PL   : train=1.7714e+02  test=3.6388e+01  σ_φ̄(train)=1.9041e-01  σ_φ̄(test)=1.7988e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.110e+03  V=3.706e+02  Dw=2.084e+03  g=3.096e+03  sigma=3.526e+02  total=8.013e+03
+  subnet MSE  M=9.452e-01  V=1.613e+01  Dw=6.965e-01  g=2.954e-01
+[step   4200]
+  train: −ELBO=3.0537e+03  NLL=2.9154e+03  NLL_R=6.7318e+02  NLL_ω=2.2422e+03  MSE_R=3.6895e-01  MSE_ω=9.9478e-01
+  test : −ELBO=1.1472e+03  NLL=1.1237e+03  NLL_R=-1.6132e+00  NLL_ω=1.1253e+03  MSE_R=4.3033e-03  MSE_ω=5.0210e-01
+  sigma: σ_R=1.6438e-02  σ_ω=1.4861e-02  β=0.0000e+00
+  PL   : train=1.3831e+02  test=2.3510e+01  σ_φ̄(train)=2.1176e-01  σ_φ̄(test)=1.9920e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.111e+03  V=3.710e+02  Dw=2.084e+03  g=3.096e+03  sigma=3.528e+02  total=8.016e+03
+  subnet MSE  M=9.230e-01  V=1.565e+01  Dw=5.923e-01  g=2.982e-01
+[step   4250]
+  train: −ELBO=2.9054e+03  NLL=2.7506e+03  NLL_R=6.3952e+02  NLL_ω=2.1111e+03  MSE_R=3.6917e-01  MSE_ω=9.8561e-01
+  test : −ELBO=1.1031e+03  NLL=1.0710e+03  NLL_R=-1.9026e+00  NLL_ω=1.0729e+03  MSE_R=4.3201e-03  MSE_ω=5.0369e-01
+  sigma: σ_R=1.6865e-02  σ_ω=1.5243e-02  β=0.0000e+00
+  PL   : train=1.5482e+02  test=3.2050e+01  σ_φ̄(train)=1.9821e-01  σ_φ̄(test)=1.8489e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.113e+03  V=3.713e+02  Dw=2.085e+03  g=3.097e+03  sigma=3.532e+02  total=8.019e+03
+  subnet MSE  M=8.735e-01  V=1.561e+01  Dw=6.313e-01  g=3.002e-01
+[step   4300]
+  train: −ELBO=2.7505e+03  NLL=2.6168e+03  NLL_R=5.9942e+02  NLL_ω=2.0174e+03  MSE_R=3.6885e-01  MSE_ω=1.0027e+00
+  test : −ELBO=1.0750e+03  NLL=1.0492e+03  NLL_R=-1.8861e+00  NLL_ω=1.0511e+03  MSE_R=4.5539e-03  MSE_ω=5.2526e-01
+  sigma: σ_R=1.7405e-02  σ_ω=1.5726e-02  β=0.0000e+00
+  PL   : train=1.3372e+02  test=2.5822e+01  σ_φ̄(train)=2.1899e-01  σ_φ̄(test)=2.0527e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.114e+03  V=3.716e+02  Dw=2.085e+03  g=3.098e+03  sigma=3.534e+02  total=8.022e+03
+  subnet MSE  M=9.317e-01  V=1.506e+01  Dw=7.813e-01  g=2.944e-01
+[step   4350]
+  train: −ELBO=2.5799e+03  NLL=2.4395e+03  NLL_R=5.6540e+02  NLL_ω=1.8741e+03  MSE_R=3.6906e-01  MSE_ω=9.8745e-01
+  test : −ELBO=9.9588e+02  NLL=9.6946e+02  NLL_R=-2.4220e+00  NLL_ω=9.7189e+02  MSE_R=4.4256e-03  MSE_ω=5.1495e-01
+  sigma: σ_R=1.7919e-02  σ_ω=1.6190e-02  β=0.0000e+00
+  PL   : train=1.4045e+02  test=2.6415e+01  σ_φ̄(train)=2.1113e-01  σ_φ̄(test)=1.9901e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.115e+03  V=3.719e+02  Dw=2.086e+03  g=3.099e+03  sigma=3.537e+02  total=8.026e+03
+  subnet MSE  M=8.153e-01  V=1.524e+01  Dw=7.860e-01  g=2.941e-01
+[step   4400]
+  train: −ELBO=2.4394e+03  NLL=2.3113e+03  NLL_R=5.3468e+02  NLL_ω=1.7766e+03  MSE_R=3.6891e-01  MSE_ω=9.8847e-01
+  test : −ELBO=9.5159e+02  NLL=9.2811e+02  NLL_R=-2.6358e+00  NLL_ω=9.3075e+02  MSE_R=4.4748e-03  MSE_ω=5.2102e-01
+  sigma: σ_R=1.8415e-02  σ_ω=1.6635e-02  β=0.0000e+00
+  PL   : train=1.2810e+02  test=2.3479e+01  σ_φ̄(train)=2.2046e-01  σ_φ̄(test)=2.0823e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.116e+03  V=3.722e+02  Dw=2.086e+03  g=3.099e+03  sigma=3.540e+02  total=8.028e+03
+  subnet MSE  M=8.196e-01  V=1.486e+01  Dw=7.760e-01  g=2.979e-01
+[step   4450]
+  train: −ELBO=2.3230e+03  NLL=2.2048e+03  NLL_R=5.0834e+02  NLL_ω=1.6965e+03  MSE_R=3.6945e-01  MSE_ω=9.9341e-01
+  test : −ELBO=9.2196e+02  NLL=9.0122e+02  NLL_R=-2.7878e+00  NLL_ω=9.0401e+02  MSE_R=4.5458e-03  MSE_ω=5.3249e-01
+  sigma: σ_R=1.8893e-02  σ_ω=1.7064e-02  β=0.0000e+00
+  PL   : train=1.1815e+02  test=2.0746e+01  σ_φ̄(train)=2.3150e-01  σ_φ̄(test)=2.1645e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.118e+03  V=3.726e+02  Dw=2.087e+03  g=3.100e+03  sigma=3.541e+02  total=8.032e+03
+  subnet MSE  M=7.611e-01  V=1.520e+01  Dw=8.727e-01  g=3.021e-01
+[step   4500]
+  train: −ELBO=2.2043e+03  NLL=2.0638e+03  NLL_R=4.7787e+02  NLL_ω=1.5859e+03  MSE_R=3.6954e-01  MSE_ω=9.8684e-01
+  test : −ELBO=8.7423e+02  NLL=8.4839e+02  NLL_R=-3.0028e+00  NLL_ω=8.5139e+02  MSE_R=4.6023e-03  MSE_ω=5.3346e-01
+  sigma: σ_R=1.9480e-02  σ_ω=1.7587e-02  β=0.0000e+00
+  PL   : train=1.4048e+02  test=2.5845e+01  σ_φ̄(train)=2.1768e-01  σ_φ̄(test)=2.0735e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.119e+03  V=3.729e+02  Dw=2.088e+03  g=3.101e+03  sigma=3.544e+02  total=8.035e+03
+  subnet MSE  M=7.086e-01  V=1.516e+01  Dw=1.124e+00  g=3.011e-01
+[step   4550]
+  train: −ELBO=1.9801e+03  NLL=1.8673e+03  NLL_R=4.3395e+02  NLL_ω=1.4334e+03  MSE_R=3.6935e-01  MSE_ω=9.7938e-01
+  test : −ELBO=7.7058e+02  NLL=7.5145e+02  NLL_R=-3.5659e+00  NLL_ω=7.5501e+02  MSE_R=4.4672e-03  MSE_ω=5.1957e-01
+  sigma: σ_R=2.0421e-02  σ_ω=1.8424e-02  β=0.0000e+00
+  PL   : train=1.1275e+02  test=1.9134e+01  σ_φ̄(train)=2.3822e-01  σ_φ̄(test)=2.2492e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.122e+03  V=3.736e+02  Dw=2.089e+03  g=3.102e+03  sigma=3.549e+02  total=8.041e+03
+  subnet MSE  M=6.701e-01  V=1.488e+01  Dw=1.138e+00  g=2.984e-01
+[step   4600]
+  train: −ELBO=1.7344e+03  NLL=1.6322e+03  NLL_R=3.8499e+02  NLL_ω=1.2472e+03  MSE_R=3.6877e-01  MSE_ω=9.5569e-01
+  test : −ELBO=6.3701e+02  NLL=6.2129e+02  NLL_R=-4.3532e+00  NLL_ω=6.2564e+02  MSE_R=4.1162e-03  MSE_ω=4.8368e-01
+  sigma: σ_R=2.1640e-02  σ_ω=1.9503e-02  β=0.0000e+00
+  PL   : train=1.0214e+02  test=1.5722e+01  σ_φ̄(train)=2.4282e-01  σ_φ̄(test)=2.3080e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.125e+03  V=3.744e+02  Dw=2.090e+03  g=3.103e+03  sigma=3.555e+02  total=8.048e+03
+  subnet MSE  M=5.982e-01  V=1.430e+01  Dw=1.035e+00  g=2.973e-01
+[step   4650]
+  train: −ELBO=1.5583e+03  NLL=1.4730e+03  NLL_R=3.5042e+02  NLL_ω=1.1225e+03  MSE_R=3.6802e-01  MSE_ω=9.3898e-01
+  test : −ELBO=5.4646e+02  NLL=5.3522e+02  NLL_R=-4.8221e+00  NLL_ω=5.4004e+02  MSE_R=3.8835e-03  MSE_ω=4.5622e-01
+  sigma: σ_R=2.2639e-02  σ_ω=2.0370e-02  β=0.0000e+00
+  PL   : train=8.5382e+01  test=1.1240e+01  σ_φ̄(train)=2.5958e-01  σ_φ̄(test)=2.4745e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.128e+03  V=3.748e+02  Dw=2.091e+03  g=3.104e+03  sigma=3.560e+02  total=8.054e+03
+  subnet MSE  M=6.152e-01  V=1.366e+01  Dw=9.676e-01  g=2.968e-01
+[step   4700]
+  train: −ELBO=1.4241e+03  NLL=1.3378e+03  NLL_R=3.2199e+02  NLL_ω=1.0158e+03  MSE_R=3.6814e-01  MSE_ω=9.2046e-01
+  test : −ELBO=5.0469e+02  NLL=4.9281e+02  NLL_R=-5.0312e+00  NLL_ω=4.9784e+02  MSE_R=3.8481e-03  MSE_ω=4.5579e-01
+  sigma: σ_R=2.3600e-02  σ_ω=2.1194e-02  β=0.0000e+00
+  PL   : train=8.6282e+01  test=1.1886e+01  σ_φ̄(train)=2.5645e-01  σ_φ̄(test)=2.4455e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.130e+03  V=3.753e+02  Dw=2.092e+03  g=3.105e+03  sigma=3.564e+02  total=8.059e+03
+  subnet MSE  M=4.979e-01  V=1.369e+01  Dw=1.035e+00  g=2.926e-01
+[step   4750]
+  train: −ELBO=1.3467e+03  NLL=1.2621e+03  NLL_R=2.9677e+02  NLL_ω=9.6537e+02  MSE_R=3.6880e-01  MSE_ω=9.4670e-01
+  test : −ELBO=4.9781e+02  NLL=4.8539e+02  NLL_R=-4.9109e+00  NLL_ω=4.9030e+02  MSE_R=4.1732e-03  MSE_ω=4.8578e-01
+  sigma: σ_R=2.4583e-02  σ_ω=2.2044e-02  β=0.0000e+00
+  PL   : train=8.4561e+01  test=1.2425e+01  σ_φ̄(train)=2.6831e-01  σ_φ̄(test)=2.5527e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.133e+03  V=3.758e+02  Dw=2.093e+03  g=3.106e+03  sigma=3.567e+02  total=8.064e+03
+  subnet MSE  M=4.640e-01  V=1.362e+01  Dw=1.488e+00  g=2.915e-01
+[step   4800]
+  train: −ELBO=1.2129e+03  NLL=1.1377e+03  NLL_R=2.6925e+02  NLL_ω=8.6846e+02  MSE_R=3.6875e-01  MSE_ω=9.3576e-01
+  test : −ELBO=4.3378e+02  NLL=4.2412e+02  NLL_R=-5.2199e+00  NLL_ω=4.2934e+02  MSE_R=3.9887e-03  MSE_ω=4.6821e-01
+  sigma: σ_R=2.5778e-02  σ_ω=2.3098e-02  β=0.0000e+00
+  PL   : train=7.5177e+01  test=9.6587e+00  σ_φ̄(train)=2.7699e-01  σ_φ̄(test)=2.6461e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.136e+03  V=3.762e+02  Dw=2.094e+03  g=3.108e+03  sigma=3.573e+02  total=8.071e+03
+  subnet MSE  M=4.114e-01  V=1.333e+01  Dw=1.222e+00  g=2.883e-01
+[step   4850]
+  train: −ELBO=1.0723e+03  NLL=1.0093e+03  NLL_R=2.3915e+02  NLL_ω=7.7013e+02  MSE_R=3.6813e-01  MSE_ω=9.2875e-01
+  test : −ELBO=3.7051e+02  NLL=3.6331e+02  NLL_R=-5.4966e+00  NLL_ω=3.6881e+02  MSE_R=3.8013e-03  MSE_ω=4.5081e-01
+  sigma: σ_R=2.7287e-02  σ_ω=2.4423e-02  β=0.0000e+00
+  PL   : train=6.3060e+01  test=7.2046e+00  σ_φ̄(train)=2.9302e-01  σ_φ̄(test)=2.8070e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.140e+03  V=3.770e+02  Dw=2.095e+03  g=3.110e+03  sigma=3.579e+02  total=8.079e+03
+  subnet MSE  M=3.453e-01  V=1.260e+01  Dw=1.050e+00  g=2.842e-01
+[step   4900]
+  train: −ELBO=1.0020e+03  NLL=9.4059e+02  NLL_R=2.2230e+02  NLL_ω=7.1829e+02  MSE_R=3.6860e-01  MSE_ω=9.2995e-01
+  test : −ELBO=3.5115e+02  NLL=3.4407e+02  NLL_R=-5.5094e+00  NLL_ω=3.4958e+02  MSE_R=3.8909e-03  MSE_ω=4.5855e-01
+  sigma: σ_R=2.8293e-02  σ_ω=2.5298e-02  β=0.0000e+00
+  PL   : train=6.1395e+01  test=7.0719e+00  σ_φ̄(train)=2.9908e-01  σ_φ̄(test)=2.8768e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.142e+03  V=3.775e+02  Dw=2.096e+03  g=3.111e+03  sigma=3.583e+02  total=8.085e+03
+  subnet MSE  M=2.990e-01  V=1.221e+01  Dw=1.282e+00  g=2.842e-01
+[step   4950]
+  train: −ELBO=9.3268e+02  NLL=8.7308e+02  NLL_R=2.0406e+02  NLL_ω=6.6902e+02  MSE_R=3.6847e-01  MSE_ω=9.4022e-01
+  test : −ELBO=3.4262e+02  NLL=3.3503e+02  NLL_R=-5.4321e+00  NLL_ω=3.4047e+02  MSE_R=4.1471e-03  MSE_ω=4.8523e-01
+  sigma: σ_R=2.9488e-02  σ_ω=2.6348e-02  β=0.0000e+00
+  PL   : train=5.9602e+01  test=7.5866e+00  σ_φ̄(train)=3.0853e-01  σ_φ̄(test)=2.9712e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.145e+03  V=3.780e+02  Dw=2.097e+03  g=3.112e+03  sigma=3.586e+02  total=8.091e+03
+  subnet MSE  M=2.901e-01  V=1.183e+01  Dw=1.574e+00  g=2.828e-01
+[step   5000]
+  train: −ELBO=8.2018e+02  NLL=7.7153e+02  NLL_R=1.8349e+02  NLL_ω=5.8804e+02  MSE_R=3.6833e-01  MSE_ω=9.1551e-01
+  test : −ELBO=2.7727e+02  NLL=2.7318e+02  NLL_R=-5.7390e+00  NLL_ω=2.7892e+02  MSE_R=3.7046e-03  MSE_ω=4.4160e-01
+  sigma: σ_R=3.1040e-02  σ_ω=2.7713e-02  β=0.0000e+00
+  PL   : train=4.8646e+01  test=4.0912e+00  σ_φ̄(train)=3.2466e-01  σ_φ̄(test)=3.1250e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.148e+03  V=3.786e+02  Dw=2.099e+03  g=3.114e+03  sigma=3.590e+02  total=8.099e+03
+  subnet MSE  M=2.148e-01  V=1.116e+01  Dw=1.162e+00  g=2.838e-01
+[step   5050]
+  train: −ELBO=7.3487e+02  NLL=6.9180e+02  NLL_R=1.6578e+02  NLL_ω=5.2601e+02  MSE_R=3.6746e-01  MSE_ω=8.9954e-01
+  test : −ELBO=2.3774e+02  NLL=2.3506e+02  NLL_R=-5.8448e+00  NLL_ω=2.4090e+02  MSE_R=3.5465e-03  MSE_ω=4.1977e-01
+  sigma: σ_R=3.2561e-02  σ_ω=2.9025e-02  β=0.0000e+00
+  PL   : train=4.3073e+01  test=2.6814e+00  σ_φ̄(train)=3.4226e-01  σ_φ̄(test)=3.3081e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.153e+03  V=3.793e+02  Dw=2.100e+03  g=3.115e+03  sigma=3.594e+02  total=8.107e+03
+  subnet MSE  M=2.080e-01  V=1.043e+01  Dw=1.230e+00  g=2.804e-01
+[step   5100]
+  train: −ELBO=6.7580e+02  NLL=6.3288e+02  NLL_R=1.5306e+02  NLL_ω=4.7981e+02  MSE_R=3.6737e-01  MSE_ω=8.8400e-01
+  test : −ELBO=2.1248e+02  NLL=2.0978e+02  NLL_R=-5.9198e+00  NLL_ω=2.1570e+02  MSE_R=3.3936e-03  MSE_ω=4.0564e-01
+  sigma: σ_R=3.3833e-02  σ_ω=3.0109e-02  β=0.0000e+00
+  PL   : train=4.2921e+01  test=2.6978e+00  σ_φ̄(train)=3.3755e-01  σ_φ̄(test)=3.2549e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.156e+03  V=3.798e+02  Dw=2.101e+03  g=3.116e+03  sigma=3.598e+02  total=8.113e+03
+  subnet MSE  M=1.614e-01  V=1.003e+01  Dw=1.229e+00  g=2.787e-01
+[step   5150]
+  train: −ELBO=6.0363e+02  NLL=5.6860e+02  NLL_R=1.3869e+02  NLL_ω=4.2991e+02  MSE_R=3.6670e-01  MSE_ω=8.6675e-01
+  test : −ELBO=1.7829e+02  NLL=1.7743e+02  NLL_R=-6.0121e+00  NLL_ω=1.8345e+02  MSE_R=3.1411e-03  MSE_ω=3.7901e-01
+  sigma: σ_R=3.5444e-02  σ_ω=3.1472e-02  β=0.0000e+00
+  PL   : train=3.5029e+01  test=8.5231e-01  σ_φ̄(train)=3.5972e-01  σ_φ̄(test)=3.4651e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.161e+03  V=3.805e+02  Dw=2.101e+03  g=3.118e+03  sigma=3.601e+02  total=8.120e+03
+  subnet MSE  M=1.392e-01  V=9.121e+00  Dw=9.220e-01  g=2.744e-01
+[step   5200]
+  train: −ELBO=5.5502e+02  NLL=5.2278e+02  NLL_R=1.2761e+02  NLL_ω=3.9517e+02  MSE_R=3.6627e-01  MSE_ω=8.5896e-01
+  test : −ELBO=1.6164e+02  NLL=1.6117e+02  NLL_R=-6.0104e+00  NLL_ω=1.6718e+02  MSE_R=3.0813e-03  MSE_ω=3.7325e-01
+  sigma: σ_R=3.6865e-02  σ_ω=3.2658e-02  β=0.0000e+00
+  PL   : train=3.2240e+01  test=4.7070e-01  σ_φ̄(train)=3.7116e-01  σ_φ̄(test)=3.5846e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.164e+03  V=3.811e+02  Dw=2.102e+03  g=3.119e+03  sigma=3.605e+02  total=8.126e+03
+  subnet MSE  M=1.339e-01  V=8.597e+00  Dw=8.119e-01  g=2.682e-01
+[step   5250]
+  train: −ELBO=5.0326e+02  NLL=4.7212e+02  NLL_R=1.1301e+02  NLL_ω=3.5912e+02  MSE_R=3.6696e-01  MSE_ω=8.7510e-01
+  test : −ELBO=1.5268e+02  NLL=1.5228e+02  NLL_R=-5.8856e+00  NLL_ω=1.5816e+02  MSE_R=3.3075e-03  MSE_ω=3.9574e-01
+  sigma: σ_R=3.9107e-02  σ_ω=3.4554e-02  β=0.0000e+00
+  PL   : train=3.1135e+01  test=4.0546e-01  σ_φ̄(train)=3.8795e-01  σ_φ̄(test)=3.7495e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.169e+03  V=3.818e+02  Dw=2.104e+03  g=3.121e+03  sigma=3.609e+02  total=8.136e+03
+  subnet MSE  M=1.175e-01  V=8.683e+00  Dw=1.232e+00  g=2.696e-01
+[step   5300]
+  train: −ELBO=4.6230e+02  NLL=4.3371e+02  NLL_R=1.0388e+02  NLL_ω=3.2983e+02  MSE_R=3.6711e-01  MSE_ω=8.7063e-01
+  test : −ELBO=1.3872e+02  NLL=1.3873e+02  NLL_R=-5.8574e+00  NLL_ω=1.4458e+02  MSE_R=3.2781e-03  MSE_ω=3.9253e-01
+  sigma: σ_R=4.0715e-02  σ_ω=3.5938e-02  β=0.0000e+00
+  PL   : train=2.8595e+01  test=-6.5932e-03  σ_φ̄(train)=4.0046e-01  σ_φ̄(test)=3.8759e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.173e+03  V=3.824e+02  Dw=2.105e+03  g=3.122e+03  sigma=3.612e+02  total=8.144e+03
+  subnet MSE  M=8.751e-02  V=8.140e+00  Dw=1.441e+00  g=2.669e-01
+[step   5350]
+  train: −ELBO=4.2751e+02  NLL=4.0160e+02  NLL_R=9.6316e+01  NLL_ω=3.0528e+02  MSE_R=3.6694e-01  MSE_ω=8.6492e-01
+  test : −ELBO=1.2710e+02  NLL=1.2758e+02  NLL_R=-5.8264e+00  NLL_ω=1.3340e+02  MSE_R=3.2492e-03  MSE_ω=3.8952e-01
+  sigma: σ_R=4.2194e-02  σ_ω=3.7207e-02  β=0.0000e+00
+  PL   : train=2.5910e+01  test=-4.7887e-01  σ_φ̄(train)=4.1642e-01  σ_φ̄(test)=4.0278e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.177e+03  V=3.829e+02  Dw=2.106e+03  g=3.123e+03  sigma=3.615e+02  total=8.150e+03
+  subnet MSE  M=7.742e-02  V=7.960e+00  Dw=1.418e+00  g=2.660e-01
+[step   5400]
+  train: −ELBO=4.0530e+02  NLL=3.7996e+02  NLL_R=8.9545e+01  NLL_ω=2.9041e+02  MSE_R=3.6684e-01  MSE_ω=8.8066e-01
+  test : −ELBO=1.2275e+02  NLL=1.2308e+02  NLL_R=-5.7475e+00  NLL_ω=1.2883e+02  MSE_R=3.3881e-03  MSE_ω=4.0267e-01
+  sigma: σ_R=4.3670e-02  σ_ω=3.8477e-02  β=0.0000e+00
+  PL   : train=2.5341e+01  test=-3.3108e-01  σ_φ̄(train)=4.2929e-01  σ_φ̄(test)=4.1594e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.179e+03  V=3.835e+02  Dw=2.107e+03  g=3.125e+03  sigma=3.618e+02  total=8.156e+03
+  subnet MSE  M=7.834e-02  V=7.432e+00  Dw=1.866e+00  g=2.632e-01
+[step   5450]
+  train: −ELBO=3.8965e+02  NLL=3.6471e+02  NLL_R=8.3877e+01  NLL_ω=2.8083e+02  MSE_R=3.6726e-01  MSE_ω=9.0761e-01
+  test : −ELBO=1.2513e+02  NLL=1.2510e+02  NLL_R=-5.6351e+00  NLL_ω=1.3074e+02  MSE_R=3.6812e-03  MSE_ω=4.3477e-01
+  sigma: σ_R=4.5065e-02  σ_ω=3.9713e-02  β=0.0000e+00
+  PL   : train=2.4942e+01  test=2.9083e-02  σ_φ̄(train)=4.4071e-01  σ_φ̄(test)=4.2709e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.182e+03  V=3.839e+02  Dw=2.108e+03  g=3.126e+03  sigma=3.621e+02  total=8.163e+03
+  subnet MSE  M=6.750e-02  V=7.218e+00  Dw=2.373e+00  g=2.672e-01
+[step   5500]
+  train: −ELBO=3.5629e+02  NLL=3.3435e+02  NLL_R=7.7121e+01  NLL_ω=2.5723e+02  MSE_R=3.6714e-01  MSE_ω=9.0218e-01
+  test : −ELBO=1.0983e+02  NLL=1.1043e+02  NLL_R=-5.6139e+00  NLL_ω=1.1605e+02  MSE_R=3.5555e-03  MSE_ω=4.2037e-01
+  sigma: σ_R=4.6875e-02  σ_ω=4.1334e-02  β=0.0000e+00
+  PL   : train=2.1939e+01  test=-6.0593e-01  σ_φ̄(train)=4.5659e-01  σ_φ̄(test)=4.4266e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.186e+03  V=3.844e+02  Dw=2.109e+03  g=3.128e+03  sigma=3.624e+02  total=8.170e+03
+  subnet MSE  M=5.623e-02  V=7.054e+00  Dw=2.278e+00  g=2.580e-01
+[step   5550]
+  train: −ELBO=3.3551e+02  NLL=3.1466e+02  NLL_R=7.2413e+01  NLL_ω=2.4225e+02  MSE_R=3.6680e-01  MSE_ω=9.0252e-01
+  test : −ELBO=1.0223e+02  NLL=1.0304e+02  NLL_R=-5.5806e+00  NLL_ω=1.0862e+02  MSE_R=3.5179e-03  MSE_ω=4.1855e-01
+  sigma: σ_R=4.8259e-02  σ_ω=4.2575e-02  β=0.0000e+00
+  PL   : train=2.0853e+01  test=-8.0857e-01  σ_φ̄(train)=4.5986e-01  σ_φ̄(test)=4.4426e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.189e+03  V=3.848e+02  Dw=2.109e+03  g=3.129e+03  sigma=3.626e+02  total=8.174e+03
+  subnet MSE  M=5.289e-02  V=6.602e+00  Dw=2.124e+00  g=2.596e-01
+[step   5600]
+  train: −ELBO=3.1922e+02  NLL=2.9937e+02  NLL_R=6.8613e+01  NLL_ω=2.3076e+02  MSE_R=3.6696e-01  MSE_ω=9.0629e-01
+  test : −ELBO=1.0069e+02  NLL=1.0129e+02  NLL_R=-5.5075e+00  NLL_ω=1.0679e+02  MSE_R=3.6862e-03  MSE_ω=4.3345e-01
+  sigma: σ_R=4.9503e-02  σ_ω=4.3690e-02  β=0.0000e+00
+  PL   : train=1.9851e+01  test=-5.9432e-01  σ_φ̄(train)=4.7496e-01  σ_φ̄(test)=4.5900e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.190e+03  V=3.851e+02  Dw=2.110e+03  g=3.130e+03  sigma=3.628e+02  total=8.178e+03
+  subnet MSE  M=5.841e-02  V=6.391e+00  Dw=2.280e+00  g=2.575e-01
+[step   5650]
+  train: −ELBO=2.8593e+02  NLL=2.6849e+02  NLL_R=6.2859e+01  NLL_ω=2.0563e+02  MSE_R=3.6656e-01  MSE_ω=8.7859e-01
+  test : −ELBO=8.0999e+01  NLL=8.2630e+01  NLL_R=-5.5206e+00  NLL_ω=8.8151e+01  MSE_R=3.2788e-03  MSE_ω=3.9274e-01
+  sigma: σ_R=5.1539e-02  σ_ω=4.5505e-02  β=0.0000e+00
+  PL   : train=1.7441e+01  test=-1.6311e+00  σ_φ̄(train)=4.8364e-01  σ_φ̄(test)=4.6908e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.195e+03  V=3.857e+02  Dw=2.111e+03  g=3.132e+03  sigma=3.631e+02  total=8.186e+03
+  subnet MSE  M=4.386e-02  V=6.165e+00  Dw=1.768e+00  g=2.567e-01
+[step   5700]
+  train: −ELBO=2.5381e+02  NLL=2.3763e+02  NLL_R=5.6590e+01  NLL_ω=1.8104e+02  MSE_R=3.6588e-01  MSE_ω=8.5189e-01
+  test : −ELBO=6.7631e+01  NLL=6.9639e+01  NLL_R=-5.4669e+00  NLL_ω=7.5105e+01  MSE_R=3.0852e-03  MSE_ω=3.7081e-01
+  sigma: σ_R=5.4065e-02  σ_ω=4.7674e-02  β=0.0000e+00
+  PL   : train=1.6181e+01  test=-2.0078e+00  σ_φ̄(train)=4.8651e-01  σ_φ̄(test)=4.7332e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.201e+03  V=3.864e+02  Dw=2.113e+03  g=3.134e+03  sigma=3.635e+02  total=8.197e+03
+  subnet MSE  M=4.223e-02  V=5.894e+00  Dw=1.473e+00  g=2.577e-01
+[step   5750]
+  train: −ELBO=2.3215e+02  NLL=2.1714e+02  NLL_R=5.1191e+01  NLL_ω=1.6595e+02  MSE_R=3.6595e-01  MSE_ω=8.5681e-01
+  test : −ELBO=6.3650e+01  NLL=6.5712e+01  NLL_R=-5.3554e+00  NLL_ω=7.1068e+01  MSE_R=3.2038e-03  MSE_ω=3.8534e-01
+  sigma: σ_R=5.6634e-02  σ_ω=4.9881e-02  β=0.0000e+00
+  PL   : train=1.5008e+01  test=-2.0623e+00  σ_φ̄(train)=5.0287e-01  σ_φ̄(test)=4.9074e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.206e+03  V=3.872e+02  Dw=2.114e+03  g=3.136e+03  sigma=3.638e+02  total=8.207e+03
+  subnet MSE  M=3.172e-02  V=5.559e+00  Dw=1.706e+00  g=2.583e-01
+[step   5800]
+  train: −ELBO=2.1598e+02  NLL=2.0176e+02  NLL_R=4.7115e+01  NLL_ω=1.5465e+02  MSE_R=3.6611e-01  MSE_ω=8.6230e-01
+  test : −ELBO=5.9662e+01  NLL=6.1709e+01  NLL_R=-5.2675e+00  NLL_ω=6.6977e+01  MSE_R=3.2696e-03  MSE_ω=3.9278e-01
+  sigma: σ_R=5.8850e-02  σ_ω=5.1785e-02  β=0.0000e+00
+  PL   : train=1.4212e+01  test=-2.0476e+00  σ_φ̄(train)=5.1609e-01  σ_φ̄(test)=5.0398e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.210e+03  V=3.878e+02  Dw=2.115e+03  g=3.138e+03  sigma=3.640e+02  total=8.214e+03
+  subnet MSE  M=3.117e-02  V=5.340e+00  Dw=1.784e+00  g=2.582e-01
+[step   5850]
+  train: −ELBO=1.9442e+02  NLL=1.8087e+02  NLL_R=4.2727e+01  NLL_ω=1.3814e+02  MSE_R=3.6554e-01  MSE_ω=8.4243e-01
+  test : −ELBO=4.9283e+01  NLL=5.1621e+01  NLL_R=-5.2030e+00  NLL_ω=5.6824e+01  MSE_R=3.0685e-03  MSE_ω=3.6749e-01
+  sigma: σ_R=6.1491e-02  σ_ω=5.4058e-02  β=0.0000e+00
+  PL   : train=1.3547e+01  test=-2.3388e+00  σ_φ̄(train)=5.2126e-01  σ_φ̄(test)=5.0909e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.215e+03  V=3.884e+02  Dw=2.117e+03  g=3.140e+03  sigma=3.643e+02  total=8.224e+03
+  subnet MSE  M=3.007e-02  V=4.854e+00  Dw=1.626e+00  g=2.558e-01
+[step   5900]
+  train: −ELBO=1.8817e+02  NLL=1.7485e+02  NLL_R=4.0306e+01  NLL_ω=1.3454e+02  MSE_R=3.6615e-01  MSE_ω=8.6626e-01
+  test : −ELBO=4.8991e+01  NLL=5.1241e+01  NLL_R=-5.1238e+00  NLL_ω=5.6365e+01  MSE_R=3.2152e-03  MSE_ω=3.8451e-01
+  sigma: σ_R=6.3201e-02  σ_ω=5.5531e-02  β=0.0000e+00
+  PL   : train=1.3318e+01  test=-2.2504e+00  σ_φ̄(train)=5.3649e-01  σ_φ̄(test)=5.2465e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.217e+03  V=3.887e+02  Dw=2.117e+03  g=3.142e+03  sigma=3.645e+02  total=8.230e+03
+  subnet MSE  M=2.726e-02  V=4.872e+00  Dw=1.939e+00  g=2.551e-01
+[step   5950]
+  train: −ELBO=1.6358e+02  NLL=1.5271e+02  NLL_R=3.6395e+01  NLL_ω=1.1632e+02  MSE_R=3.6536e-01  MSE_ω=8.2297e-01
+  test : −ELBO=3.8509e+01  NLL=4.1472e+01  NLL_R=-5.0569e+00  NLL_ω=4.6529e+01  MSE_R=2.9123e-03  MSE_ω=3.5319e-01
+  sigma: σ_R=6.6119e-02  σ_ω=5.8052e-02  β=0.0000e+00
+  PL   : train=1.0862e+01  test=-2.9633e+00  σ_φ̄(train)=5.4829e-01  σ_φ̄(test)=5.3673e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.223e+03  V=3.894e+02  Dw=2.119e+03  g=3.144e+03  sigma=3.648e+02  total=8.239e+03
+  subnet MSE  M=1.993e-02  V=4.689e+00  Dw=1.229e+00  g=2.552e-01
+[step   6000]
+  train: −ELBO=1.4189e+02  NLL=1.3284e+02  NLL_R=3.2254e+01  NLL_ω=1.0059e+02  MSE_R=3.6453e-01  MSE_ω=7.9211e-01
+  test : −ELBO=3.0208e+01  NLL=3.3491e+01  NLL_R=-4.9511e+00  NLL_ω=3.8442e+01  MSE_R=2.7108e-03  MSE_ω=3.2933e-01
+  sigma: σ_R=6.9729e-02  σ_ω=6.1063e-02  β=0.0000e+00
+  PL   : train=9.0500e+00  test=-3.2827e+00  σ_φ̄(train)=5.6525e-01  σ_φ̄(test)=5.5555e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.228e+03  V=3.905e+02  Dw=2.120e+03  g=3.147e+03  sigma=3.650e+02  total=8.251e+03
+  subnet MSE  M=1.659e-02  V=3.995e+00  Dw=6.602e-01  g=2.512e-01
+[step   6050]
+  train: −ELBO=1.2400e+02  NLL=1.1584e+02  NLL_R=2.8439e+01  NLL_ω=8.7400e+01  MSE_R=3.6412e-01  MSE_ω=7.6838e-01
+  test : −ELBO=2.5822e+01  NLL=2.9071e+01  NLL_R=-4.8163e+00  NLL_ω=3.3887e+01  MSE_R=2.6876e-03  MSE_ω=3.2616e-01
+  sigma: σ_R=7.3715e-02  σ_ω=6.4316e-02  β=0.0000e+00
+  PL   : train=8.1583e+00  test=-3.2487e+00  σ_φ̄(train)=5.7600e-01  σ_φ̄(test)=5.6793e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.234e+03  V=3.914e+02  Dw=2.122e+03  g=3.150e+03  sigma=3.652e+02  total=8.262e+03
+  subnet MSE  M=1.486e-02  V=3.911e+00  Dw=4.921e-01  g=2.503e-01
+[step   6100]
+  train: −ELBO=1.0430e+02  NLL=9.7235e+01  NLL_R=2.3896e+01  NLL_ω=7.3340e+01  MSE_R=3.6363e-01  MSE_ω=7.4937e-01
+  test : −ELBO=1.9458e+01  NLL=2.3057e+01  NLL_R=-4.6284e+00  NLL_ω=2.7685e+01  MSE_R=2.5948e-03  MSE_ω=3.1497e-01
+  sigma: σ_R=7.9546e-02  σ_ω=6.9042e-02  β=0.0000e+00
+  PL   : train=7.0602e+00  test=-3.5983e+00  σ_φ̄(train)=5.9461e-01  σ_φ̄(test)=5.8886e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.242e+03  V=3.929e+02  Dw=2.124e+03  g=3.154e+03  sigma=3.654e+02  total=8.279e+03
+  subnet MSE  M=1.188e-02  V=3.399e+00  Dw=3.568e-01  g=2.496e-01
+[step   6150]
+  train: −ELBO=8.9044e+01  NLL=8.2882e+01  NLL_R=2.0388e+01  NLL_ω=6.2494e+01  MSE_R=3.6370e-01  MSE_ω=7.3340e-01
+  test : −ELBO=1.5393e+01  NLL=1.9123e+01  NLL_R=-4.4510e+00  NLL_ω=2.3574e+01  MSE_R=2.5675e-03  MSE_ω=3.1128e-01
+  sigma: σ_R=8.5258e-02  σ_ω=7.3672e-02  β=0.0000e+00
+  PL   : train=6.1620e+00  test=-3.7293e+00  σ_φ̄(train)=6.1463e-01  σ_φ̄(test)=6.0990e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.250e+03  V=3.941e+02  Dw=2.127e+03  g=3.158e+03  sigma=3.657e+02  total=8.295e+03
+  subnet MSE  M=9.396e-03  V=3.156e+00  Dw=2.645e-01  g=2.509e-01
+[step   6200]
+  train: −ELBO=7.6734e+01  NLL=7.1346e+01  NLL_R=1.7322e+01  NLL_ω=5.4024e+01  MSE_R=3.6365e-01  MSE_ω=7.3023e-01
+  test : −ELBO=1.2620e+01  NLL=1.6347e+01  NLL_R=-4.2595e+00  NLL_ω=2.0607e+01  MSE_R=2.6079e-03  MSE_ω=3.1664e-01
+  sigma: σ_R=9.1450e-02  σ_ω=7.8738e-02  β=0.0000e+00
+  PL   : train=5.3876e+00  test=-3.7272e+00  σ_φ̄(train)=6.3543e-01  σ_φ̄(test)=6.3231e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.258e+03  V=3.955e+02  Dw=2.130e+03  g=3.162e+03  sigma=3.658e+02  total=8.312e+03
+  subnet MSE  M=7.399e-03  V=2.946e+00  Dw=2.407e-01  g=2.459e-01
+[step   6250]
+  train: −ELBO=6.5322e+01  NLL=6.0538e+01  NLL_R=1.4531e+01  NLL_ω=4.6007e+01  MSE_R=3.6347e-01  MSE_ω=7.2508e-01
+  test : −ELBO=9.5856e+00  NLL=1.3351e+01  NLL_R=-4.0569e+00  NLL_ω=1.7408e+01  MSE_R=2.6084e-03  MSE_ω=3.1673e-01
+  sigma: σ_R=9.8510e-02  σ_ω=8.4596e-02  β=0.0000e+00
+  PL   : train=4.7844e+00  test=-3.7657e+00  σ_φ̄(train)=6.5443e-01  σ_φ̄(test)=6.5227e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.267e+03  V=3.971e+02  Dw=2.133e+03  g=3.168e+03  sigma=3.658e+02  total=8.331e+03
+  subnet MSE  M=5.856e-03  V=2.522e+00  Dw=2.424e-01  g=2.483e-01
+[step   6300]
+  train: −ELBO=5.4709e+01  NLL=5.0505e+01  NLL_R=1.1972e+01  NLL_ω=3.8534e+01  MSE_R=3.6337e-01  MSE_ω=7.2001e-01
+  test : −ELBO=6.5005e+00  NLL=1.0335e+01  NLL_R=-3.8373e+00  NLL_ω=1.4172e+01  MSE_R=2.5773e-03  MSE_ω=3.1223e-01
+  sigma: σ_R=1.0681e-01  σ_ω=9.1554e-02  β=0.0000e+00
+  PL   : train=4.2037e+00  test=-3.8347e+00  σ_φ̄(train)=6.7372e-01  σ_φ̄(test)=6.7269e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.277e+03  V=3.990e+02  Dw=2.137e+03  g=3.175e+03  sigma=3.659e+02  total=8.354e+03
+  subnet MSE  M=4.669e-03  V=2.126e+00  Dw=2.310e-01  g=2.489e-01
+[step   6350]
+  train: −ELBO=4.7045e+01  NLL=4.3298e+01  NLL_R=1.0060e+01  NLL_ω=3.3238e+01  MSE_R=3.6330e-01  MSE_ω=7.2302e-01
+  test : −ELBO=4.5234e+00  NLL=8.3888e+00  NLL_R=-3.6361e+00  NLL_ω=1.2025e+01  MSE_R=2.5932e-03  MSE_ω=3.1418e-01
+  sigma: σ_R=1.1474e-01  σ_ω=9.8261e-02  β=0.0000e+00
+  PL   : train=3.7474e+00  test=-3.8654e+00  σ_φ̄(train)=6.9147e-01  σ_φ̄(test)=6.9168e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.286e+03  V=4.008e+02  Dw=2.141e+03  g=3.181e+03  sigma=3.659e+02  total=8.375e+03
+  subnet MSE  M=3.692e-03  V=1.871e+00  Dw=2.369e-01  g=2.511e-01
+[step   6400]
+  train: −ELBO=4.0351e+01  NLL=3.7078e+01  NLL_R=8.5358e+00  NLL_ω=2.8542e+01  MSE_R=3.6309e-01  MSE_ω=7.1768e-01
+  test : −ELBO=2.8484e+00  NLL=6.7602e+00  NLL_R=-3.4490e+00  NLL_ω=1.0209e+01  MSE_R=2.5947e-03  MSE_ω=3.1421e-01
+  sigma: σ_R=1.2262e-01  σ_ω=1.0500e-01  β=0.0000e+00
+  PL   : train=3.2724e+00  test=-3.9119e+00  σ_φ̄(train)=7.1280e-01  σ_φ̄(test)=7.1470e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.295e+03  V=4.025e+02  Dw=2.144e+03  g=3.188e+03  sigma=3.659e+02  total=8.395e+03
+  subnet MSE  M=3.057e-03  V=1.710e+00  Dw=2.390e-01  g=2.508e-01
+[step   6450]
+  train: −ELBO=3.4921e+01  NLL=3.2203e+01  NLL_R=7.2655e+00  NLL_ω=2.4937e+01  MSE_R=3.6312e-01  MSE_ω=7.2221e-01
+  test : −ELBO=2.0581e+00  NLL=5.9333e+00  NLL_R=-3.2617e+00  NLL_ω=9.1950e+00  MSE_R=2.7069e-03  MSE_ω=3.2763e-01
+  sigma: σ_R=1.3081e-01  σ_ω=1.1208e-01  β=0.0000e+00
+  PL   : train=2.7185e+00  test=-3.8752e+00  σ_φ̄(train)=7.4230e-01  σ_φ̄(test)=7.4532e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.304e+03  V=4.043e+02  Dw=2.147e+03  g=3.196e+03  sigma=3.660e+02  total=8.417e+03
+  subnet MSE  M=2.658e-03  V=1.605e+00  Dw=2.295e-01  g=2.472e-01
+[step   6500]
+  train: −ELBO=3.0323e+01  NLL=2.8198e+01  NLL_R=6.2091e+00  NLL_ω=2.1989e+01  MSE_R=3.6343e-01  MSE_ω=7.3195e-01
+  test : −ELBO=1.0064e+00  NLL=4.9059e+00  NLL_R=-3.0809e+00  NLL_ω=7.9868e+00  MSE_R=2.7627e-03  MSE_ω=3.3265e-01
+  sigma: σ_R=1.3929e-01  σ_ω=1.1956e-01  β=0.0000e+00
+  PL   : train=2.1248e+00  test=-3.8995e+00  σ_φ̄(train)=7.7788e-01  σ_φ̄(test)=7.8140e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.312e+03  V=4.059e+02  Dw=2.151e+03  g=3.204e+03  sigma=3.662e+02  total=8.439e+03
+  subnet MSE  M=2.173e-03  V=1.395e+00  Dw=2.261e-01  g=2.555e-01
+[step   6550]
+  train: −ELBO=2.5943e+01  NLL=2.4281e+01  NLL_R=5.2357e+00  NLL_ω=1.9045e+01  MSE_R=3.6342e-01  MSE_ω=7.3788e-01
+  test : −ELBO=-6.0558e-05  NLL=3.9087e+00  NLL_R=-2.8910e+00  NLL_ω=6.7998e+00  MSE_R=2.7758e-03  MSE_ω=3.3590e-01
+  sigma: σ_R=1.4894e-01  σ_ω=1.2819e-01  β=0.0000e+00
+  PL   : train=1.6621e+00  test=-3.9088e+00  σ_φ̄(train)=8.0803e-01  σ_φ̄(test)=8.1065e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.321e+03  V=4.078e+02  Dw=2.154e+03  g=3.212e+03  sigma=3.665e+02  total=8.462e+03
+  subnet MSE  M=2.114e-03  V=1.298e+00  Dw=2.267e-01  g=2.518e-01
+[step   6600]
+  train: −ELBO=2.2691e+01  NLL=2.1356e+01  NLL_R=4.5353e+00  NLL_ω=1.6820e+01  MSE_R=3.6325e-01  MSE_ω=7.4120e-01
+  test : −ELBO=-4.4863e-01  NLL=3.4171e+00  NLL_R=-2.7270e+00  NLL_ω=6.1440e+00  MSE_R=2.8750e-03  MSE_ω=3.4732e-01
+  sigma: σ_R=1.5748e-01  σ_ω=1.3596e-01  β=0.0000e+00
+  PL   : train=1.3348e+00  test=-3.8657e+00  σ_φ̄(train)=8.3456e-01  σ_φ̄(test)=8.3684e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.329e+03  V=4.094e+02  Dw=2.157e+03  g=3.220e+03  sigma=3.669e+02  total=8.483e+03
+  subnet MSE  M=2.068e-03  V=1.157e+00  Dw=2.228e-01  g=2.539e-01
+[step   6650]
+  train: −ELBO=1.8968e+01  NLL=1.8034e+01  NLL_R=3.7486e+00  NLL_ω=1.4285e+01  MSE_R=3.6330e-01  MSE_ω=7.4833e-01
+  test : −ELBO=-1.1628e+00  NLL=2.6858e+00  NLL_R=-2.5118e+00  NLL_ω=5.1975e+00  MSE_R=2.9509e-03  MSE_ω=3.5533e-01
+  sigma: σ_R=1.6961e-01  σ_ω=1.4716e-01  β=0.0000e+00
+  PL   : train=9.3373e-01  test=-3.8485e+00  σ_φ̄(train)=8.6782e-01  σ_φ̄(test)=8.6681e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.340e+03  V=4.114e+02  Dw=2.162e+03  g=3.232e+03  sigma=3.675e+02  total=8.513e+03
+  subnet MSE  M=1.992e-03  V=1.076e+00  Dw=2.301e-01  g=2.512e-01
+[step   6700]
+  train: −ELBO=1.6391e+01  NLL=1.5763e+01  NLL_R=3.2205e+00  NLL_ω=1.2542e+01  MSE_R=3.6379e-01  MSE_ω=7.5685e-01
+  test : −ELBO=-1.4204e+00  NLL=2.3900e+00  NLL_R=-2.3348e+00  NLL_ω=4.7249e+00  MSE_R=3.0789e-03  MSE_ω=3.7183e-01
+  sigma: σ_R=1.8013e-01  σ_ω=1.5707e-01  β=0.0000e+00
+  PL   : train=6.2816e-01  test=-3.8104e+00  σ_φ̄(train)=8.9829e-01  σ_φ̄(test)=8.9837e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.349e+03  V=4.132e+02  Dw=2.166e+03  g=3.242e+03  sigma=3.682e+02  total=8.539e+03
+  subnet MSE  M=2.046e-03  V=1.030e+00  Dw=2.235e-01  g=2.586e-01
+[step   6750]
+  train: −ELBO=1.4724e+01  NLL=1.4268e+01  NLL_R=2.8840e+00  NLL_ω=1.1384e+01  MSE_R=3.6346e-01  MSE_ω=7.6138e-01
+  test : −ELBO=-1.7947e+00  NLL=2.0086e+00  NLL_R=-2.2090e+00  NLL_ω=4.2176e+00  MSE_R=3.0917e-03  MSE_ω=3.7363e-01
+  sigma: σ_R=1.8802e-01  σ_ω=1.6468e-01  β=0.0000e+00
+  PL   : train=4.5603e-01  test=-3.8033e+00  σ_φ̄(train)=9.1663e-01  σ_φ̄(test)=9.1781e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.355e+03  V=4.145e+02  Dw=2.169e+03  g=3.250e+03  sigma=3.688e+02  total=8.557e+03
+  subnet MSE  M=2.153e-03  V=9.541e-01  Dw=2.099e-01  g=2.612e-01
+[step   6800]
+  train: −ELBO=1.2988e+01  NLL=1.2693e+01  NLL_R=2.5362e+00  NLL_ω=1.0157e+01  MSE_R=3.6362e-01  MSE_ω=7.6927e-01
+  test : −ELBO=-2.0595e+00  NLL=1.7152e+00  NLL_R=-2.0574e+00  NLL_ω=3.7726e+00  MSE_R=3.1651e-03  MSE_ω=3.8157e-01
+  sigma: σ_R=1.9799e-01  σ_ω=1.7445e-01  β=0.0000e+00
+  PL   : train=2.9475e-01  test=-3.7747e+00  σ_φ̄(train)=9.3505e-01  σ_φ̄(test)=9.3554e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.363e+03  V=4.161e+02  Dw=2.174e+03  g=3.259e+03  sigma=3.696e+02  total=8.582e+03
+  subnet MSE  M=2.361e-03  V=8.839e-01  Dw=2.198e-01  g=2.614e-01
+[step   6850]
+  train: −ELBO=1.0768e+01  NLL=1.0738e+01  NLL_R=2.1396e+00  NLL_ω=8.5987e+00  MSE_R=3.6364e-01  MSE_ω=7.7360e-01
+  test : −ELBO=-2.2767e+00  NLL=1.4689e+00  NLL_R=-1.8518e+00  NLL_ω=3.3207e+00  MSE_R=3.3048e-03  MSE_ω=3.9764e-01
+  sigma: σ_R=2.1238e-01  σ_ω=1.8888e-01  β=0.0000e+00
+  PL   : train=2.9895e-02  test=-3.7456e+00  σ_φ̄(train)=9.6981e-01  σ_φ̄(test)=9.6923e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.374e+03  V=4.184e+02  Dw=2.180e+03  g=3.274e+03  sigma=3.709e+02  total=8.617e+03
+  subnet MSE  M=2.558e-03  V=8.498e-01  Dw=2.131e-01  g=2.630e-01
+[step   6900]
+  train: −ELBO=9.1416e+00  NLL=9.3173e+00  NLL_R=1.8525e+00  NLL_ω=7.4648e+00  MSE_R=3.6370e-01  MSE_ω=7.8338e-01
+  test : −ELBO=-2.4579e+00  NLL=1.2462e+00  NLL_R=-1.6655e+00  NLL_ω=2.9117e+00  MSE_R=3.3876e-03  MSE_ω=4.0840e-01
+  sigma: σ_R=2.2617e-01  σ_ω=2.0317e-01  β=0.0000e+00
+  PL   : train=-1.7568e-01  test=-3.7041e+00  σ_φ̄(train)=9.9923e-01  σ_φ̄(test)=9.9782e-01  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.383e+03  V=4.207e+02  Dw=2.186e+03  g=3.289e+03  sigma=3.723e+02  total=8.651e+03
+  subnet MSE  M=3.038e-03  V=7.642e-01  Dw=2.129e-01  g=2.669e-01
+[step   6950]
+  train: −ELBO=7.6640e+00  NLL=8.0005e+00  NLL_R=1.6120e+00  NLL_ω=6.3885e+00  MSE_R=3.6373e-01  MSE_ω=7.8972e-01
+  test : −ELBO=-2.5823e+00  NLL=1.0840e+00  NLL_R=-1.4721e+00  NLL_ω=2.5561e+00  MSE_R=3.4972e-03  MSE_ω=4.2038e-01
+  sigma: σ_R=2.4153e-01  σ_ω=2.1974e-01  β=0.0000e+00
+  PL   : train=-3.3651e-01  test=-3.6663e+00  σ_φ̄(train)=1.0258e+00  σ_φ̄(test)=1.0225e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.394e+03  V=4.231e+02  Dw=2.194e+03  g=3.306e+03  sigma=3.740e+02  total=8.691e+03
+  subnet MSE  M=3.661e-03  V=7.274e-01  Dw=2.136e-01  g=2.690e-01
+[step   7000]
+  train: −ELBO=6.7805e+00  NLL=7.1758e+00  NLL_R=1.4789e+00  NLL_ω=5.6968e+00  MSE_R=3.6392e-01  MSE_ω=7.9077e-01
+  test : −ELBO=-2.6488e+00  NLL=9.9536e-01  NLL_R=-1.3394e+00  NLL_ω=2.3348e+00  MSE_R=3.5447e-03  MSE_ω=4.2787e-01
+  sigma: σ_R=2.5276e-01  σ_ω=2.3245e-01  β=0.0000e+00
+  PL   : train=-3.9524e-01  test=-3.6442e+00  σ_φ̄(train)=1.0354e+00  σ_φ̄(test)=1.0344e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.402e+03  V=4.248e+02  Dw=2.200e+03  g=3.320e+03  sigma=3.755e+02  total=8.722e+03
+  subnet MSE  M=4.329e-03  V=6.930e-01  Dw=2.048e-01  g=2.706e-01
+[step   7050]
+  train: −ELBO=5.9246e+00  NLL=6.5049e+00  NLL_R=1.3612e+00  NLL_ω=5.1436e+00  MSE_R=3.6393e-01  MSE_ω=8.0558e-01
+  test : −ELBO=-2.5881e+00  NLL=1.0013e+00  NLL_R=-1.1933e+00  NLL_ω=2.1945e+00  MSE_R=3.7049e-03  MSE_ω=4.4524e-01
+  sigma: σ_R=2.6532e-01  σ_ω=2.4749e-01  β=0.0000e+00
+  PL   : train=-5.8030e-01  test=-3.5893e+00  σ_φ̄(train)=1.0717e+00  σ_φ̄(test)=1.0707e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.411e+03  V=4.269e+02  Dw=2.207e+03  g=3.337e+03  sigma=3.773e+02  total=8.759e+03
+  subnet MSE  M=5.440e-03  V=6.726e-01  Dw=2.091e-01  g=2.751e-01
+[step   7100]
+  train: −ELBO=5.0289e+00  NLL=5.7784e+00  NLL_R=1.2477e+00  NLL_ω=4.5306e+00  MSE_R=3.6365e-01  MSE_ω=8.2374e-01
+  test : −ELBO=-2.5035e+00  NLL=1.0260e+00  NLL_R=-1.0173e+00  NLL_ω=2.0433e+00  MSE_R=3.8705e-03  MSE_ω=4.6626e-01
+  sigma: σ_R=2.8163e-01  σ_ω=2.6833e-01  β=0.0000e+00
+  PL   : train=-7.4950e-01  test=-3.5295e+00  σ_φ̄(train)=1.1103e+00  σ_φ̄(test)=1.1095e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.423e+03  V=4.296e+02  Dw=2.218e+03  g=3.361e+03  sigma=3.799e+02  total=8.811e+03
+  subnet MSE  M=7.200e-03  V=6.363e-01  Dw=2.042e-01  g=2.782e-01
+[step   7150]
+  train: −ELBO=4.3131e+00  NLL=5.1719e+00  NLL_R=1.1757e+00  NLL_ω=3.9962e+00  MSE_R=3.6372e-01  MSE_ω=8.3473e-01
+  test : −ELBO=-2.4601e+00  NLL=1.0295e+00  NLL_R=-8.5763e-01  NLL_ω=1.8871e+00  MSE_R=3.9874e-03  MSE_ω=4.7966e-01
+  sigma: σ_R=2.9721e-01  σ_ω=2.9041e-01  β=0.0000e+00
+  PL   : train=-8.5881e-01  test=-3.4895e+00  σ_φ̄(train)=1.1354e+00  σ_φ̄(test)=1.1297e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.436e+03  V=4.323e+02  Dw=2.229e+03  g=3.388e+03  sigma=3.830e+02  total=8.869e+03
+  subnet MSE  M=1.030e-02  V=5.971e-01  Dw=2.079e-01  g=2.830e-01
+[step   7200]
+  train: −ELBO=3.8213e+00  NLL=4.7858e+00  NLL_R=1.1369e+00  NLL_ω=3.6489e+00  MSE_R=3.6392e-01  MSE_ω=8.5050e-01
+  test : −ELBO=-2.3393e+00  NLL=1.0861e+00  NLL_R=-7.3348e-01  NLL_ω=1.8196e+00  MSE_R=4.1427e-03  MSE_ω=4.9710e-01
+  sigma: σ_R=3.0994e-01  σ_ω=3.1104e-01  β=0.0000e+00
+  PL   : train=-9.6453e-01  test=-3.4254e+00  σ_φ̄(train)=1.1646e+00  σ_φ̄(test)=1.1595e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.448e+03  V=4.351e+02  Dw=2.241e+03  g=3.416e+03  sigma=3.860e+02  total=8.926e+03
+  subnet MSE  M=1.344e-02  V=5.625e-01  Dw=2.129e-01  g=2.874e-01
+[step   7250]
+  train: −ELBO=3.3448e+00  NLL=4.3794e+00  NLL_R=1.1120e+00  NLL_ω=3.2674e+00  MSE_R=3.6421e-01  MSE_ω=8.5483e-01
+  test : −ELBO=-2.2530e+00  NLL=1.1397e+00  NLL_R=-6.1067e-01  NLL_ω=1.7503e+00  MSE_R=4.2681e-03  MSE_ω=5.1234e-01
+  sigma: σ_R=3.2300e-01  σ_ω=3.3625e-01  β=0.0000e+00
+  PL   : train=-1.0346e+00  test=-3.3927e+00  σ_φ̄(train)=1.1822e+00  σ_φ̄(test)=1.1800e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.463e+03  V=4.385e+02  Dw=2.258e+03  g=3.453e+03  sigma=3.900e+02  total=9.003e+03
+  subnet MSE  M=1.699e-02  V=5.394e-01  Dw=2.141e-01  g=2.924e-01
+[step   7300]
+  train: −ELBO=2.9989e+00  NLL=4.1300e+00  NLL_R=1.1001e+00  NLL_ω=3.0299e+00  MSE_R=3.6427e-01  MSE_ω=8.7152e-01
+  test : −ELBO=-2.1338e+00  NLL=1.2072e+00  NLL_R=-5.1587e-01  NLL_ω=1.7230e+00  MSE_R=4.4001e-03  MSE_ω=5.2873e-01
+  sigma: σ_R=3.3350e-01  σ_ω=3.6238e-01  β=0.0000e+00
+  PL   : train=-1.1311e+00  test=-3.3410e+00  σ_φ̄(train)=1.2134e+00  σ_φ̄(test)=1.2060e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.479e+03  V=4.420e+02  Dw=2.277e+03  g=3.496e+03  sigma=3.949e+02  total=9.089e+03
+  subnet MSE  M=2.190e-02  V=5.046e-01  Dw=2.166e-01  g=2.979e-01
+[step   7350]
+  train: −ELBO=2.6919e+00  NLL=3.9103e+00  NLL_R=1.0954e+00  NLL_ω=2.8149e+00  MSE_R=3.6432e-01  MSE_ω=8.8258e-01
+  test : −ELBO=-1.9667e+00  NLL=1.3120e+00  NLL_R=-4.4237e-01  NLL_ω=1.7543e+00  MSE_R=4.6314e-03  MSE_ω=5.5592e-01
+  sigma: σ_R=3.4186e-01  σ_ω=3.9261e-01  β=0.0000e+00
+  PL   : train=-1.2184e+00  test=-3.2787e+00  σ_φ̄(train)=1.2421e+00  σ_φ̄(test)=1.2337e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.500e+03  V=4.464e+02  Dw=2.303e+03  g=3.554e+03  sigma=4.012e+02  total=9.204e+03
+  subnet MSE  M=3.029e-02  V=4.817e-01  Dw=2.102e-01  g=3.044e-01
+[step   7400]
+  train: −ELBO=2.5019e+00  NLL=3.7871e+00  NLL_R=1.0964e+00  NLL_ω=2.6907e+00  MSE_R=3.6478e-01  MSE_ω=8.9334e-01
+  test : −ELBO=-1.8277e+00  NLL=1.3863e+00  NLL_R=-4.0683e-01  NLL_ω=1.7932e+00  MSE_R=4.8380e-03  MSE_ω=5.7811e-01
+  sigma: σ_R=3.4595e-01  σ_ω=4.1914e-01  β=0.0000e+00
+  PL   : train=-1.2852e+00  test=-3.2140e+00  σ_φ̄(train)=1.2668e+00  σ_φ̄(test)=1.2655e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.520e+03  V=4.506e+02  Dw=2.329e+03  g=3.609e+03  sigma=4.079e+02  total=9.316e+03
+  subnet MSE  M=3.767e-02  V=4.680e-01  Dw=2.255e-01  g=3.099e-01
+[step   7450]
+  train: −ELBO=2.3810e+00  NLL=3.6994e+00  NLL_R=1.0962e+00  NLL_ω=2.6032e+00  MSE_R=3.6476e-01  MSE_ω=8.9690e-01
+  test : −ELBO=-1.7899e+00  NLL=1.4129e+00  NLL_R=-3.9253e-01  NLL_ω=1.8055e+00  MSE_R=4.8708e-03  MSE_ω=5.8530e-01
+  sigma: σ_R=3.4764e-01  σ_ω=4.4192e-01  β=0.0000e+00
+  PL   : train=-1.3183e+00  test=-3.2028e+00  σ_φ̄(train)=1.2730e+00  σ_φ̄(test)=1.2646e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.540e+03  V=4.548e+02  Dw=2.356e+03  g=3.664e+03  sigma=4.141e+02  total=9.429e+03
+  subnet MSE  M=4.191e-02  V=4.397e-01  Dw=2.269e-01  g=3.190e-01
+[step   7500]
+  train: −ELBO=2.2885e+00  NLL=3.6576e+00  NLL_R=1.0958e+00  NLL_ω=2.5618e+00  MSE_R=3.6469e-01  MSE_ω=9.1011e-01
+  test : −ELBO=-1.7150e+00  NLL=1.4515e+00  NLL_R=-3.8583e-01  NLL_ω=1.8373e+00  MSE_R=4.9412e-03  MSE_ω=5.9544e-01
+  sigma: σ_R=3.4842e-01  σ_ω=4.6594e-01  β=0.0000e+00
+  PL   : train=-1.3691e+00  test=-3.1665e+00  σ_φ̄(train)=1.2925e+00  σ_φ̄(test)=1.2778e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.566e+03  V=4.598e+02  Dw=2.390e+03  g=3.732e+03  sigma=4.214e+02  total=9.569e+03
+  subnet MSE  M=5.016e-02  V=4.150e-01  Dw=2.469e-01  g=3.246e-01
+[step   7550]
+  train: −ELBO=2.2259e+00  NLL=3.6139e+00  NLL_R=1.0952e+00  NLL_ω=2.5187e+00  MSE_R=3.6454e-01  MSE_ω=9.0741e-01
+  test : −ELBO=-1.6641e+00  NLL=1.4800e+00  NLL_R=-3.8430e-01  NLL_ω=1.8643e+00  MSE_R=5.0173e-03  MSE_ω=6.0211e-01
+  sigma: σ_R=3.4857e-01  σ_ω=4.8288e-01  β=0.0000e+00
+  PL   : train=-1.3880e+00  test=-3.1442e+00  σ_φ̄(train)=1.2907e+00  σ_φ̄(test)=1.2816e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.587e+03  V=4.638e+02  Dw=2.418e+03  g=3.788e+03  sigma=4.270e+02  total=9.684e+03
+  subnet MSE  M=5.490e-02  V=3.879e-01  Dw=2.612e-01  g=3.298e-01
+[step   7600]
+  train: −ELBO=2.1754e+00  NLL=3.6069e+00  NLL_R=1.0949e+00  NLL_ω=2.5120e+00  MSE_R=3.6445e-01  MSE_ω=9.1774e-01
+  test : −ELBO=-1.5761e+00  NLL=1.5304e+00  NLL_R=-3.8321e-01  NLL_ω=1.9136e+00  MSE_R=5.1577e-03  MSE_ω=6.1759e-01
+  sigma: σ_R=3.4863e-01  σ_ω=5.0062e-01  β=0.0000e+00
+  PL   : train=-1.4315e+00  test=-3.1065e+00  σ_φ̄(train)=1.3064e+00  σ_φ̄(test)=1.2932e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.615e+03  V=4.687e+02  Dw=2.455e+03  g=3.859e+03  sigma=4.339e+02  total=9.831e+03
+  subnet MSE  M=6.596e-02  V=3.867e-01  Dw=2.859e-01  g=3.346e-01
+[step   7650]
+  train: −ELBO=2.1377e+00  NLL=3.5872e+00  NLL_R=1.0961e+00  NLL_ω=2.4911e+00  MSE_R=3.6476e-01  MSE_ω=9.1442e-01
+  test : −ELBO=-1.5299e+00  NLL=1.5636e+00  NLL_R=-3.8286e-01  NLL_ω=1.9465e+00  MSE_R=5.2422e-03  MSE_ω=6.2696e-01
+  sigma: σ_R=3.4863e-01  σ_ω=5.1367e-01  β=0.0000e+00
+  PL   : train=-1.4495e+00  test=-3.0936e+00  σ_φ̄(train)=1.3059e+00  σ_φ̄(test)=1.2945e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.641e+03  V=4.733e+02  Dw=2.488e+03  g=3.924e+03  sigma=4.405e+02  total=9.966e+03
+  subnet MSE  M=6.878e-02  V=3.626e-01  Dw=2.866e-01  g=3.404e-01
+[step   7700]
+  train: −ELBO=2.1020e+00  NLL=3.5760e+00  NLL_R=1.0950e+00  NLL_ω=2.4810e+00  MSE_R=3.6449e-01  MSE_ω=9.1320e-01
+  test : −ELBO=-1.4676e+00  NLL=1.5995e+00  NLL_R=-3.8229e-01  NLL_ω=1.9818e+00  MSE_R=5.3126e-03  MSE_ω=6.3901e-01
+  sigma: σ_R=3.4866e-01  σ_ω=5.2389e-01  β=0.0000e+00
+  PL   : train=-1.4740e+00  test=-3.0671e+00  σ_φ̄(train)=1.3110e+00  σ_φ̄(test)=1.3020e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.668e+03  V=4.781e+02  Dw=2.522e+03  g=3.987e+03  sigma=4.470e+02  total=1.010e+04
+  subnet MSE  M=7.639e-02  V=3.457e-01  Dw=3.224e-01  g=3.447e-01
+[step   7750]
+  train: −ELBO=2.0768e+00  NLL=3.5704e+00  NLL_R=1.0944e+00  NLL_ω=2.4760e+00  MSE_R=3.6434e-01  MSE_ω=9.1275e-01
+  test : −ELBO=-1.4457e+00  NLL=1.6081e+00  NLL_R=-3.8246e-01  NLL_ω=1.9906e+00  MSE_R=5.3126e-03  MSE_ω=6.3801e-01
+  sigma: σ_R=3.4864e-01  σ_ω=5.3187e-01  β=0.0000e+00
+  PL   : train=-1.4936e+00  test=-3.0538e+00  σ_φ̄(train)=1.3124e+00  σ_φ̄(test)=1.2991e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.696e+03  V=4.828e+02  Dw=2.556e+03  g=4.050e+03  sigma=4.536e+02  total=1.024e+04
+  subnet MSE  M=8.105e-02  V=3.405e-01  Dw=3.467e-01  g=3.504e-01
+[step   7800]
+  train: −ELBO=2.0775e+00  NLL=3.5772e+00  NLL_R=1.0944e+00  NLL_ω=2.4828e+00  MSE_R=3.6433e-01  MSE_ω=9.1775e-01
+  test : −ELBO=-1.3949e+00  NLL=1.6384e+00  NLL_R=-3.8213e-01  NLL_ω=2.0206e+00  MSE_R=5.4391e-03  MSE_ω=6.5117e-01
+  sigma: σ_R=3.4862e-01  σ_ω=5.3692e-01  β=0.0000e+00
+  PL   : train=-1.4998e+00  test=-3.0333e+00  σ_φ̄(train)=1.3077e+00  σ_φ̄(test)=1.2988e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.718e+03  V=4.868e+02  Dw=2.585e+03  g=4.102e+03  sigma=4.594e+02  total=1.035e+04
+  subnet MSE  M=8.429e-02  V=3.828e-01  Dw=3.638e-01  g=3.531e-01
+[step   7850]
+  train: −ELBO=2.0627e+00  NLL=3.5731e+00  NLL_R=1.0951e+00  NLL_ω=2.4780e+00  MSE_R=3.6451e-01  MSE_ω=9.1543e-01
+  test : −ELBO=-1.3864e+00  NLL=1.6408e+00  NLL_R=-3.8225e-01  NLL_ω=2.0230e+00  MSE_R=5.4187e-03  MSE_ω=6.5031e-01
+  sigma: σ_R=3.4862e-01  σ_ω=5.3978e-01  β=0.0000e+00
+  PL   : train=-1.5104e+00  test=-3.0272e+00  σ_φ̄(train)=1.3082e+00  σ_φ̄(test)=1.2955e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.734e+03  V=4.897e+02  Dw=2.605e+03  g=4.138e+03  sigma=4.636e+02  total=1.043e+04
+  subnet MSE  M=9.024e-02  V=3.134e-01  Dw=3.627e-01  g=3.553e-01
+[step   7900]
+  train: −ELBO=2.0575e+00  NLL=3.5878e+00  NLL_R=1.0956e+00  NLL_ω=2.4923e+00  MSE_R=3.6463e-01  MSE_ω=9.2417e-01
+  test : −ELBO=-1.3471e+00  NLL=1.6612e+00  NLL_R=-3.8172e-01  NLL_ω=2.0429e+00  MSE_R=5.5040e-03  MSE_ω=6.5988e-01
+  sigma: σ_R=3.4864e-01  σ_ω=5.4229e-01  β=0.0000e+00
+  PL   : train=-1.5304e+00  test=-3.0083e+00  σ_φ̄(train)=1.3169e+00  σ_φ̄(test)=1.3055e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.750e+03  V=4.923e+02  Dw=2.627e+03  g=4.175e+03  sigma=4.679e+02  total=1.051e+04
+  subnet MSE  M=9.316e-02  V=3.823e-01  Dw=3.665e-01  g=3.579e-01
+[step   7950]
+  train: −ELBO=2.0431e+00  NLL=3.5685e+00  NLL_R=1.0947e+00  NLL_ω=2.4738e+00  MSE_R=3.6442e-01  MSE_ω=9.1353e-01
+  test : −ELBO=-1.3691e+00  NLL=1.6553e+00  NLL_R=-3.8219e-01  NLL_ω=2.0375e+00  MSE_R=5.4502e-03  MSE_ω=6.5490e-01
+  sigma: σ_R=3.4861e-01  σ_ω=5.4438e-01  β=0.0000e+00
+  PL   : train=-1.5254e+00  test=-3.0244e+00  σ_φ̄(train)=1.3044e+00  σ_φ̄(test)=1.2912e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.767e+03  V=4.950e+02  Dw=2.649e+03  g=4.212e+03  sigma=4.725e+02  total=1.060e+04
+  subnet MSE  M=9.545e-02  V=3.532e-01  Dw=3.752e-01  g=3.604e-01
+[step   8000]
+  train: −ELBO=2.0322e+00  NLL=3.5746e+00  NLL_R=1.0950e+00  NLL_ω=2.4796e+00  MSE_R=3.6449e-01  MSE_ω=9.1712e-01
+  test : −ELBO=-1.3366e+00  NLL=1.6693e+00  NLL_R=-3.8179e-01  NLL_ω=2.0511e+00  MSE_R=5.4990e-03  MSE_ω=6.6145e-01
+  sigma: σ_R=3.4863e-01  σ_ω=5.4618e-01  β=0.0000e+00
+  PL   : train=-1.5424e+00  test=-3.0059e+00  σ_φ̄(train)=1.3134e+00  σ_φ̄(test)=1.3026e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.784e+03  V=4.979e+02  Dw=2.672e+03  g=4.251e+03  sigma=4.771e+02  total=1.068e+04
+  subnet MSE  M=9.746e-02  V=3.197e-01  Dw=3.803e-01  g=3.593e-01
+[step   8050]
+  train: −ELBO=2.0239e+00  NLL=3.5692e+00  NLL_R=1.0942e+00  NLL_ω=2.4750e+00  MSE_R=3.6430e-01  MSE_ω=9.1447e-01
+  test : −ELBO=-1.3286e+00  NLL=1.6720e+00  NLL_R=-3.8181e-01  NLL_ω=2.0538e+00  MSE_R=5.5150e-03  MSE_ω=6.6175e-01
+  sigma: σ_R=3.4862e-01  σ_ω=5.4769e-01  β=0.0000e+00
+  PL   : train=-1.5453e+00  test=-3.0006e+00  σ_φ̄(train)=1.3070e+00  σ_φ̄(test)=1.2969e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.802e+03  V=5.011e+02  Dw=2.696e+03  g=4.292e+03  sigma=4.821e+02  total=1.077e+04
+  subnet MSE  M=1.047e-01  V=3.131e-01  Dw=4.009e-01  g=3.616e-01
+[step   8100]
+  train: −ELBO=2.0082e+00  NLL=3.5675e+00  NLL_R=1.0949e+00  NLL_ω=2.4726e+00  MSE_R=3.6446e-01  MSE_ω=9.1307e-01
+  test : −ELBO=-1.3249e+00  NLL=1.6660e+00  NLL_R=-3.8208e-01  NLL_ω=2.0481e+00  MSE_R=5.4998e-03  MSE_ω=6.5740e-01
+  sigma: σ_R=3.4860e-01  σ_ω=5.4876e-01  β=0.0000e+00
+  PL   : train=-1.5593e+00  test=-2.9909e+00  σ_φ̄(train)=1.3142e+00  σ_φ̄(test)=1.2934e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.819e+03  V=5.039e+02  Dw=2.718e+03  g=4.330e+03  sigma=4.865e+02  total=1.086e+04
+  subnet MSE  M=1.079e-01  V=3.124e-01  Dw=4.195e-01  g=3.616e-01
+[step   8150]
+  train: −ELBO=2.0166e+00  NLL=3.5802e+00  NLL_R=1.0950e+00  NLL_ω=2.4852e+00  MSE_R=3.6449e-01  MSE_ω=9.2072e-01
+  test : −ELBO=-1.2843e+00  NLL=1.6954e+00  NLL_R=-3.8155e-01  NLL_ω=2.0770e+00  MSE_R=5.6321e-03  MSE_ω=6.7415e-01
+  sigma: σ_R=3.4859e-01  σ_ω=5.4955e-01  β=0.0000e+00
+  PL   : train=-1.5636e+00  test=-2.9798e+00  σ_φ̄(train)=1.3111e+00  σ_φ̄(test)=1.2969e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.835e+03  V=5.067e+02  Dw=2.740e+03  g=4.366e+03  sigma=4.909e+02  total=1.094e+04
+  subnet MSE  M=1.118e-01  V=3.118e-01  Dw=4.234e-01  g=3.693e-01
+[step   8200]
+  train: −ELBO=2.0024e+00  NLL=3.5666e+00  NLL_R=1.0952e+00  NLL_ω=2.4714e+00  MSE_R=3.6454e-01  MSE_ω=9.1237e-01
+  test : −ELBO=-1.2899e+00  NLL=1.6880e+00  NLL_R=-3.8171e-01  NLL_ω=2.0697e+00  MSE_R=5.5700e-03  MSE_ω=6.6931e-01
+  sigma: σ_R=3.4861e-01  σ_ω=5.5004e-01  β=0.0000e+00
+  PL   : train=-1.5641e+00  test=-2.9779e+00  σ_φ̄(train)=1.3053e+00  σ_φ̄(test)=1.2926e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.848e+03  V=5.090e+02  Dw=2.759e+03  g=4.394e+03  sigma=4.944e+02  total=1.100e+04
+  subnet MSE  M=1.184e-01  V=2.931e-01  Dw=4.236e-01  g=3.661e-01
+[step   8250]
+  train: −ELBO=1.9913e+00  NLL=3.5560e+00  NLL_R=1.0943e+00  NLL_ω=2.4617e+00  MSE_R=3.6431e-01  MSE_ω=9.0654e-01
+  test : −ELBO=-1.3017e+00  NLL=1.6759e+00  NLL_R=-3.8187e-01  NLL_ω=2.0577e+00  MSE_R=5.5266e-03  MSE_ω=6.6188e-01
+  sigma: σ_R=3.4861e-01  σ_ω=5.5027e-01  β=0.0000e+00
+  PL   : train=-1.5646e+00  test=-2.9775e+00  σ_φ̄(train)=1.3017e+00  σ_φ̄(test)=1.2883e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.856e+03  V=5.103e+02  Dw=2.770e+03  g=4.413e+03  sigma=4.968e+02  total=1.105e+04
+  subnet MSE  M=1.258e-01  V=2.993e-01  Dw=4.251e-01  g=3.665e-01
+[step   8300]
+  train: −ELBO=1.9841e+00  NLL=3.5574e+00  NLL_R=1.0945e+00  NLL_ω=2.4629e+00  MSE_R=3.6436e-01  MSE_ω=9.0725e-01
+  test : −ELBO=-1.2721e+00  NLL=1.6902e+00  NLL_R=-3.8185e-01  NLL_ω=2.0720e+00  MSE_R=5.5681e-03  MSE_ω=6.7035e-01
+  sigma: σ_R=3.4859e-01  σ_ω=5.5048e-01  β=0.0000e+00
+  PL   : train=-1.5732e+00  test=-2.9623e+00  σ_φ̄(train)=1.3047e+00  σ_φ̄(test)=1.2939e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.871e+03  V=5.128e+02  Dw=2.790e+03  g=4.444e+03  sigma=5.007e+02  total=1.112e+04
+  subnet MSE  M=1.256e-01  V=3.122e-01  Dw=4.392e-01  g=3.681e-01
+[step   8350]
+  train: −ELBO=1.9934e+00  NLL=3.5738e+00  NLL_R=1.0946e+00  NLL_ω=2.4792e+00  MSE_R=3.6439e-01  MSE_ω=9.1714e-01
+  test : −ELBO=-1.2694e+00  NLL=1.6911e+00  NLL_R=-3.8182e-01  NLL_ω=2.0729e+00  MSE_R=5.5970e-03  MSE_ω=6.7076e-01
+  sigma: σ_R=3.4858e-01  σ_ω=5.5064e-01  β=0.0000e+00
+  PL   : train=-1.5804e+00  test=-2.9605e+00  σ_φ̄(train)=1.3011e+00  σ_φ̄(test)=1.2875e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.890e+03  V=5.162e+02  Dw=2.818e+03  g=4.486e+03  sigma=5.060e+02  total=1.122e+04
+  subnet MSE  M=1.301e-01  V=3.020e-01  Dw=4.435e-01  g=3.707e-01
+[step   8400]
+  train: −ELBO=1.9804e+00  NLL=3.5639e+00  NLL_R=1.0949e+00  NLL_ω=2.4690e+00  MSE_R=3.6447e-01  MSE_ω=9.1096e-01
+  test : −ELBO=-1.2711e+00  NLL=1.6935e+00  NLL_R=-3.8168e-01  NLL_ω=2.0752e+00  MSE_R=5.6287e-03  MSE_ω=6.7207e-01
+  sigma: σ_R=3.4858e-01  σ_ω=5.5074e-01  β=0.0000e+00
+  PL   : train=-1.5835e+00  test=-2.9647e+00  σ_φ̄(train)=1.2956e+00  σ_φ̄(test)=1.2795e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.909e+03  V=5.193e+02  Dw=2.845e+03  g=4.525e+03  sigma=5.110e+02  total=1.131e+04
+  subnet MSE  M=1.358e-01  V=3.066e-01  Dw=4.558e-01  g=3.728e-01
+[step   8450]
+  train: −ELBO=1.9726e+00  NLL=3.5660e+00  NLL_R=1.0953e+00  NLL_ω=2.4708e+00  MSE_R=3.6455e-01  MSE_ω=9.1203e-01
+  test : −ELBO=-1.2405e+00  NLL=1.7056e+00  NLL_R=-3.8182e-01  NLL_ω=2.0874e+00  MSE_R=5.6618e-03  MSE_ω=6.7947e-01
+  sigma: σ_R=3.4855e-01  σ_ω=5.5076e-01  β=0.0000e+00
+  PL   : train=-1.5935e+00  test=-2.9461e+00  σ_φ̄(train)=1.3016e+00  σ_φ̄(test)=1.2868e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.928e+03  V=5.226e+02  Dw=2.872e+03  g=4.565e+03  sigma=5.162e+02  total=1.140e+04
+  subnet MSE  M=1.389e-01  V=2.911e-01  Dw=4.545e-01  g=3.755e-01
+[step   8500]
+  train: −ELBO=1.9625e+00  NLL=3.5542e+00  NLL_R=1.0945e+00  NLL_ω=2.4597e+00  MSE_R=3.6438e-01  MSE_ω=9.0529e-01
+  test : −ELBO=-1.2575e+00  NLL=1.6904e+00  NLL_R=-3.8202e-01  NLL_ω=2.0724e+00  MSE_R=5.5992e-03  MSE_ω=6.7044e-01
+  sigma: σ_R=3.4855e-01  σ_ω=5.5068e-01  β=0.0000e+00
+  PL   : train=-1.5917e+00  test=-2.9479e+00  σ_φ̄(train)=1.2916e+00  σ_φ̄(test)=1.2788e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.940e+03  V=5.248e+02  Dw=2.889e+03  g=4.592e+03  sigma=5.197e+02  total=1.147e+04
+  subnet MSE  M=1.439e-01  V=2.797e-01  Dw=4.642e-01  g=3.760e-01
+[step   8550]
+  train: −ELBO=1.9607e+00  NLL=3.5601e+00  NLL_R=1.0949e+00  NLL_ω=2.4652e+00  MSE_R=3.6447e-01  MSE_ω=9.0866e-01
+  test : −ELBO=-1.2295e+00  NLL=1.7137e+00  NLL_R=-3.8166e-01  NLL_ω=2.0954e+00  MSE_R=5.7179e-03  MSE_ω=6.8445e-01
+  sigma: σ_R=3.4854e-01  σ_ω=5.5057e-01  β=0.0000e+00
+  PL   : train=-1.5994e+00  test=-2.9433e+00  σ_φ̄(train)=1.2958e+00  σ_φ̄(test)=1.2796e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.951e+03  V=5.265e+02  Dw=2.905e+03  g=4.614e+03  sigma=5.226e+02  total=1.152e+04
+  subnet MSE  M=1.435e-01  V=3.172e-01  Dw=4.767e-01  g=3.769e-01
+[step   8600]
+  train: −ELBO=1.9592e+00  NLL=3.5672e+00  NLL_R=1.0947e+00  NLL_ω=2.4725e+00  MSE_R=3.6443e-01  MSE_ω=9.1305e-01
+  test : −ELBO=-1.2356e+00  NLL=1.7002e+00  NLL_R=-3.8199e-01  NLL_ω=2.0822e+00  MSE_R=5.6580e-03  MSE_ω=6.7660e-01
+  sigma: σ_R=3.4853e-01  σ_ω=5.5042e-01  β=0.0000e+00
+  PL   : train=-1.6080e+00  test=-2.9359e+00  σ_φ̄(train)=1.2967e+00  σ_φ̄(test)=1.2699e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.966e+03  V=5.293e+02  Dw=2.928e+03  g=4.645e+03  sigma=5.268e+02  total=1.160e+04
+  subnet MSE  M=1.511e-01  V=3.131e-01  Dw=4.931e-01  g=3.764e-01
+[step   8650]
+  train: −ELBO=1.9507e+00  NLL=3.5601e+00  NLL_R=1.0941e+00  NLL_ω=2.4660e+00  MSE_R=3.6427e-01  MSE_ω=9.0916e-01
+  test : −ELBO=-1.2168e+00  NLL=1.7001e+00  NLL_R=-3.8190e-01  NLL_ω=2.0820e+00  MSE_R=5.6575e-03  MSE_ω=6.7667e-01
+  sigma: σ_R=3.4854e-01  σ_ω=5.5019e-01  β=0.0000e+00
+  PL   : train=-1.6094e+00  test=-2.9169e+00  σ_φ̄(train)=1.2925e+00  σ_φ̄(test)=1.2777e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.983e+03  V=5.323e+02  Dw=2.952e+03  g=4.680e+03  sigma=5.313e+02  total=1.168e+04
+  subnet MSE  M=1.597e-01  V=2.729e-01  Dw=4.861e-01  g=3.784e-01
+[step   8700]
+  train: −ELBO=1.9347e+00  NLL=3.5483e+00  NLL_R=1.0949e+00  NLL_ω=2.4534e+00  MSE_R=3.6447e-01  MSE_ω=9.0150e-01
+  test : −ELBO=-1.2015e+00  NLL=1.7158e+00  NLL_R=-3.8174e-01  NLL_ω=2.0975e+00  MSE_R=5.7316e-03  MSE_ω=6.8619e-01
+  sigma: σ_R=3.4852e-01  σ_ω=5.5004e-01  β=0.0000e+00
+  PL   : train=-1.6136e+00  test=-2.9173e+00  σ_φ̄(train)=1.2925e+00  σ_φ̄(test)=1.2780e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=2.994e+03  V=5.345e+02  Dw=2.969e+03  g=4.704e+03  sigma=5.344e+02  total=1.174e+04
+  subnet MSE  M=1.557e-01  V=3.037e-01  Dw=4.879e-01  g=3.779e-01
+[step   8750]
+  train: −ELBO=1.9368e+00  NLL=3.5441e+00  NLL_R=1.0952e+00  NLL_ω=2.4489e+00  MSE_R=3.6453e-01  MSE_ω=8.9879e-01
+  test : −ELBO=-1.2265e+00  NLL=1.7033e+00  NLL_R=-3.8179e-01  NLL_ω=2.0851e+00  MSE_R=5.6493e-03  MSE_ω=6.7888e-01
+  sigma: σ_R=3.4856e-01  σ_ω=5.4979e-01  β=0.0000e+00
+  PL   : train=-1.6073e+00  test=-2.9299e+00  σ_φ̄(train)=1.2845e+00  σ_φ̄(test)=1.2752e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.013e+03  V=5.378e+02  Dw=2.997e+03  g=4.742e+03  sigma=5.396e+02  total=1.183e+04
+  subnet MSE  M=1.503e-01  V=3.051e-01  Dw=5.013e-01  g=3.776e-01
+[step   8800]
+  train: −ELBO=1.9283e+00  NLL=3.5691e+00  NLL_R=1.0956e+00  NLL_ω=2.4735e+00  MSE_R=3.6462e-01  MSE_ω=9.1368e-01
+  test : −ELBO=-1.1642e+00  NLL=1.7240e+00  NLL_R=-3.8145e-01  NLL_ω=2.1054e+00  MSE_R=5.7972e-03  MSE_ω=6.9142e-01
+  sigma: σ_R=3.4853e-01  σ_ω=5.4943e-01  β=0.0000e+00
+  PL   : train=-1.6408e+00  test=-2.8881e+00  σ_φ̄(train)=1.3065e+00  σ_φ̄(test)=1.2839e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.028e+03  V=5.406e+02  Dw=3.019e+03  g=4.774e+03  sigma=5.440e+02  total=1.191e+04
+  subnet MSE  M=1.645e-01  V=2.995e-01  Dw=5.233e-01  g=3.821e-01
+[step   8850]
+  train: −ELBO=1.9256e+00  NLL=3.5529e+00  NLL_R=1.0932e+00  NLL_ω=2.4597e+00  MSE_R=3.6405e-01  MSE_ω=9.0535e-01
+  test : −ELBO=-1.1819e+00  NLL=1.7103e+00  NLL_R=-3.8185e-01  NLL_ω=2.0921e+00  MSE_R=5.7025e-03  MSE_ω=6.8358e-01
+  sigma: σ_R=3.4853e-01  σ_ω=5.4921e-01  β=0.0000e+00
+  PL   : train=-1.6273e+00  test=-2.8921e+00  σ_φ̄(train)=1.2893e+00  σ_φ̄(test)=1.2691e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.040e+03  V=5.429e+02  Dw=3.038e+03  g=4.801e+03  sigma=5.474e+02  total=1.197e+04
+  subnet MSE  M=1.678e-01  V=2.634e-01  Dw=4.959e-01  g=3.832e-01
+[step   8900]
+  train: −ELBO=1.9074e+00  NLL=3.5409e+00  NLL_R=1.0949e+00  NLL_ω=2.4461e+00  MSE_R=3.6445e-01  MSE_ω=8.9710e-01
+  test : −ELBO=-1.1670e+00  NLL=1.7228e+00  NLL_R=-3.8159e-01  NLL_ω=2.1044e+00  MSE_R=5.7972e-03  MSE_ω=6.9131e-01
+  sigma: σ_R=3.4851e-01  σ_ω=5.4878e-01  β=0.0000e+00
+  PL   : train=-1.6335e+00  test=-2.8898e+00  σ_φ̄(train)=1.2845e+00  σ_φ̄(test)=1.2676e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.058e+03  V=5.463e+02  Dw=3.066e+03  g=4.840e+03  sigma=5.527e+02  total=1.206e+04
+  subnet MSE  M=1.649e-01  V=2.949e-01  Dw=5.444e-01  g=3.809e-01
+[step   8950]
+  train: −ELBO=1.9001e+00  NLL=3.5390e+00  NLL_R=1.0942e+00  NLL_ω=2.4449e+00  MSE_R=3.6429e-01  MSE_ω=8.9640e-01
+  test : −ELBO=-1.1446e+00  NLL=1.7305e+00  NLL_R=-3.8145e-01  NLL_ω=2.1120e+00  MSE_R=5.8081e-03  MSE_ω=6.9623e-01
+  sigma: σ_R=3.4852e-01  σ_ω=5.4832e-01  β=0.0000e+00
+  PL   : train=-1.6389e+00  test=-2.8751e+00  σ_φ̄(train)=1.2827e+00  σ_φ̄(test)=1.2690e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.075e+03  V=5.492e+02  Dw=3.091e+03  g=4.873e+03  sigma=5.574e+02  total=1.215e+04
+  subnet MSE  M=1.748e-01  V=2.430e-01  Dw=5.608e-01  g=3.826e-01
+[step   9000]
+  train: −ELBO=1.8953e+00  NLL=3.5413e+00  NLL_R=1.0950e+00  NLL_ω=2.4463e+00  MSE_R=3.6449e-01  MSE_ω=8.9729e-01
+  test : −ELBO=-1.1365e+00  NLL=1.7260e+00  NLL_R=-3.8161e-01  NLL_ω=2.1076e+00  MSE_R=5.7976e-03  MSE_ω=6.9396e-01
+  sigma: σ_R=3.4851e-01  σ_ω=5.4784e-01  β=0.0000e+00
+  PL   : train=-1.6461e+00  test=-2.8625e+00  σ_φ̄(train)=1.2830e+00  σ_φ̄(test)=1.2714e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.095e+03  V=5.528e+02  Dw=3.121e+03  g=4.914e+03  sigma=5.631e+02  total=1.225e+04
+  subnet MSE  M=1.736e-01  V=2.551e-01  Dw=5.787e-01  g=3.844e-01
+[step   9050]
+  train: −ELBO=1.8848e+00  NLL=3.5359e+00  NLL_R=1.0950e+00  NLL_ω=2.4409e+00  MSE_R=3.6448e-01  MSE_ω=8.9403e-01
+  test : −ELBO=-1.1498e+00  NLL=1.7187e+00  NLL_R=-3.8183e-01  NLL_ω=2.1005e+00  MSE_R=5.7428e-03  MSE_ω=6.8985e-01
+  sigma: σ_R=3.4851e-01  σ_ω=5.4764e-01  β=0.0000e+00
+  PL   : train=-1.6511e+00  test=-2.8685e+00  σ_φ̄(train)=1.2833e+00  σ_φ̄(test)=1.2625e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.109e+03  V=5.552e+02  Dw=3.143e+03  g=4.943e+03  sigma=5.673e+02  total=1.232e+04
+  subnet MSE  M=1.782e-01  V=2.861e-01  Dw=5.846e-01  g=3.854e-01
+[step   9100]
+  train: −ELBO=1.8861e+00  NLL=3.5434e+00  NLL_R=1.0952e+00  NLL_ω=2.4481e+00  MSE_R=3.6455e-01  MSE_ω=8.9837e-01
+  test : −ELBO=-1.1341e+00  NLL=1.7227e+00  NLL_R=-3.8171e-01  NLL_ω=2.1044e+00  MSE_R=5.7862e-03  MSE_ω=6.9241e-01
+  sigma: σ_R=3.4850e-01  σ_ω=5.4735e-01  β=0.0000e+00
+  PL   : train=-1.6572e+00  test=-2.8568e+00  σ_φ̄(train)=1.2829e+00  σ_φ̄(test)=1.2598e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.122e+03  V=5.575e+02  Dw=3.163e+03  g=4.969e+03  sigma=5.711e+02  total=1.238e+04
+  subnet MSE  M=1.835e-01  V=3.000e-01  Dw=5.870e-01  g=3.882e-01
+[step   9150]
+  train: −ELBO=1.8822e+00  NLL=3.5373e+00  NLL_R=1.0952e+00  NLL_ω=2.4421e+00  MSE_R=3.6453e-01  MSE_ω=8.9476e-01
+  test : −ELBO=-1.1320e+00  NLL=1.7253e+00  NLL_R=-3.8164e-01  NLL_ω=2.1070e+00  MSE_R=5.8132e-03  MSE_ω=6.9413e-01
+  sigma: σ_R=3.4850e-01  σ_ω=5.4711e-01  β=0.0000e+00
+  PL   : train=-1.6551e+00  test=-2.8573e+00  σ_φ̄(train)=1.2738e+00  σ_φ̄(test)=1.2551e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.138e+03  V=5.605e+02  Dw=3.188e+03  g=5.002e+03  sigma=5.760e+02  total=1.246e+04
+  subnet MSE  M=1.790e-01  V=2.730e-01  Dw=6.114e-01  g=3.867e-01
+[step   9200]
+  train: −ELBO=1.8679e+00  NLL=3.5183e+00  NLL_R=1.0940e+00  NLL_ω=2.4243e+00  MSE_R=3.6425e-01  MSE_ω=8.8412e-01
+  test : −ELBO=-1.1212e+00  NLL=1.7264e+00  NLL_R=-3.8179e-01  NLL_ω=2.1082e+00  MSE_R=5.8022e-03  MSE_ω=6.9506e-01
+  sigma: σ_R=3.4848e-01  σ_ω=5.4685e-01  β=0.0000e+00
+  PL   : train=-1.6504e+00  test=-2.8476e+00  σ_φ̄(train)=1.2670e+00  σ_φ̄(test)=1.2486e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.149e+03  V=5.625e+02  Dw=3.206e+03  g=5.026e+03  sigma=5.793e+02  total=1.252e+04
+  subnet MSE  M=1.841e-01  V=2.556e-01  Dw=6.362e-01  g=3.887e-01
+[step   9250]
+  train: −ELBO=1.8703e+00  NLL=3.5322e+00  NLL_R=1.0946e+00  NLL_ω=2.4376e+00  MSE_R=3.6439e-01  MSE_ω=8.9207e-01
+  test : −ELBO=-1.1140e+00  NLL=1.7306e+00  NLL_R=-3.8150e-01  NLL_ω=2.1121e+00  MSE_R=5.8346e-03  MSE_ω=6.9754e-01
+  sigma: σ_R=3.4850e-01  σ_ω=5.4663e-01  β=0.0000e+00
+  PL   : train=-1.6619e+00  test=-2.8446e+00  σ_φ̄(train)=1.2740e+00  σ_φ̄(test)=1.2559e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.157e+03  V=5.639e+02  Dw=3.219e+03  g=5.042e+03  sigma=5.816e+02  total=1.256e+04
+  subnet MSE  M=1.883e-01  V=2.899e-01  Dw=6.323e-01  g=3.867e-01
+[step   9300]
+  train: −ELBO=1.8706e+00  NLL=3.5381e+00  NLL_R=1.0952e+00  NLL_ω=2.4429e+00  MSE_R=3.6453e-01  MSE_ω=8.9524e-01
+  test : −ELBO=-1.1096e+00  NLL=1.7233e+00  NLL_R=-3.8159e-01  NLL_ω=2.1049e+00  MSE_R=5.7870e-03  MSE_ω=6.9344e-01
+  sigma: σ_R=3.4851e-01  σ_ω=5.4636e-01  β=0.0000e+00
+  PL   : train=-1.6674e+00  test=-2.8329e+00  σ_φ̄(train)=1.2752e+00  σ_φ̄(test)=1.2576e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.165e+03  V=5.654e+02  Dw=3.231e+03  g=5.058e+03  sigma=5.840e+02  total=1.260e+04
+  subnet MSE  M=1.840e-01  V=2.638e-01  Dw=6.452e-01  g=3.881e-01
+[step   9350]
+  train: −ELBO=1.8730e+00  NLL=3.5408e+00  NLL_R=1.0943e+00  NLL_ω=2.4466e+00  MSE_R=3.6431e-01  MSE_ω=8.9742e-01
+  test : −ELBO=-1.0661e+00  NLL=1.7401e+00  NLL_R=-3.8142e-01  NLL_ω=2.1215e+00  MSE_R=5.9002e-03  MSE_ω=7.0351e-01
+  sigma: σ_R=3.4848e-01  σ_ω=5.4619e-01  β=0.0000e+00
+  PL   : train=-1.6678e+00  test=-2.8063e+00  σ_φ̄(train)=1.2773e+00  σ_φ̄(test)=1.2568e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.175e+03  V=5.669e+02  Dw=3.245e+03  g=5.076e+03  sigma=5.866e+02  total=1.265e+04
+  subnet MSE  M=1.827e-01  V=2.526e-01  Dw=6.715e-01  g=3.899e-01
+[step   9400]
+  train: −ELBO=1.8668e+00  NLL=3.5384e+00  NLL_R=1.0941e+00  NLL_ω=2.4443e+00  MSE_R=3.6428e-01  MSE_ω=8.9605e-01
+  test : −ELBO=-1.0903e+00  NLL=1.7330e+00  NLL_R=-3.8194e-01  NLL_ω=2.1150e+00  MSE_R=5.8549e-03  MSE_ω=6.9973e-01
+  sigma: σ_R=3.4844e-01  σ_ω=5.4597e-01  β=0.0000e+00
+  PL   : train=-1.6716e+00  test=-2.8233e+00  σ_φ̄(train)=1.2729e+00  σ_φ̄(test)=1.2520e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.185e+03  V=5.687e+02  Dw=3.260e+03  g=5.096e+03  sigma=5.897e+02  total=1.270e+04
+  subnet MSE  M=1.856e-01  V=2.704e-01  Dw=6.718e-01  g=3.898e-01
+[step   9450]
+  train: −ELBO=1.8512e+00  NLL=3.5246e+00  NLL_R=1.0945e+00  NLL_ω=2.4301e+00  MSE_R=3.6438e-01  MSE_ω=8.8760e-01
+  test : −ELBO=-1.0694e+00  NLL=1.7403e+00  NLL_R=-3.8143e-01  NLL_ω=2.1217e+00  MSE_R=5.8817e-03  MSE_ω=7.0387e-01
+  sigma: σ_R=3.4849e-01  σ_ω=5.4582e-01  β=0.0000e+00
+  PL   : train=-1.6734e+00  test=-2.8096e+00  σ_φ̄(train)=1.2730e+00  σ_φ̄(test)=1.2528e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.193e+03  V=5.701e+02  Dw=3.273e+03  g=5.112e+03  sigma=5.923e+02  total=1.274e+04
+  subnet MSE  M=1.860e-01  V=2.512e-01  Dw=6.843e-01  g=3.886e-01
+[step   9500]
+  train: −ELBO=1.8559e+00  NLL=3.5322e+00  NLL_R=1.0937e+00  NLL_ω=2.4385e+00  MSE_R=3.6418e-01  MSE_ω=8.9259e-01
+  test : −ELBO=-1.0457e+00  NLL=1.7388e+00  NLL_R=-3.8129e-01  NLL_ω=2.1201e+00  MSE_R=5.8854e-03  MSE_ω=7.0303e-01
+  sigma: σ_R=3.4850e-01  σ_ω=5.4562e-01  β=0.0000e+00
+  PL   : train=-1.6763e+00  test=-2.7845e+00  σ_φ̄(train)=1.2708e+00  σ_φ̄(test)=1.2532e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.205e+03  V=5.722e+02  Dw=3.291e+03  g=5.136e+03  sigma=5.959e+02  total=1.280e+04
+  subnet MSE  M=1.894e-01  V=2.581e-01  Dw=6.881e-01  g=3.908e-01
+[step   9550]
+  train: −ELBO=1.8349e+00  NLL=3.5162e+00  NLL_R=1.0955e+00  NLL_ω=2.4207e+00  MSE_R=3.6460e-01  MSE_ω=8.8202e-01
+  test : −ELBO=-1.0699e+00  NLL=1.7341e+00  NLL_R=-3.8150e-01  NLL_ω=2.1156e+00  MSE_R=5.8597e-03  MSE_ω=7.0058e-01
+  sigma: σ_R=3.4849e-01  σ_ω=5.4528e-01  β=0.0000e+00
+  PL   : train=-1.6812e+00  test=-2.8040e+00  σ_φ̄(train)=1.2691e+00  σ_φ̄(test)=1.2491e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.216e+03  V=5.742e+02  Dw=3.309e+03  g=5.159e+03  sigma=5.997e+02  total=1.286e+04
+  subnet MSE  M=1.827e-01  V=2.613e-01  Dw=7.141e-01  g=3.910e-01
+[step   9600]
+  train: −ELBO=1.8480e+00  NLL=3.5292e+00  NLL_R=1.0947e+00  NLL_ω=2.4345e+00  MSE_R=3.6442e-01  MSE_ω=8.9025e-01
+  test : −ELBO=-1.0636e+00  NLL=1.7414e+00  NLL_R=-3.8137e-01  NLL_ω=2.1228e+00  MSE_R=5.9004e-03  MSE_ω=7.0501e-01
+  sigma: σ_R=3.4848e-01  σ_ω=5.4508e-01  β=0.0000e+00
+  PL   : train=-1.6813e+00  test=-2.8050e+00  σ_φ̄(train)=1.2664e+00  σ_φ̄(test)=1.2452e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.223e+03  V=5.755e+02  Dw=3.321e+03  g=5.174e+03  sigma=6.022e+02  total=1.290e+04
+  subnet MSE  M=1.909e-01  V=2.627e-01  Dw=7.032e-01  g=3.932e-01
+[step   9650]
+  train: −ELBO=1.8405e+00  NLL=3.5249e+00  NLL_R=1.0935e+00  NLL_ω=2.4314e+00  MSE_R=3.6412e-01  MSE_ω=8.8842e-01
+  test : −ELBO=-1.0414e+00  NLL=1.7438e+00  NLL_R=-3.8152e-01  NLL_ω=2.1254e+00  MSE_R=5.9222e-03  MSE_ω=7.0672e-01
+  sigma: σ_R=3.4846e-01  σ_ω=5.4481e-01  β=0.0000e+00
+  PL   : train=-1.6845e+00  test=-2.7852e+00  σ_φ̄(train)=1.2659e+00  σ_φ̄(test)=1.2474e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.235e+03  V=5.776e+02  Dw=3.339e+03  g=5.197e+03  sigma=6.060e+02  total=1.295e+04
+  subnet MSE  M=1.839e-01  V=2.873e-01  Dw=7.633e-01  g=3.908e-01
+[step   9700]
+  train: −ELBO=1.8347e+00  NLL=3.5219e+00  NLL_R=1.0947e+00  NLL_ω=2.4272e+00  MSE_R=3.6442e-01  MSE_ω=8.8589e-01
+  test : −ELBO=-1.0490e+00  NLL=1.7333e+00  NLL_R=-3.8140e-01  NLL_ω=2.1147e+00  MSE_R=5.8768e-03  MSE_ω=7.0056e-01
+  sigma: σ_R=3.4849e-01  σ_ω=5.4456e-01  β=0.0000e+00
+  PL   : train=-1.6872e+00  test=-2.7823e+00  σ_φ̄(train)=1.2674e+00  σ_φ̄(test)=1.2438e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.245e+03  V=5.794e+02  Dw=3.356e+03  g=5.218e+03  sigma=6.096e+02  total=1.301e+04
+  subnet MSE  M=1.865e-01  V=2.488e-01  Dw=7.538e-01  g=3.926e-01
+[step   9750]
+  train: −ELBO=1.8291e+00  NLL=3.5166e+00  NLL_R=1.0948e+00  NLL_ω=2.4218e+00  MSE_R=3.6443e-01  MSE_ω=8.8271e-01
+  test : −ELBO=-1.0360e+00  NLL=1.7403e+00  NLL_R=-3.8170e-01  NLL_ω=2.1220e+00  MSE_R=5.9084e-03  MSE_ω=7.0519e-01
+  sigma: σ_R=3.4844e-01  σ_ω=5.4418e-01  β=0.0000e+00
+  PL   : train=-1.6874e+00  test=-2.7764e+00  σ_φ̄(train)=1.2603e+00  σ_φ̄(test)=1.2422e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.262e+03  V=5.824e+02  Dw=3.381e+03  g=5.251e+03  sigma=6.153e+02  total=1.309e+04
+  subnet MSE  M=1.886e-01  V=2.569e-01  Dw=7.675e-01  g=3.944e-01
+[step   9800]
+  train: −ELBO=1.8278e+00  NLL=3.5283e+00  NLL_R=1.0934e+00  NLL_ω=2.4349e+00  MSE_R=3.6410e-01  MSE_ω=8.9048e-01
+  test : −ELBO=-1.0161e+00  NLL=1.7534e+00  NLL_R=-3.8087e-01  NLL_ω=2.1343e+00  MSE_R=5.9678e-03  MSE_ω=7.1259e-01
+  sigma: σ_R=3.4851e-01  σ_ω=5.4392e-01  β=0.0000e+00
+  PL   : train=-1.7005e+00  test=-2.7695e+00  σ_φ̄(train)=1.2708e+00  σ_φ̄(test)=1.2528e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.274e+03  V=5.845e+02  Dw=3.401e+03  g=5.275e+03  sigma=6.195e+02  total=1.315e+04
+  subnet MSE  M=1.844e-01  V=2.632e-01  Dw=7.897e-01  g=3.965e-01
+[step   9850]
+  train: −ELBO=1.8163e+00  NLL=3.5162e+00  NLL_R=1.0951e+00  NLL_ω=2.4211e+00  MSE_R=3.6450e-01  MSE_ω=8.8231e-01
+  test : −ELBO=-1.0342e+00  NLL=1.7345e+00  NLL_R=-3.8199e-01  NLL_ω=2.1165e+00  MSE_R=5.8611e-03  MSE_ω=7.0214e-01
+  sigma: σ_R=3.4843e-01  σ_ω=5.4381e-01  β=0.0000e+00
+  PL   : train=-1.6999e+00  test=-2.7687e+00  σ_φ̄(train)=1.2625e+00  σ_φ̄(test)=1.2425e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.286e+03  V=5.865e+02  Dw=3.419e+03  g=5.298e+03  sigma=6.234e+02  total=1.321e+04
+  subnet MSE  M=1.864e-01  V=2.578e-01  Dw=8.141e-01  g=3.910e-01
+[step   9900]
+  train: −ELBO=1.8150e+00  NLL=3.5094e+00  NLL_R=1.0934e+00  NLL_ω=2.4161e+00  MSE_R=3.6410e-01  MSE_ω=8.7933e-01
+  test : −ELBO=-1.0238e+00  NLL=1.7348e+00  NLL_R=-3.8132e-01  NLL_ω=2.1161e+00  MSE_R=5.8613e-03  MSE_ω=7.0206e-01
+  sigma: σ_R=3.4851e-01  σ_ω=5.4362e-01  β=0.0000e+00
+  PL   : train=-1.6944e+00  test=-2.7586e+00  σ_φ̄(train)=1.2502e+00  σ_φ̄(test)=1.2261e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.302e+03  V=5.891e+02  Dw=3.442e+03  g=5.328e+03  sigma=6.286e+02  total=1.329e+04
+  subnet MSE  M=1.841e-01  V=2.396e-01  Dw=8.127e-01  g=3.966e-01
+[step   9950]
+  train: −ELBO=1.8154e+00  NLL=3.5347e+00  NLL_R=1.0945e+00  NLL_ω=2.4402e+00  MSE_R=3.6435e-01  MSE_ω=8.9361e-01
+  test : −ELBO=-9.8247e-01  NLL=1.7584e+00  NLL_R=-3.8097e-01  NLL_ω=2.1394e+00  MSE_R=6.0245e-03  MSE_ω=7.1587e-01
+  sigma: σ_R=3.4847e-01  σ_ω=5.4351e-01  β=0.0000e+00
+  PL   : train=-1.7192e+00  test=-2.7409e+00  σ_φ̄(train)=1.2739e+00  σ_φ̄(test)=1.2507e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.313e+03  V=5.909e+02  Dw=3.459e+03  g=5.348e+03  sigma=6.322e+02  total=1.334e+04
+  subnet MSE  M=1.764e-01  V=2.292e-01  Dw=8.554e-01  g=3.982e-01
+[step  10000]
+  train: −ELBO=1.7997e+00  NLL=3.5059e+00  NLL_R=1.0949e+00  NLL_ω=2.4110e+00  MSE_R=3.6447e-01  MSE_ω=8.7633e-01
+  test : −ELBO=-1.0077e+00  NLL=1.7434e+00  NLL_R=-3.8145e-01  NLL_ω=2.1249e+00  MSE_R=5.9347e-03  MSE_ω=7.0741e-01
+  sigma: σ_R=3.4846e-01  σ_ω=5.4335e-01  β=0.0000e+00
+  PL   : train=-1.7062e+00  test=-2.7511e+00  σ_φ̄(train)=1.2563e+00  σ_φ̄(test)=1.2356e+00  σ_obs_ω=1.0000e-02  λ_PL=1.00
+  KL   : M=3.320e+03  V=5.922e+02  Dw=3.470e+03  g=5.363e+03  sigma=6.348e+02  total=1.338e+04
+  subnet MSE  M=1.705e-01  V=2.639e-01  Dw=8.817e-01  g=3.955e-01
+
+Final per-trajectory eval ...
+Final trajectory train loss 1.5431e+02 +/- 8.6270e+01
+Final trajectory test loss  1.3810e+02 +/- 8.8594e+01
+Final trajectory train l2 loss 1.4401e+02 +/- 8.2530e+01
+Final trajectory test l2 loss  1.3314e+02 +/- 8.5325e+01
+Final trajectory train geo loss 1.0305e+01 +/- 7.2742e+00
+Final trajectory test geo loss  4.9637e+00 +/- 5.9046e+00
+Saved final stats:  /mnt/data/thribhuvan/Projects/stochastic_port_hamiltonian/Final/SPHNP v2/src/models/3D_SO3_Windy_Pendulum/ph_gp_sde/data/run_wp3d_jax/obs0p25_fric0p5_wind0p5_ext0-sine_lr0p001_s10000_np5_smp64_T20_seed0_randu7_G0p5-0p7-0p1_260627-053541/wp3d-so3hamGPSDE-5p-stats.pkl

@@ -1,0 +1,141 @@
+created_at: '2026-09-25T01:00:00-05:00'
+data:
+  dataset_path: datasets/QUADROTOR-DATASET-WINDSDE/WINDSDEHI_CF2P_10s_h0p01_clean.pkl
+  max_test_windows: null
+  max_train_windows: null
+  observation_noise_override: null
+  time_varying_controls: true
+  window_points: 51
+  window_stride: 10
+experiment:
+  changes:
+  - 'RERUN of 25-09-2026-00-03_ph_gp_lie_imex_sde_idsia.yaml with optimizer.adam_groups = [sigma_weights]: the diffusion GP''s
+    weights are trained by the shared Adam (1e-3) instead of their own Prodigy. In the first run that Prodigy''s d_t never
+    left 1e-6 in 3000 steps, so only the diffusion level learned and sigma(x) stayed constant; every other group is unchanged
+    (13 Prodigys).'
+  - Also uses the fixed diffusion initialisation (twist scale / initial M2^-1).
+  - 'This run: gp-lieimex-SDE-PRODIGYv2-dcoef0p01-sigAdam-DIFF-c-full-WINDSDEHI-CLEAN-stage1-K50-3k-nopriors.'
+  - 'PHASE 1 of the ground-truth diffusion study on QUADROTOR-DATASET-WINDSDE (high wind, clean): white state-dependent wind
+    with KNOWN diffusion M^-1 Sigma(x) = diag(0.25(1+0.5|v_b|) I, 0.4(1+0.25|omega_b|) I), linear damping c = 0.5.'
+  - GP-SDE, diffusion GP sigma(x), input full; 14/12 Prodigys (weights d_coef 0.01, levels as before); otherwise 22-09-2026-07-06
+    (WIND25-CLEAN NOPRIORS, wrench input).
+  - 'This run: gp-lieimex-SDE-PRODIGYv2-dcoef0p01-DIFF-c-full-WINDSDEHI-CLEAN-stage1-K50-3k-nopriors.'
+  history_file: experiments/quadrotor/experiment_history.txt
+  name_suffix: gp-lieimex-SDE-PRODIGYv2-dcoef0p01-sigAdam-DIFF-c-full-WINDSDEHI-CLEAN-stage1-K50-3k-nopriors
+  root: experiments/quadrotor/train_runs
+gp:
+  actuation_penalty_weight: 0.0
+  control_position_feature_count: 20
+  control_rotation_feature_budget: 11
+  data_fit: se3-nll
+  direct_control_map: false
+  dissipation_v_feature_count: 20
+  dissipation_v_initial_value: 1.0
+  dissipation_w_feature_count: 20
+  dissipation_w_initial_value: 0.001
+  enabled: true
+  fixed_observation_sigma: null
+  gravity_level_prior: false
+  gravity_penalty_points: 1024
+  gravity_penalty_weight: 0.0
+  initial_log_standard_deviation: -5.0
+  initial_observation_sigma: 0.3
+  inverse_mass_2_initial_value: 1000.0
+  kernel: matern
+  kl_anneal_steps: 1000
+  kl_beta_max: 1.0
+  known_gravity: 9.81
+  mass_1_feature_count: 20
+  mass_2_feature_budget: 20
+  matern_length_scale: 1.0
+  matern_smoothness: 2.5
+  model_backend: utils-gp-model
+  nll_squared_error_scale: 1.0
+  optional_mean_subnetwork: null
+  period: 6.283185307179586
+  periodic_dimension: 0
+  periodic_harmonics: 5
+  periodic_length_scale: 0.5
+  potential_include_rotation: false
+  potential_position_feature_count: 20
+  potential_rotation_feature_budget: 11
+  structured_potential: false
+model:
+  activation: null
+  dissipation_enabled: true
+  family: gp
+  hidden_dim: null
+  initialization_gain: null
+  mass_epsilon: 0.01
+  mass_factor_epsilon: null
+  name: ph_gp_lie_imex_sde_idsia
+  optional_subnetwork: null
+  solver: lie-imex
+optimizer:
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  gradient_clip_norm: 10.0
+  learning_rate: 0.001
+  level_learning_rate: 0.25
+  name: prodigy-per-subnetwork-v2
+  weight_decay: 0.0
+  prodigy_weight_learning_rate: 1.0
+  prodigy_d_coef: 0.01
+  adam_groups:
+  - sigma_weights
+report:
+  auto_generate: false
+  controller_use_dissipation: true
+  dpi: 150
+  enabled: false
+  evaluation_dataset: datasets/QUADROTOR-DATASET-WINDSDE/WINDSDEHI_CF2P_10s_h0p01_clean.pkl
+  exact_pages: 47
+  experiment_dirs: null
+  generator: src.models.SE3_Quadrotor.comparision.generate_report
+  output_name: model_report_47_pages.pdf
+  random_seed: 42
+  title: PH-GP Lie-IMEX V2 JAX model report
+  trajectory_count: 10
+runtime:
+  compilation_cache_dir: experiments/quadrotor/.jax_cache
+  device: gpu
+  device_index: 0
+  enable_compilation_cache: true
+  jax_enable_x64: false
+  matmul_precision: highest
+  require_gpu: true
+schema_version: 1
+training:
+  batch_size: 256
+  checkpoint_every: 500
+  continuity_weight: 0.0
+  eval_every: 250
+  initial_checkpoint: null
+  latent_initial_state: true
+  latent_initial_state_kl_weight: 1.0
+  latent_initial_state_learning_rate: 0.01
+  latent_initial_state_sample: false
+  latent_initial_state_sigma: learned
+  latent_initial_state_std_floor: 0.0
+  long_horizon_test_seconds:
+  - 1.0
+  - 3.0
+  loss: se3-nll
+  loss_scale: 1.0
+  mass_pretrain_learning_rate: 0.001
+  mass_pretrain_samples: 4096
+  mass_pretrain_steps: 0
+  resume_checkpoint: null
+  seed: 0
+  total_steps: 3000
+  diverged_window_position_limit: 10.0
+sde:
+  enabled: true
+  samples: 8
+  initial_process_sigma_linear: 0.05
+  initial_process_sigma_angular: 0.05
+  screen_omega_limit: 100.0
+  screen_velocity_limit: 50.0
+  diffusion_input: full
+  diffusion_feature_count: 20

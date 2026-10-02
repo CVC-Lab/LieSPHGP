@@ -1,0 +1,126 @@
+schema_version: 1
+created_at: '2026-09-19T03:00:00-05:00'
+model:
+  name: ph_gp_lie_imex
+  family: gp
+  solver: lie-imex
+  hidden_dim: null
+  activation: null
+  initialization_gain: null
+  dissipation_enabled: true
+  mass_epsilon: 0.01
+  mass_factor_epsilon: null
+  optional_subnetwork: null
+data:
+  dataset_path: datasets/QUADROTOR-DATASET-NANOBENCH/NANOBENCH_CF2_10s_h0p01_clean.pkl
+  window_points: 51
+  window_stride: 10
+  time_varying_controls: true
+  max_train_windows: null
+  max_test_windows: null
+  observation_noise_override: null
+training:
+  seed: 0
+  total_steps: 3000
+  batch_size: 256
+  eval_every: 250
+  checkpoint_every: 500
+  loss: se3-nll
+  loss_scale: 1.0
+  mass_pretrain_steps: 0
+  mass_pretrain_learning_rate: 0.001
+  mass_pretrain_samples: 4096
+  initial_checkpoint: null
+  resume_checkpoint: null
+  long_horizon_test_seconds:
+  - 1.0
+  - 3.0
+  latent_initial_state: true
+  latent_initial_state_sigma: learned
+  latent_initial_state_learning_rate: 0.01
+  latent_initial_state_kl_weight: 1.0
+  latent_initial_state_std_floor: 0.0
+  latent_initial_state_sample: false
+  continuity_weight: 0.0
+optimizer:
+  name: prodigy-levels-per-subnetwork
+  learning_rate: 0.001
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  weight_decay: 0.0
+  gradient_clip_norm: 10.0
+  level_learning_rate: 0.25
+gp:
+  enabled: true
+  kernel: matern
+  matern_smoothness: 2.5
+  model_backend: utils-gp-model
+  matern_length_scale: 1.0
+  period: 6.283185307179586
+  periodic_length_scale: 0.5
+  periodic_harmonics: 5
+  periodic_dimension: 0
+  mass_1_feature_count: 20
+  mass_2_feature_budget: 20
+  dissipation_v_feature_count: 20
+  dissipation_w_feature_count: 20
+  potential_position_feature_count: 20
+  potential_rotation_feature_budget: 11
+  potential_include_rotation: false
+  control_position_feature_count: 20
+  control_rotation_feature_budget: 11
+  initial_log_standard_deviation: -5.0
+  inverse_mass_2_initial_value: 1000.0
+  dissipation_v_initial_value: 1.0
+  dissipation_w_initial_value: 0.001
+  kl_beta_max: 1.0
+  kl_anneal_steps: 1000
+  data_fit: se3-nll
+  initial_observation_sigma: 0.3
+  fixed_observation_sigma: null
+  nll_squared_error_scale: 1.0
+  direct_control_map: false
+  optional_mean_subnetwork: null
+  known_gravity: 9.81
+  gravity_level_prior: false
+  gravity_penalty_weight: 0.0
+  gravity_penalty_points: 1024
+  structured_potential: false
+  actuation_penalty_weight: 0.0
+runtime:
+  device: gpu
+  device_index: 0
+  require_gpu: true
+  jax_enable_x64: false
+  matmul_precision: highest
+  enable_compilation_cache: true
+  compilation_cache_dir: experiments/quadrotor/.jax_cache
+experiment:
+  root: experiments/quadrotor/train_runs
+  name_suffix: gp-lieimex-NANOBENCH-real-stage1-K50-3k-scratch-shapedisjoint
+  history_file: experiments/quadrotor/experiment_history.txt
+  changes:
+  - 'REAL-FLIGHT run: trained on QUADROTOR-DATASET-NANOBENCH (NanoBench, arXiv 2603.09908, BSD 3-Clause): 107 Crazyflie 2.1
+    flights under Vicon at 100 Hz, converted to the 22-channel layout by datasets/QUADROTOR-DATASET-NANOBENCH/convert_nanobench.py.
+    State from Vicon only; input = battery-compensated per-motor PWM through the CF2X mixer (hover thrust 0.96-1.00 x m g).'
+  - 'SHAPE-DISJOINT split: train = multisine, circle, figure-eight, oval, linear ramp, staircase climb, random waypoints,
+    battery-drain hover (89 flights x 10 s); test = helix, star, trefoil, lissajous (25 flights x 10 s). No trajectory family
+    is shared between the splits.'
+  - 'No synthetic observation noise: the measurements are the only data. The four likelihood sigmas (GP) are still learned
+    from a neutral 0.3, so no noise level is supplied.'
+  - 'Everything else is the published sigma=0.25 simulator recipe, unchanged: same window curriculum (K=50 then K=100, stride
+    10, batch 256, 3000 steps per stage), same losses, same optimizers.'
+report:
+  enabled: false
+  auto_generate: false
+  generator: src.models.SE3_Quadrotor.comparision.generate_report
+  exact_pages: 47
+  output_name: model_report_47_pages.pdf
+  title: PH-GP Lie-IMEX V2 JAX model report
+  trajectory_count: 10
+  random_seed: 42
+  dpi: 150
+  experiment_dirs: null
+  evaluation_dataset: datasets/QUADROTOR-DATASET-NANOBENCH/NANOBENCH_CF2_10s_h0p01_clean.pkl
+  controller_use_dissipation: true

@@ -16,3 +16,10 @@ datasets/**/*.pkl
 envs/gym-pybullet-drones/
 results/
 stats/
+*.json
+
+# Generated quadrotor runs and the preserved pre-cleanup archive.
+experiments/quadrotor/*/
+
+# local archives / scratch
+tmp/

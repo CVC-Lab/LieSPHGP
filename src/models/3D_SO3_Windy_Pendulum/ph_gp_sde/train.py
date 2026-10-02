@@ -5,7 +5,7 @@ Differences from the previous (MSE-based) ph_gp_sde trainer:
   - Rollout switched from diffrax (deterministic ODE) to
     `lie_heun_sde_rollout` (Stratonovich Heun on SO(3) × ℝ³), so the SDE
     structure is actually exercised — σ_net receives gradients via the
-    Brownian-noise branch.  Mirrors `ph_nn_sde_debug/train.py`.
+    Brownian-noise branch.  Mirrors `ph_nn_sde/train.py`.
 
   - Loss replaced with the negative ELBO:
 
@@ -73,6 +73,39 @@ DEFAULT_DATA_DIR = os.path.join(PROJECT_ROOT, 'datasets/data/windy_pendulum_3d')
 
 
 # ─────────────────────────────────────────────────────────────────────
+# Run-folder naming (mirrors ph_nn_ode so parallel runs don't collide)
+# ─────────────────────────────────────────────────────────────────────
+
+def _fmt_num(x):
+    s = f"{x:g}"
+    return s.replace('.', 'p').replace('-', 'n').replace('+', '')
+
+
+def build_run_name(args):
+    parts = [
+        f"obs{_fmt_num(args.obs_noise_std)}",
+        f"fric{_fmt_num(args.friction_coeff)}",
+        f"wind{_fmt_num(args.wind_force_std)}",
+        f"ext{_fmt_num(args.external_force_std)}-{args.external_force_type}",
+        f"lr{_fmt_num(args.learn_rate)}",
+        f"s{args.total_steps}",
+        f"np{args.num_points}",
+        f"smp{args.samples}",
+        f"T{args.timesteps}",
+        f"seed{args.seed}",
+    ]
+    if args.varying_friction:
+        parts.append('varfric')
+    if args.random_u:
+        parts.append(f'randu{_fmt_num(args.random_u_scale)}')
+    if (args.g_x, args.g_y, args.g_z) != (1.0, 1.0, 1.0):
+        parts.append(
+            f'G{_fmt_num(args.g_x)}-{_fmt_num(args.g_y)}-{_fmt_num(args.g_z)}')
+    stamp = time.strftime('%y%m%d-%H%M%S')
+    return '_'.join(parts) + '_' + stamp
+
+
+# ─────────────────────────────────────────────────────────────────────
 # CLI
 # ─────────────────────────────────────────────────────────────────────
 
@@ -100,6 +133,14 @@ def get_args():
     p.add_argument('--wind_force_std', type=float, default=0.0)
     p.add_argument('--obs_noise_std', type=float, default=0.0)
     p.add_argument('--random_u', action='store_true')
+    p.add_argument('--random_u_scale', type=float, default=1.0,
+                   help='if --random_u, sample u ~ U(-scale, scale) per step')
+    p.add_argument('--g_x', type=float, default=1.0,
+                   help='diagonal control gain G[0,0] in env dynamics')
+    p.add_argument('--g_y', type=float, default=1.0,
+                   help='diagonal control gain G[1,1] in env dynamics')
+    p.add_argument('--g_z', type=float, default=1.0,
+                   help='diagonal control gain G[2,2] in env dynamics')
 
     # M_net pretraining
     p.add_argument('--pretrain_M_steps', type=int, default=200)
@@ -130,10 +171,12 @@ def get_args():
     p.add_argument('--lambda_pl', type=float, default=1.0,
                    help='weight of the per-increment pseudo-likelihood term '
                         '(0 disables; see elbo_loss_jax.pl_loss)')
-    p.add_argument('--init_sigma_obs_omega', type=float, default=0.5,
-                   help='initial per-snapshot ω observation-noise scale used '
-                        'inside Σ_eff = σ_φ²·Δt + 2·σ_obs_ω²; should match the '
-                        'dataset\'s --obs_noise_std')
+    p.add_argument('--init_sigma_obs_omega', type=float, default=0.01,
+                   help='per-snapshot ω observation-noise scale (FROZEN, static '
+                        'field) used inside Σ_eff = σ_φ²·Δt + 2·σ_obs_ω². Kept '
+                        'small (0.01) so the noise budget is forced onto the '
+                        'process diffusion σ_φ instead of being absorbed here — '
+                        'a large value (old default 0.5) lets σ_φ collapse to 0.')
     p.add_argument('--init_sigma_const', type=float, default=0.5,
                    help='DEPRECATED / IGNORED. The static softplus bias on '
                         'sigma_net was removed; σ(q) = softplus(GP_raw(q)) '
@@ -209,7 +252,7 @@ class _DiagShim:
 
 # ─────────────────────────────────────────────────────────────────────
 # NaN diagnostics — heavy debug path triggered on first NaN/Inf.
-# Ported from ph_nn_sde_debug/train.py and adapted for GP subnets:
+# Ported from ph_nn_sde/train.py and adapted for GP subnets:
 #   • Subnet calls thread `inference_mode=True` so the deterministic
 #     (posterior-mean) path is exercised first.
 #   • The eager substep replay also runs a SECOND pass with the exact
@@ -546,7 +589,7 @@ def diagnose_and_dump(*, model_pre, batch_x_cat, dW_batch, gp_keys_batch,
 
 
 # ─────────────────────────────────────────────────────────────────────
-# Rollout helpers (ported from ph_nn_sde_debug/train.py)
+# Rollout helpers (ported from ph_nn_sde/train.py)
 # ─────────────────────────────────────────────────────────────────────
 
 def _sample_dW(key, batch_size, mc_samples, n_outer, n_substeps, h, dtype):
@@ -811,6 +854,8 @@ def train(args):
         wind_force_std=args.wind_force_std,
         obs_noise_std=args.obs_noise_std,
         random_u=args.random_u,
+        random_u_scale=args.random_u_scale,
+        g_diag=(args.g_x, args.g_y, args.g_z),
     )
 
     train_x_np, t_eval_np = arrange_data(data['x'], data['t'],
@@ -1139,6 +1184,15 @@ def train(args):
 
 if __name__ == "__main__":
     args = get_args()
+
+    # Per-run date-stamped subfolder so parallel runs (different obs_noise_std
+    # etc.) don't overwrite each other's checkpoints/stats. The default
+    # save_dir acts as the parent for all runs.
+    run_name = build_run_name(args)
+    args.save_dir = os.path.join(args.save_dir, run_name)
+    os.makedirs(args.save_dir, exist_ok=True)
+    print(f"Run dir : {args.save_dir}")
+
     model, stats = train(args)
 
     os.makedirs(args.save_dir, exist_ok=True)

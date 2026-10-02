@@ -53,7 +53,7 @@ $$
 
 The "$\circ$" denotes Stratonovich integration; the Stratonovich
 convention is used for the same reason as in the env's data generator
-and in `ph_gp_sde` / `ph_nn_sde_debug` — it commutes with the
+and in `ph_gp_sde` / `ph_nn_sde` — it commutes with the
 chain rule, which keeps the Heun-type predictor–corrector
 discretisation unbiased even when $\Sigma_\theta$ depends on the
 state.
@@ -262,7 +262,7 @@ guard against the small-angle and antipodal singularities.
 > drift learns the env's *mean* dynamics; the diffusion's only data
 > signal is whatever residual variance the rollout MSE explains by
 > tilting $\sigma_\theta$. This is the same training regime as
-> `ph_nn_sde_debug` — for a stronger $\sigma$ signal you'd add a
+> `ph_nn_sde` — for a stronger $\sigma$ signal you'd add a
 > per-increment pseudo-likelihood term, as `ph_gp_sde` does.
 
 ---
@@ -329,7 +329,7 @@ $$
 are reported as mean ± std over $b$. The full predicted trajectories
 $\hat y$ are stashed in the stats dict (`train_x_hat`, `test_x_hat`)
 so the comparison-PDF script can plot them next to `ph_gp_sde`,
-`ph_nn_ode_v2`, etc., on the same axes.
+`ph_nn_ode`, etc., on the same axes.
 
 ---
 

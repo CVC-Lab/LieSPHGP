@@ -149,6 +149,7 @@ def sample_windy_pendulum_3d(
     g=9.81,
     random_u=False,
     random_u_scale=1.0,
+    g_diag=1.0,
     varying_friction=True,
     **kwargs
 ):
@@ -160,6 +161,9 @@ def sample_windy_pendulum_3d(
     random_u_scale: half-width of the uniform distribution used when
         random_u=True. u ~ U(-scale, scale) per timestep. Defaults to 1.0
         for backward compatibility.
+    g_diag: scalar or 3-tuple defining the constant diagonal control gain
+        matrix G(q) = diag(g_x, g_y, g_z) applied as G·u in the body-frame
+        torque. Defaults to 1.0 (G = I₃).
     """
     env = windy_pendulum_3d(
         g=g,
@@ -169,6 +173,7 @@ def sample_windy_pendulum_3d(
         friction_coeff=friction_coeff,
         varying_friction=varying_friction,
         wind_force_std=wind_force_std,
+        g_diag=g_diag,
         ori_rep=ori_rep,
         render_mode=None,
         **kwargs
@@ -276,6 +281,7 @@ def get_dataset(
     timesteps=75,
     random_u=False,
     random_u_scale=1.0,
+    g_diag=1.0,
     varying_friction=True,
     **kwargs
 ):
@@ -302,7 +308,12 @@ def get_dataset(
         rand_u_str = f"random_u{str(random_u)}_uScale{str(random_u_scale).replace('.', 'p')}"
     else:
         rand_u_str = f"random_u{str(random_u)}"
-    filename = f"wp3d_dataset_{extforce_str}_{fric_str}_{var_fric_str}_{obs_str}_{wind_str}_{rand_u_str}_steps{timesteps}.pkl"
+    if isinstance(g_diag, (list, tuple, np.ndarray)):
+        gd = tuple(float(x) for x in g_diag)
+        g_str = "G_" + "_".join(str(x).replace('.', 'p') for x in gd)
+    else:
+        g_str = f"G{str(float(g_diag)).replace('.', 'p')}"
+    filename = f"wp3d_dataset_{extforce_str}_{fric_str}_{var_fric_str}_{obs_str}_{wind_str}_{rand_u_str}_{g_str}_steps{timesteps}.pkl"
     out_path = os.path.join(save_dir, filename)
 
     try:
@@ -328,6 +339,7 @@ def get_dataset(
             g=g,
             random_u=random_u,
             random_u_scale=random_u_scale,
+            g_diag=g_diag,
             varying_friction=varying_friction,
             **kwargs
         )
@@ -365,6 +377,7 @@ def get_dataset(
         'timesteps': timesteps,
         'random_u': random_u,
         'random_u_scale': random_u_scale,
+        'g_diag': tuple(float(x) for x in np.broadcast_to(np.asarray(g_diag, dtype=np.float64), (3,))),
     }
 
     # Add observation noise
@@ -403,6 +416,14 @@ if __name__ == "__main__":
     parser.add_argument("--wind_force_std", type=float, default=0.1)
     parser.add_argument("--obs_noise_std", type=float, default=0.05)
     parser.add_argument("--random_u", action="store_true")
+    parser.add_argument("--random_u_scale", type=float, default=1.0,
+                        help="if --random_u, sample u ~ U(-scale, scale) per step per axis")
+    parser.add_argument("--g_x", type=float, default=1.0,
+                        help="diagonal control gain G[0,0]")
+    parser.add_argument("--g_y", type=float, default=1.0,
+                        help="diagonal control gain G[1,1]")
+    parser.add_argument("--g_z", type=float, default=1.0,
+                        help="diagonal control gain G[2,2]")
     args = parser.parse_args()
 
     data, path = get_dataset(
@@ -418,6 +439,8 @@ if __name__ == "__main__":
         wind_force_std=args.wind_force_std,
         obs_noise_std=args.obs_noise_std,
         random_u=args.random_u,
+        random_u_scale=args.random_u_scale,
+        g_diag=(args.g_x, args.g_y, args.g_z),
         us=((0.0, 0.0, 0.0),(1.0, 1.0, 1.0),(-1.0, -1.0, -1.0),),
     )
     print("Done.")

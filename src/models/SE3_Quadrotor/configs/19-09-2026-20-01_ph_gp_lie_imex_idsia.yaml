@@ -1,0 +1,146 @@
+schema_version: 1
+created_at: '2026-09-19T15:30:00-05:00'
+model:
+  name: ph_gp_lie_imex_idsia
+  family: gp
+  solver: lie-imex
+  hidden_dim: null
+  activation: null
+  initialization_gain: null
+  dissipation_enabled: true
+  mass_epsilon: 0.01
+  mass_factor_epsilon: null
+  optional_subnetwork: null
+data:
+  dataset_path: datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_clean.pkl
+  window_points: 66
+  window_stride: 10
+  time_varying_controls: true
+  max_train_windows: null
+  max_test_windows: null
+  observation_noise_override: null
+training:
+  seed: 0
+  total_steps: 500
+  batch_size: 256
+  eval_every: 100
+  checkpoint_every: 250
+  loss: se3-nll
+  loss_scale: 1.0
+  mass_pretrain_steps: 0
+  mass_pretrain_learning_rate: 0.001
+  mass_pretrain_samples: 4096
+  initial_checkpoint: experiments/quadrotor/train_runs/19-09-15-20_ph_gp_lie_imex_idsia_gp-idsia-curric-fp64-s1-K50-1500-melon-heldout/checkpoint_final.pkl
+  resume_checkpoint: null
+  long_horizon_test_seconds:
+  - 1.0
+  - 3.0
+  latent_initial_state: true
+  latent_initial_state_sigma: learned
+  latent_initial_state_learning_rate: 0.01
+  latent_initial_state_kl_weight: 1.0
+  latent_initial_state_std_floor: 0.0
+  latent_initial_state_sample: false
+  continuity_weight: 0.0
+  diverged_window_position_limit: 10.0
+  loss_horizon_weight: 0.0
+  carry_optimizer_state: true
+optimizer:
+  name: prodigy-levels-per-subnetwork
+  learning_rate: 0.001
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  weight_decay: 0.0
+  gradient_clip_norm: 10.0
+  level_learning_rate: 0.25
+gp:
+  enabled: true
+  kernel: matern
+  matern_smoothness: 2.5
+  model_backend: utils-gp-model
+  matern_length_scale: 1.0
+  period: 6.283185307179586
+  periodic_length_scale: 0.5
+  periodic_harmonics: 5
+  periodic_dimension: 0
+  mass_1_feature_count: 20
+  mass_2_feature_budget: 20
+  dissipation_v_feature_count: 20
+  dissipation_w_feature_count: 20
+  potential_position_feature_count: 20
+  potential_rotation_feature_budget: 11
+  potential_include_rotation: false
+  control_position_feature_count: 20
+  control_rotation_feature_budget: 11
+  initial_log_standard_deviation: -5.0
+  inverse_mass_2_initial_value: 1000.0
+  dissipation_v_initial_value: 1.0
+  dissipation_w_initial_value: 0.001
+  kl_beta_max: 1.0
+  kl_anneal_steps: 1000
+  data_fit: se3-nll
+  initial_observation_sigma: 0.3
+  fixed_observation_sigma: null
+  nll_squared_error_scale: 1.0
+  direct_control_map: false
+  optional_mean_subnetwork: null
+  known_gravity: 9.81
+  gravity_level_prior: false
+  gravity_penalty_weight: 0.0
+  gravity_penalty_points: 1024
+  structured_potential: false
+  actuation_penalty_weight: 0.0
+  min_observation_sigma: null
+  robust_likelihood_dof: null
+  reinit_observation_sigma_on_init: true
+runtime:
+  device: gpu
+  device_index: 0
+  require_gpu: true
+  jax_enable_x64: true
+  matmul_precision: highest
+  enable_compilation_cache: true
+  compilation_cache_dir: experiments/quadrotor/.jax_cache
+experiment:
+  root: experiments/quadrotor/train_runs
+  name_suffix: gp-idsia-curric-fp64-s2-K65-500-carry-reinit-melon-heldout
+  history_file: experiments/quadrotor/experiment_history.txt
+  changes:
+  - 'REAL-FLIGHT run on QUADROTOR-DATASET-IDSIA: the IDSIA nano-drone system identification benchmark (Busetto et al., Control
+    Engineering Practice; github.com/idsia-robotics/nanodrone-sysid-benchmark), Crazyflie 2.1 Brushless under motion capture
+    at 100 Hz, converted by datasets/QUADROTOR-DATASET-IDSIA/convert_idsia.py.'
+  - 'The input is the MEASURED motor angular velocity from ESC telemetry, mapped to a wrench by the benchmark''s own published
+    mixer (K_t = 3.72e-8, K_c = 7.74e-12, arm = 0.0353 m). This is why this set replaces NanoBench: there the input was a
+    commanded PWM and the rotational channel was unidentifiable (yaw R^2 = 0.000, best fit needing a 20-30 ms motor lag);
+    here the same test gives roll/pitch/yaw R^2 = 0.369/0.342/0.417 at zero lag and a parameter-free mass estimate of 44.78
+    g against the published 45.0 g.'
+  - 'SHAPE-DISJOINT split, the benchmark''s own protocol: train = chirp, random, square (44 flights x 10 s); test = melon
+    (18 flights x 10 s), a trajectory shape that never occurs in training.'
+  - No synthetic observation noise; the GP's four likelihood sigmas are still learned from a neutral 0.3, so no noise level
+    is supplied to any model.
+  - 'Otherwise the published sigma=0.25 simulator recipe is unchanged: same window curriculum (K=50 then K=100, stride 10,
+    batch 256, 3000 steps per stage), same losses, same optimizers, same clipping.'
+  - 'CURRICULUM EXPERIMENT (run A). Stage-2 (K=100) failures were traced to three things stacking at the stage boundary: the
+    window doubles, the learned scales are already at 0.04 so every residual is weighted 1/(2 sigma^2) ~ 300, and the optimiser
+    state is reset so Prodigy''s distance restarts at 1e-3 (measured pinned there in every stage-2 run). Stage 1 itself is
+    flat after step ~1000.'
+  - 'Three changes, all in the ph_gp_lie_imex_idsia package: (1) training.carry_optimizer_state=true passes the optimiser
+    state through initial_checkpoint; (2) gp.reinit_observation_sigma_on_init=true sets each sigma to its MAP value for the
+    new window length before training; (3) window curriculum K=50 (1500) -> 65 (500) -> 80 (500) -> 100 (1000), same 6000-step
+    budget as 3000+3000.'
+  - No sigma floor (min_observation_sigma=null) so the re-initialisation is tested on its own. fp64 as in the other idsia-package
+    runs.
+report:
+  enabled: false
+  auto_generate: false
+  generator: src.models.SE3_Quadrotor.comparision.generate_report
+  exact_pages: 47
+  output_name: model_report_47_pages.pdf
+  title: PH-GP Lie-IMEX V2 JAX model report
+  trajectory_count: 10
+  random_seed: 42
+  dpi: 150
+  experiment_dirs: null
+  evaluation_dataset: datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_clean.pkl
+  controller_use_dissipation: true

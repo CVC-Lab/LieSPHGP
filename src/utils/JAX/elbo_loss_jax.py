@@ -77,7 +77,7 @@ def gaussian_nll_omega(omega_obs, omega_hat, log_sigma_omega):
                         components of ω, then mean over the N samples).
                         This is the convention used as the "MSE_ω"
                         diagnostic in the trainer prints and matched on
-                        the PyTorch side by ph_nn_ode_fp32.
+                        the PyTorch side by ph_nn_ode.
     """
     diff = omega_obs - omega_hat                                # (N, 3)
     sq_norm = jnp.sum(diff * diff, axis=-1)                     # (N,)

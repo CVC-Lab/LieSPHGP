@@ -1,0 +1,160 @@
+created_at: '2026-09-20T15:00:00-05:00'
+data:
+  dataset_path: datasets/QUADROTOR-DATASET-WIND/WIND_CF2P_10s_h0p01_clean.pkl
+  max_test_windows: null
+  max_train_windows: null
+  observation_noise_override: null
+  time_varying_controls: true
+  window_points: 51
+  window_stride: 10
+experiment:
+  changes:
+  - Learned levels (no dataset physics) for M1^-1, M2^-1, Dv, Dw, and g; GP residuals on top.
+  - 'Potential V(x) = lambda_V^T x + GP(x): learned linear level (zero init, outside the KL, own Prodigy group).'
+  - SE(3) negative log-likelihood with learned per-block sigma; KL spread over all training transitions (beta 1). Standard
+    single-term window loss (no multi-horizon term).
+  - Per-subnetwork Prodigy (eta=0.5, d0=1e-3, safeguard warm-up) on the level scalars only; Adam 1e-3 for GP weight means,
+    log-stds and likelihood sigmas; global-norm gradient clipping at 10. Fresh optimizer state at every curriculum stage (initial_checkpoint,
+    parameters only).
+  - 1 s and 3 s open-loop position RMS on the clean test flights logged at every evaluation (test_long1s_* / test_long3s_*
+    in training_stats.npz).
+  - 'Soft known-gravity penalty: L_g = w/g^2 * mean_x ||mu(x) grad V(x) - g e3||^2 on 1024 batch states per step with the
+    full GP-including mu and V (gp.gravity_penalty_weight=30, gp.known_gravity=9.81); hard level prior OFF (gp.gravity_level_prior=false);
+    lambda_V fully learned.'
+  - 'Report controller: reference law WITH the learned damping feedforward +Dv v_b, +Dw omega_b (report.controller_use_dissipation=true).'
+  - 'Latent initial state per training window (training.latent_initial_state=true): variational q(x0_i)=N(x0_obs+m_i, s_i^2)
+    on the 12 SE(3) tangent coordinates, prior N(x0_obs, 0.1^2) (=observation noise), KL in the ELBO, Adam 1e-2 on (m_i, log
+    s_i), fresh per stage. Errors-in-variables treatment so the damping/thrust/gravity products are not biased by the noisy
+    window starts.'
+  - 'Training data: QUADROTOR-DATASET-HARD-V3 = HARD-V2 protocol (gusts off, kick torque recorded) plus yaw-rate excitation:
+    new yaw_kick segment (impulsive J_zz*rate torque about body z, rate 3-6 rad/s, weight 1.2) and yaw_turn weight 1.0; 50
+    train / 10 test flights of 10 s at h=0.01 s, absolute observation noise 0.1 on the training flights, test split clean.'
+  - 'Final recipe (0.1 noise): HARD-V3; learned V with gravity-consistency penalty w=30 (structured V off, level prior off);
+    MAP latent initial state per window (training.latent_initial_state_sample=false: rollout from x0_obs+m_i, no sampling,
+    prior penalty |m_i|^2/(2 sigma^2), floor 0); curriculum K=50 (3k, scratch) -> K=100 (3k) -> K=200 = 2 s (4k), overlapping
+    windows stride 10, fresh optimizer and latents per stage; Prodigy level rate 0.5.'
+  - 'Observation noise NOT assumed known: the four likelihood sigmas start at a neutral 0.3 for every noise level and are
+    learned; the latent initial-state prior uses the learned per-block sigma with its log-sigma term (training.latent_initial_state_sigma=learned),
+    i.e. the window likelihood''s missing -log p(x0_obs | x0) term. No noise value enters training.'
+  - PRIORS-ON counterpart of the reported sigma 0.25 model (14-09-20-22 no-priors feat20 lvl0p25): identical recipe, gravity
+      penalty 30 and actuation prior 30 switched on. Requested for a physics-identification report with the priors-on GP against
+      the same NN and PH-NODE baselines.
+  - 'HARD-V5 data: HARD-V4 shifted to 1-3 m/s (figure-eight/circle 1-3 m/s radius 1-2 m, hops up to 3.5 m, vertical steps
+    1.5-2.5 m, coasts entered at 2-3 m/s and cut at 1.5-2.5 s, no hover segment, initial speed up to 2 m/s, envelope +-3.5
+    m): mean |v| 1.05 m/s, 46% of samples in 1-3 m/s, 24% below 0.25 m/s.'
+  - 'All six GPs use 20 Matern features (x 11 periodic = 220 features each): M1, M2, Dv, Dw drop from 220/225 to 20 while
+    V and g stay at 20. Trainable scalars 103,670 -> 19,410. Both physics priors OFF, dissipation inputs unchanged (v_b, omega_b),
+    continuity off. Auto report on the varying 10 s reference flight.'
+  - 'This run: levels-nll-noise0p25-HARDV5-v5F25-stage1-K50-3k-scratch-latentx0MAP-blindsigma-gravpen30-actpen30-lvl0p25-feat20.'
+  - 'WIND experiment: QUADROTOR-DATASET-WIND = HARD plant/controller/families with the Ornstein-Uhlenbeck body-frame gust
+    enabled (tau 0.5 s, sigma 10 % of weight), unobserved by the models; held-out split = EVALSET shapes. Published stage-1
+    recipe, only the dataset path changed. Compared: PH-NODE-RK4 vs PH-GP-LieIMEX-ODE vs PH-GP-LieIMEX-SDE.'
+  - 'CLEAN-variant wind experiment: same recipes as 20-09-2026-01-0x but trained on the CLEAN flights (no observation noise)
+    so the unobserved OU gust is the dominant residual. Hypothesis under test: the SDE''s process noise learns the gust scale
+    (GT equivalent sigma_v = (sigma_f/m) sqrt(2 tau) = 0.98 at 10 %, 2.45 at 25 % of weight) and that improves the identification
+    of the other operators.'
+  history_file: experiments/quadrotor/experiment_history.txt
+  name_suffix: gp-lieimex-ODE-WIND10-CLEAN-stage1-K50-3k-published
+  root: experiments/quadrotor/train_runs
+gp:
+  actuation_penalty_weight: 30.0
+  control_position_feature_count: 20
+  control_rotation_feature_budget: 11
+  data_fit: se3-nll
+  direct_control_map: false
+  dissipation_v_feature_count: 20
+  dissipation_v_initial_value: 1.0
+  dissipation_w_feature_count: 20
+  dissipation_w_initial_value: 0.001
+  enabled: true
+  fixed_observation_sigma: null
+  gravity_level_prior: false
+  gravity_penalty_points: 1024
+  gravity_penalty_weight: 30.0
+  initial_log_standard_deviation: -5.0
+  initial_observation_sigma: 0.3
+  inverse_mass_2_initial_value: 1000.0
+  kernel: matern
+  kl_anneal_steps: 1000
+  kl_beta_max: 1.0
+  known_gravity: 9.81
+  mass_1_feature_count: 20
+  mass_2_feature_budget: 20
+  matern_length_scale: 1.0
+  matern_smoothness: 2.5
+  model_backend: utils-gp-model
+  nll_squared_error_scale: 1.0
+  optional_mean_subnetwork: null
+  period: 6.283185307179586
+  periodic_dimension: 0
+  periodic_harmonics: 5
+  periodic_length_scale: 0.5
+  potential_include_rotation: false
+  potential_position_feature_count: 20
+  potential_rotation_feature_budget: 11
+  structured_potential: false
+model:
+  activation: null
+  dissipation_enabled: true
+  family: gp
+  hidden_dim: null
+  initialization_gain: null
+  mass_epsilon: 0.01
+  mass_factor_epsilon: null
+  name: ph_gp_lie_imex
+  optional_subnetwork: null
+  solver: lie-imex
+optimizer:
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  gradient_clip_norm: 10.0
+  learning_rate: 0.001
+  level_learning_rate: 0.25
+  name: prodigy-levels-per-subnetwork
+  weight_decay: 0.0
+report:
+  auto_generate: false
+  controller_use_dissipation: true
+  dpi: 150
+  enabled: false
+  evaluation_dataset: datasets/QUADROTOR-DATASET-WIND/WIND_CF2P_10s_h0p01_clean.pkl
+  exact_pages: 47
+  experiment_dirs: null
+  generator: src.models.SE3_Quadrotor.comparision.generate_report
+  output_name: model_report_47_pages.pdf
+  random_seed: 42
+  title: PH-GP Lie-IMEX V2 JAX model report
+  trajectory_count: 10
+runtime:
+  compilation_cache_dir: experiments/quadrotor/.jax_cache
+  device: gpu
+  device_index: 0
+  enable_compilation_cache: true
+  jax_enable_x64: false
+  matmul_precision: highest
+  require_gpu: true
+schema_version: 1
+training:
+  batch_size: 256
+  checkpoint_every: 500
+  continuity_weight: 0.0
+  eval_every: 250
+  initial_checkpoint: null
+  latent_initial_state: true
+  latent_initial_state_kl_weight: 1.0
+  latent_initial_state_learning_rate: 0.01
+  latent_initial_state_sample: false
+  latent_initial_state_sigma: learned
+  latent_initial_state_std_floor: 0.0
+  long_horizon_test_seconds:
+  - 1.0
+  - 3.0
+  loss: se3-nll
+  loss_scale: 1.0
+  mass_pretrain_learning_rate: 0.001
+  mass_pretrain_samples: 4096
+  mass_pretrain_steps: 0
+  resume_checkpoint: null
+  seed: 0
+  total_steps: 3000

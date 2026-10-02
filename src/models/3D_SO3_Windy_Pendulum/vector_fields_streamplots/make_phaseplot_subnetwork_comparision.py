@@ -1,4 +1,4 @@
-"""Per-checkpoint subnetwork phase plots: ph_gp_sde vs ph_nn_ode_fp32 vs GT.
+"""Per-checkpoint subnetwork phase plots: ph_gp_sde vs ph_nn_ode vs GT.
 
 One PDF page per training step in {1k, 2k, ..., 10k}. Page layout:
 
@@ -53,7 +53,7 @@ for p in (PROJECT_ROOT,
           os.path.join(PROJECT_ROOT, "datasets"),
           os.path.join(PROJECT_ROOT, "envs"),
           os.path.join(THIS_FILE_DIR, "ph_gp_sde"),
-          os.path.join(THIS_FILE_DIR, "ph_nn_ode_fp32")):
+          os.path.join(THIS_FILE_DIR, "ph_nn_ode")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
@@ -78,7 +78,7 @@ def _load_module(name, path):
 _gp_sde_net = _load_module(
     "_gp_sde_net", os.path.join(THIS_FILE_DIR, "ph_gp_sde", "network.py"))
 _nn_ode_net = _load_module(
-    "_nn_ode_net", os.path.join(THIS_FILE_DIR, "ph_nn_ode_fp32", "network.py"))
+    "_nn_ode_net", os.path.join(THIS_FILE_DIR, "ph_nn_ode", "network.py"))
 DissipativeSO3HamSDE = _gp_sde_net.DissipativeSO3HamSDE
 DissipativeSO3HamNODE = _nn_ode_net.DissipativeSO3HamNODE
 
@@ -87,7 +87,7 @@ DissipativeSO3HamNODE = _nn_ode_net.DissipativeSO3HamNODE
 # Defaults — match make_comparison_pdf.py
 # ─────────────────────────────────────────────────────────────────────
 GP_CKPT_DIR = os.path.join(THIS_FILE_DIR, "ph_gp_sde/data/run_wp3d_jax")
-NN_CKPT_DIR = os.path.join(THIS_FILE_DIR, "ph_nn_ode_fp32/data/run_wp3d_fp32")
+NN_CKPT_DIR = os.path.join(THIS_FILE_DIR, "ph_nn_ode/data/run_wp3d")
 GP_CKPT_FMT = "wp3d-so3hamGPSDE-5p-{step}.eqx"
 NN_CKPT_FMT = "wp3d-so3ham-rk4-5p-{step}.tar"
 

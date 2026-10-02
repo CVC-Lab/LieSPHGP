@@ -1,6 +1,6 @@
 """Trainer for the unstructured neural SDE on the 3D windy pendulum.
 
-Mirrors ph_gp_sde/train.py and ph_nn_sde_debug/train.py at a high level —
+Mirrors ph_gp_sde/train.py and ph_nn_sde/train.py at a high level —
 same dataset (`windy_pendulum_3d_datagen`), same loss bookkeeping
 (`rotmat_L2_geodesic_loss_safe` + per-trajectory final eval), same stat
 keys for downstream comparison plotting.

@@ -1,0 +1,112 @@
+schema_version: 1
+created_at: '2026-09-21T02:00:00-05:00'
+model:
+  name: ph_nn_lie_imex
+  family: nn
+  solver: lie-imex
+  hidden_dim: 64
+  activation: tanh
+  initialization_gain: 0.001
+  dissipation_enabled: true
+  mass_epsilon: 0.01
+  mass_factor_epsilon: 1.0
+  optional_subnetwork: null
+data:
+  dataset_path: datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_clean.pkl
+  window_points: 51
+  window_stride: 10
+  time_varying_controls: true
+  max_train_windows: null
+  max_test_windows: null
+  observation_noise_override: null
+training:
+  seed: 0
+  total_steps: 3000
+  batch_size: 256
+  eval_every: 250
+  checkpoint_every: 500
+  loss: trajectory-mse
+  loss_scale: 1.0
+  mass_pretrain_steps: 200
+  mass_pretrain_learning_rate: 0.001
+  mass_pretrain_samples: 4096
+  initial_checkpoint: null
+  resume_checkpoint: null
+  mask_diverged_eval_windows: true
+optimizer:
+  name: adam
+  learning_rate: 0.0005
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  weight_decay: 0.0
+  gradient_clip_norm: null
+  level_learning_rate: 0.0
+gp:
+  enabled: false
+  kernel: null
+  matern_smoothness: null
+  model_backend: null
+  matern_length_scale: null
+  period: null
+  periodic_length_scale: null
+  periodic_harmonics: null
+  periodic_dimension: null
+  mass_1_feature_count: null
+  mass_2_feature_budget: null
+  dissipation_v_feature_count: null
+  dissipation_w_feature_count: null
+  potential_position_feature_count: null
+  potential_rotation_feature_budget: null
+  potential_include_rotation: null
+  control_position_feature_count: null
+  control_rotation_feature_budget: null
+  initial_log_standard_deviation: null
+  kl_beta_max: null
+  kl_anneal_steps: null
+  data_fit: null
+  initial_observation_sigma: null
+  fixed_observation_sigma: null
+  nll_squared_error_scale: null
+  direct_control_map: null
+  optional_mean_subnetwork: null
+  inverse_mass_2_initial_value: 1.0
+  dissipation_v_initial_value: 1.0
+  dissipation_w_initial_value: 1.0
+  gravity_penalty_weight: 0.0
+  actuation_penalty_weight: 0.0
+  known_gravity: 9.81
+  gravity_penalty_points: 1024
+runtime:
+  device: gpu
+  device_index: 0
+  require_gpu: true
+  jax_enable_x64: true
+  matmul_precision: highest
+  enable_compilation_cache: true
+  compilation_cache_dir: experiments/quadrotor/.jax_cache
+experiment:
+  root: experiments/quadrotor/train_runs
+  name_suffix: nn-lieimex-w64-IDSIA-stage1-K50-3k-nopriors-fp64-maskeval
+  history_file: experiments/quadrotor/experiment_history.txt
+  changes:
+  - 'PH-NN-LieIMEX on the real IDSIA flights. The earlier attempt (21-09-10-26) died with ''Non-finite evaluation metric at
+    step 0'': pose_loss_components took a plain mean over all 1728 test windows, so one window diverging at random init made
+    the whole metric NaN before a single gradient step. training.mask_diverged_eval_windows now averages the EVALUATION metric
+    over finite windows only (training objective unchanged) and logs test_masked_fraction, mirroring ph_gp_lie_imex_idsia
+    evaluate_long.'
+  - 'Also matched to the GP and PH-NODE IDSIA runs: both physics priors OFF (were 1.0/1.0) and jax_enable_x64 true.'
+  - 'This run: nn-lieimex-w64-IDSIA-stage1-K50-3k-nopriors-fp64-maskeval.'
+report:
+  enabled: false
+  auto_generate: false
+  generator: src.models.SE3_Quadrotor.comparision.generate_report
+  exact_pages: 47
+  output_name: model_report_47_pages.pdf
+  title: PH-NN Lie-IMEX JAX model report
+  trajectory_count: 10
+  random_seed: 42
+  dpi: 150
+  experiment_dirs: null
+  posterior_samples: 0
+  evaluation_dataset: datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_clean.pkl

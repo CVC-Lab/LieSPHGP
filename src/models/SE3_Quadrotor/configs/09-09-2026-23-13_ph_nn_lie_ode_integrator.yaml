@@ -1,0 +1,95 @@
+schema_version: 1
+created_at: "2026-09-09T23:13:17-05:00"
+model:
+  name: ph_nn_lie_ode_integrator
+  family: nn
+  solver: lie-heun
+  hidden_dim: 400
+  activation: tanh
+  initialization_gain: 0.001
+  dissipation_enabled: true
+  mass_epsilon: 0.01
+  mass_factor_epsilon: 1.0
+  optional_subnetwork: null
+data:
+  dataset_path: datasets/data/pybullet_quadrotor/D0_CF2P_PIDplusEXC100Hz_PYB1000Hz_contact-free_nonlinear-damping-c0p5_162flights_1sec_h0p01_T0p05_nonoverlap5_clean_260907.pkl
+  window_points: 6
+  window_stride: 5
+  time_varying_controls: true
+  max_train_windows: null
+  max_test_windows: null
+  observation_noise_override: null
+training:
+  seed: 0
+  total_steps: 5000
+  batch_size: 256
+  eval_every: 500
+  checkpoint_every: 500
+  loss: trajectory-mse
+  loss_scale: 1.0
+  mass_pretrain_steps: 200
+  mass_pretrain_learning_rate: 0.001
+  mass_pretrain_samples: 4096
+  initial_checkpoint: null
+  resume_checkpoint: null
+optimizer:
+  name: adam
+  learning_rate: 0.0005
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-8
+  weight_decay: 0.0
+  gradient_clip_norm: null
+gp:
+  enabled: false
+  kernel: null
+  matern_smoothness: null
+  model_backend: null
+  matern_length_scale: null
+  period: null
+  periodic_length_scale: null
+  periodic_harmonics: null
+  periodic_dimension: null
+  mass_1_feature_count: null
+  mass_2_feature_budget: null
+  dissipation_v_feature_count: null
+  dissipation_w_feature_count: null
+  potential_position_feature_count: null
+  potential_rotation_feature_budget: null
+  potential_include_rotation: null
+  control_position_feature_count: null
+  control_rotation_feature_budget: null
+  initial_log_standard_deviation: null
+  kl_beta_max: null
+  kl_anneal_steps: null
+  data_fit: null
+  initial_observation_sigma: null
+  fixed_observation_sigma: null
+  nll_squared_error_scale: null
+  direct_control_map: null
+  optional_mean_subnetwork: null
+runtime:
+  device: gpu
+  device_index: 0
+  require_gpu: true
+  jax_enable_x64: false
+  matmul_precision: highest
+  enable_compilation_cache: true
+  compilation_cache_dir: experiments/quadrotor/.jax_cache
+experiment:
+  root: experiments/quadrotor/train_runs
+  name_suffix: jax-lie-heun
+  history_file: experiments/quadrotor/experiment_history.txt
+  changes:
+    - Canonical pure-JAX neural Lie-ODE integration with Lie-Heun.
+report:
+  enabled: true
+  auto_generate: true
+  generator: src.models.SE3_Quadrotor.comparision.generate_report
+  exact_pages: 47
+  output_name: model_report_47_pages.pdf
+  title: PH-NN Lie ODE integrator JAX model report
+  trajectory_count: 10
+  random_seed: 42
+  dpi: 150
+  experiment_dirs: null

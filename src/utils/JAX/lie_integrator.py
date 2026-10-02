@@ -153,7 +153,7 @@ def lie_heun_sde_rollout(model, x0, u, h, dW_per_outer):
 # ── Deterministic Lie-Heun on SO(3) × ℝ³ (no diffusion) ───────────────
 #
 # These variants do NOT call `model.stochastic_increment_p`. Use them when
-# the model has no diffusion term (e.g. ph_gp_ode_v2's deterministic ODE).
+# the model has no diffusion term (e.g. ph_gp_ode's deterministic ODE).
 # Geometrically identical to the SDE variants with dW ≡ 0, but they don't
 # require the model to expose a stochastic_increment interface.
 

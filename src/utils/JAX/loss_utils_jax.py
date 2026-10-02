@@ -1,6 +1,6 @@
 """fp32-stable geodesic loss on SO(3) — JAX port.
 
-ph_nn_ode_fp32/loss_utils.py orthogonalised q via Gram-Schmidt before the
+ph_nn_ode/loss_utils.py orthogonalised q via Gram-Schmidt before the
 geodesic distance, because the ODE output drifted off SO(3).  With the
 Lie-group Heun integrator (lie_integrator.py), R is on SO(3) by construction,
 so the orthogonalisation step is removed: q is reshaped to (3, 3) directly.

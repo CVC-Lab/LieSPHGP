@@ -1,0 +1,152 @@
+schema_version: 1
+created_at: '2026-09-20T01:00:00-05:00'
+model:
+  name: ph_gp_lie_imex_idsia
+  family: gp
+  solver: lie-imex
+  hidden_dim: null
+  activation: null
+  initialization_gain: null
+  dissipation_enabled: true
+  mass_epsilon: 0.01
+  mass_factor_epsilon: null
+  optional_subnetwork: null
+  integration_substeps: 2
+data:
+  dataset_path: datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_rotor2_clean.pkl
+  window_points: 51
+  window_stride: 10
+  time_varying_controls: true
+  max_train_windows: null
+  max_test_windows: null
+  observation_noise_override: null
+training:
+  seed: 0
+  total_steps: 3000
+  batch_size: 256
+  eval_every: 250
+  checkpoint_every: 500
+  loss: se3-nll
+  loss_scale: 1.0
+  mass_pretrain_steps: 0
+  mass_pretrain_learning_rate: 0.001
+  mass_pretrain_samples: 4096
+  initial_checkpoint: null
+  resume_checkpoint: null
+  long_horizon_test_seconds:
+  - 1.0
+  - 3.0
+  latent_initial_state: true
+  latent_initial_state_sigma: learned
+  latent_initial_state_learning_rate: 0.01
+  latent_initial_state_kl_weight: 1.0
+  latent_initial_state_std_floor: 0.0
+  latent_initial_state_sample: false
+  continuity_weight: 0.0
+optimizer:
+  name: prodigy-levels-per-subnetwork
+  learning_rate: 0.001
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  weight_decay: 0.0
+  gradient_clip_norm: 10.0
+  level_learning_rate: 0.25
+gp:
+  enabled: true
+  kernel: matern
+  matern_smoothness: 2.5
+  model_backend: utils-gp-model
+  matern_length_scale: 1.0
+  period: 6.283185307179586
+  periodic_length_scale: 0.5
+  periodic_harmonics: 5
+  periodic_dimension: 0
+  mass_1_feature_count: 20
+  mass_2_feature_budget: 20
+  dissipation_v_feature_count: 20
+  dissipation_w_feature_count: 20
+  potential_position_feature_count: 20
+  potential_rotation_feature_budget: 11
+  potential_include_rotation: false
+  control_position_feature_count: 20
+  control_rotation_feature_budget: 11
+  initial_log_standard_deviation: -5.0
+  inverse_mass_2_initial_value: 1.0
+  dissipation_v_initial_value: 1.0
+  dissipation_w_initial_value: 1.0
+  kl_beta_max: 1.0
+  kl_anneal_steps: 1000
+  data_fit: se3-nll
+  initial_observation_sigma: 0.3
+  fixed_observation_sigma: null
+  nll_squared_error_scale: 1.0
+  direct_control_map: false
+  optional_mean_subnetwork: null
+  known_gravity: 9.81
+  gravity_level_prior: false
+  gravity_penalty_weight: 0.0
+  gravity_penalty_points: 1024
+  structured_potential: false
+  actuation_penalty_weight: 0.0
+  control_initial_mean_scale: 0.0
+  control_level_initial:
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  - - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+runtime:
+  device: gpu
+  device_index: 0
+  require_gpu: true
+  jax_enable_x64: false
+  matmul_precision: highest
+  enable_compilation_cache: true
+  compilation_cache_dir: experiments/quadrotor/.jax_cache
+experiment:
+  root: experiments/quadrotor/train_runs
+  name_suffix: gp-lieimex-ODE-IDSIA-rotor2-ONEINIT-stage1-K50-3k-nopriors-fp32-nopretrain-h0p005
+  history_file: experiments/quadrotor/experiment_history.txt
+  changes:
+  - PH-GP-LieIMEX-ODE on rotor2 with ALL operator initialisations at 1.  Source recipe 19-09-20-24 used control levels at
+    ones, inverse_mass_2 = 1.0 and Dv = Dw = 0.1; here every one of those is 1.0 (M2^-1, Dv, Dw and the control levels). control_initial_mean_scale
+    stays 0 so G starts exactly at its level with no random component; M2^-1, Dv and Dw cannot be 0 in any case - the config
+    validator requires them positive, and M2^-1 = 0 would mean infinite inertia.  Priors off, float32, no mass pre-training,
+    window 51, stride 10, 3000 steps, seed 0 - matched to the PH-NN rotor2 runs.
+  - integration_substeps = 2 -> integrator step 0.005 s, loss still on the recorded 100 Hz grid.
+  - 'Set to 1.0: inverse_mass_2_initial_value, dissipation_v_initial_value, dissipation_w_initial_value, control_level_initial
+    (all 24 entries). control_initial_mean_scale = 0.'
+  - 'This run: gp-lieimex-ODE-IDSIA-rotor2-ONEINIT-stage1-K50-3k-nopriors-fp32-nopretrain-h0p005.'
+report:
+  enabled: false
+  auto_generate: false
+  generator: src.models.SE3_Quadrotor.comparision.generate_report
+  exact_pages: 47
+  output_name: model_report_47_pages.pdf
+  title: PH-GP Lie-IMEX V2 JAX model report
+  trajectory_count: 10
+  random_seed: 42
+  dpi: 150
+  experiment_dirs: null
+  evaluation_dataset: datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_rotor2_clean.pkl
+  controller_use_dissipation: true
