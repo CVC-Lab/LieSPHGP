@@ -12,24 +12,24 @@ trajectory_set: hard              # hard      : train + test splits, hard librar
 # Damping (friction), set separately for the linear and the angular channel.
 dissipation:
   linear:
-    law: constant                 # none | constant: -c m v_b | speed_dependent: -c m (1+|v_b|) v_b | pybullet_builtin
+    type: constant                # none | constant: -c m v_b | speed_dependent: -c m (1+|v_b|) v_b | pybullet_builtin
     c: 0.5                        # coefficient (1/s)
   angular:
-    law: constant                 # none | constant: -c J w_b | rate_dependent: -c J (1+|w_b|) w_b | pybullet_builtin
+    type: constant                # none | constant: -c J w_b | rate_dependent: -c J (1+|w_b|) w_b | pybullet_builtin
     c: 0.5
                                   # pybullet_builtin = PyBullet's own damping; identical to speed/rate_dependent
 
 # Wind = the SDE noise term, set separately for the linear and the angular channel.
 diffusion:
-  hold_seconds: 0.01              # constant / dependent laws: new random draw every hold_seconds
+  hold_seconds: 0.01              # constant / dependent types: new random draw every hold_seconds
   linear:
-    law: none                     # none | constant: dv_b += sigma dW | speed_dependent: dv_b += sigma (1+gain |v_b|) dW | ou
+    type: none                    # none | constant: dv_b += sigma dW | speed_dependent: dv_b += sigma (1+gain |v_b|) dW | ou
     sigma: 0.25                   # constant, speed_dependent (m s^-1.5)
     gain: 0.5                     # speed_dependent only
     sigma_fraction_of_weight: 0.1 # ou only: gust force std / (m g)
     time_constant_seconds: 0.5    # ou only: gust correlation time
   angular:
-    law: none                     # none | constant: dw_b += sigma dW | rate_dependent: dw_b += sigma (1+gain |w_b|) dW | ou
+    type: none                    # none | constant: dw_b += sigma dW | rate_dependent: dw_b += sigma (1+gain |w_b|) dW | ou
     sigma: 0.4                    # constant, rate_dependent (rad s^-1.5); ou: angular-acceleration std (rad s^-2)
     gain: 0.25                    # rate_dependent only
     time_constant_seconds: 0.5    # ou only

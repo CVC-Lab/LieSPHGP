@@ -15,12 +15,12 @@ Switches
   trajectory_set   hard      train (seeds.train) + test (seeds.test) from the hard library; noise variants of train/test
                    eval      eval (seeds.eval) from the eval library, stored as heldout_trajectories, always clean
                    hard+eval train + test from the hard library, heldout from the eval library (clean)
-  dissipation.<linear|angular>.law
+  dissipation.<linear|angular>.type
                    none              0
                    constant          F = -c m v_b             tau = -c J w_b                 (external force)
                    speed_dependent   F = -c m (1+|v_b|) v_b   tau = -c J (1+|w_b|) w_b       (external force; angular alias rate_dependent)
                    pybullet_builtin  Bullet's own body damping (changeDynamics linearDamping / angularDamping = c)
-  diffusion.<linear|angular>.law   (the wind; body-frame force m*a and torque J*alpha)
+  diffusion.<linear|angular>.type  (the wind; body-frame force m*a and torque J*alpha)
                    none              0
                    constant          dv_b += sigma dW                                     (white, redrawn every hold_seconds)
                    speed_dependent   dv_b += sigma (1 + gain |v_b|) dW                    (angular alias rate_dependent, |w_b|)
@@ -69,8 +69,8 @@ from src.models.SE3_Quadrotor.comparision.report_controller import (  # noqa: E4
 STATE_DIM, CONTROL_DIM = 18, 4          # x(3) vec(R)(9) v_b(3) omega_b(3) | wrench(4)
 EUCLIDEAN = np.asarray([0, 1, 2, 12, 13, 14, 15, 16, 17])
 TRAJECTORY_SETS = ("hard", "eval", "hard+eval")
-DISSIPATION_LAWS = ("none", "constant", "speed_dependent", "rate_dependent", "pybullet_builtin")
-DIFFUSION_LAWS = ("none", "constant", "speed_dependent", "rate_dependent", "ou")
+DISSIPATION_TYPES = ("none", "constant", "speed_dependent", "rate_dependent", "pybullet_builtin")
+DIFFUSION_TYPES = ("none", "constant", "speed_dependent", "rate_dependent", "ou")
 KICK_SEGMENTS = ("aggressive_recovery", "yaw_kick", "coast_yaw")
 LOG_LINES: list[str] = []
 
@@ -89,9 +89,9 @@ def log(message: str) -> None:
 
 
 # --------------------------------------------------------------------------- config
-def law(cfg: dict, block: str, channel: str) -> str:
-    """Normalised law of dissipation/diffusion channel; rate_dependent is the angular spelling of speed_dependent."""
-    name = str(cfg[block][channel]["law"])
+def channel_type(cfg: dict, block: str, channel: str) -> str:
+    """Normalised type of a dissipation/diffusion channel; rate_dependent is the angular spelling of speed_dependent."""
+    name = str(cfg[block][channel]["type"])
     return "speed_dependent" if name == "rate_dependent" else name
 
 
@@ -99,10 +99,13 @@ def validate(cfg: dict) -> None:
     if cfg["trajectory_set"] not in TRAJECTORY_SETS:
         raise ValueError(f"trajectory_set must be one of {TRAJECTORY_SETS}, got {cfg['trajectory_set']!r}")
     for channel in ("linear", "angular"):
-        if cfg["dissipation"][channel]["law"] not in DISSIPATION_LAWS:
-            raise ValueError(f"dissipation.{channel}.law must be one of {DISSIPATION_LAWS}")
-        if cfg["diffusion"][channel]["law"] not in DIFFUSION_LAWS:
-            raise ValueError(f"diffusion.{channel}.law must be one of {DIFFUSION_LAWS}")
+        for block in ("dissipation", "diffusion"):
+            if "type" not in cfg[block][channel]:
+                raise ValueError(f"{block}.{channel} needs a `type:` key (it was called `law:` before 2 Oct 2026)")
+        if cfg["dissipation"][channel]["type"] not in DISSIPATION_TYPES:
+            raise ValueError(f"dissipation.{channel}.type must be one of {DISSIPATION_TYPES}")
+        if cfg["diffusion"][channel]["type"] not in DIFFUSION_TYPES:
+            raise ValueError(f"diffusion.{channel}.type must be one of {DIFFUSION_TYPES}")
     if cfg["recording"]["kick_torque"] not in ("interval_mean", "last_step"):
         raise ValueError("recording.kick_torque must be interval_mean or last_step")
     if cfg["recording"].get("kick_alignment", "none") not in ("none", "sample"):
@@ -135,21 +138,21 @@ def make_env(cfg: dict, xyz: np.ndarray, rpy: np.ndarray) -> CtrlAviary:
 
 
 def configure_plant(env: CtrlAviary, cfg: dict) -> dict[str, Any]:
-    """Contact-free world, then Bullet's built-in damping on the channels whose law is pybullet_builtin (0 elsewhere)."""
+    """Contact-free world, then Bullet's built-in damping on the channels whose type is pybullet_builtin (0 elsewhere)."""
     audit = {"contact_free": bool(cfg["plant"]["contact_free"])}
     if cfg["plant"]["contact_free"]:
         audit["no_ground"] = remove_ground_plane(env)
         audit["dynamics"] = configure_contact_free_dynamics(env)
-    builtin = {ch: float(cfg["dissipation"][ch]["c"]) if law(cfg, "dissipation", ch) == "pybullet_builtin" else 0.0 for ch in ("linear", "angular")}
+    builtin = {ch: float(cfg["dissipation"][ch]["c"]) if channel_type(cfg, "dissipation", ch) == "pybullet_builtin" else 0.0 for ch in ("linear", "angular")}
     pb.changeDynamics(int(env.DRONE_IDS[0]), -1, linearDamping=builtin["linear"], angularDamping=builtin["angular"], physicsClientId=int(env.CLIENT))
     audit["builtin_damping"] = builtin
-    audit["dissipation_laws"] = {ch: law(cfg, "dissipation", ch) for ch in ("linear", "angular")}
+    audit["dissipation_types"] = {ch: channel_type(cfg, "dissipation", ch) for ch in ("linear", "angular")}
     return audit
 
 
 def apply_external_dissipation(env: CtrlAviary, state: np.ndarray, cfg: dict, mass: float, inertia: np.ndarray) -> None:
     """External damping for one physics step (body frame): constant -c m v_b / -c J w_b, speed_dependent x (1 + |.|)."""
-    lin, ang = law(cfg, "dissipation", "linear"), law(cfg, "dissipation", "angular")
+    lin, ang = channel_type(cfg, "dissipation", "linear"), channel_type(cfg, "dissipation", "angular")
     external = ("constant", "speed_dependent")
     if lin not in external and ang not in external:
         return
@@ -345,45 +348,45 @@ def sample_aligned_kick(seg: dict, step: int, sub: int, sample_hz: int) -> tuple
 
 # --------------------------------------------------------------------------- Step 4: wind (the diffusion term)
 class Wind:
-    """Body-frame wind force m*a and torque J*alpha, one law per channel (see the module docstring).
+    """Body-frame wind force m*a and torque J*alpha, one type per channel (see the module docstring).
 
-    Random draws per physics step, in this order: linear channel, then angular channel. White laws draw at the start of
+    Random draws per physics step, in this order: linear channel, then angular channel. White types draw at the start of
     every hold (hold_seconds) and keep the value; OU draws every physics step. sigma(x) is evaluated at the draw.
     """
 
     def __init__(self, cfg: dict, mass: float, grav: float, inertia: np.ndarray, dt: float):
         self.cfg, self.mass, self.inertia, self.dt = cfg["diffusion"], mass, inertia, dt
-        self.law = {ch: law(cfg, "diffusion", ch) for ch in ("linear", "angular")}
+        self.type = {ch: channel_type(cfg, "diffusion", ch) for ch in ("linear", "angular")}
         self.hold_steps = max(1, int(round(float(self.cfg.get("hold_seconds", dt)) / dt)))
         self.force, self.torque = np.zeros(3), np.zeros(3)
         lin, ang = self.cfg["linear"], self.cfg["angular"]
-        if self.law["linear"] == "ou":
+        if self.type["linear"] == "ou":
             self.sigma_force, self.tau_force = float(lin["sigma_fraction_of_weight"]) * mass * grav, float(lin["time_constant_seconds"])
-        if self.law["angular"] == "ou":
+        if self.type["angular"] == "ou":
             self.sigma_alpha, self.tau_alpha, self.alpha = float(ang["sigma"]), float(ang["time_constant_seconds"]), np.zeros(3)
 
     @property
     def active(self) -> dict[str, bool]:
-        return {ch: self.law[ch] != "none" for ch in ("linear", "angular")}
+        return {ch: self.type[ch] != "none" for ch in ("linear", "angular")}
 
     def _white_scale(self, channel: str, mult: float, magnitude: float) -> float:
         p = self.cfg[channel]
-        gain = float(p.get("gain", 0.0)) if self.law[channel] == "speed_dependent" else 0.0
+        gain = float(p.get("gain", 0.0)) if self.type[channel] == "speed_dependent" else 0.0
         return mult * float(p["sigma"]) * (1.0 + gain * magnitude)
 
     def step(self, rng: np.random.Generator, step: int, state: np.ndarray, mult: float) -> None:
-        white = [ch for ch in ("linear", "angular") if self.law[ch] in ("constant", "speed_dependent")]
+        white = [ch for ch in ("linear", "angular") if self.type[ch] in ("constant", "speed_dependent")]
         if white:
             rotation = np.asarray(pb.getMatrixFromQuaternion(state[3:7]), dtype=np.float64).reshape(3, 3)
             speed = float(np.linalg.norm(rotation.T @ np.asarray(state[10:13], dtype=np.float64)))
             rate = float(np.linalg.norm(rotation.T @ np.asarray(state[13:16], dtype=np.float64)))
         new_hold = (step - 1) % self.hold_steps == 0
         hold = self.hold_steps * self.dt
-        if self.law["linear"] == "ou":
+        if self.type["linear"] == "ou":
             self.force = self.force * np.exp(-self.dt / self.tau_force) + mult * self.sigma_force * np.sqrt(1 - np.exp(-2 * self.dt / self.tau_force)) * rng.normal(size=3)
         elif "linear" in white and new_hold:
             self.force = self.mass * self._white_scale("linear", mult, speed) * rng.normal(size=3) / np.sqrt(hold)
-        if self.law["angular"] == "ou":
+        if self.type["angular"] == "ou":
             self.alpha = self.alpha * np.exp(-self.dt / self.tau_alpha) + mult * self.sigma_alpha * np.sqrt(1 - np.exp(-2 * self.dt / self.tau_alpha)) * rng.normal(size=3)
             self.torque = self.inertia @ self.alpha
         elif "angular" in white and new_hold:
@@ -612,10 +615,10 @@ def audits(flights: np.ndarray, cfg: dict, h: float) -> dict[str, Any]:
 # --------------------------------------------------------------------------- Step 9: settings and files
 def legacy_damping_law(cfg: dict) -> str:
     """The single-word law the model loaders and reports read: linear = -c v, nonlinear = -c (1 + |v|) v."""
-    laws = {law(cfg, "dissipation", ch) for ch in ("linear", "angular")}
-    if laws <= {"constant", "none"}:
+    types = {channel_type(cfg, "dissipation", ch) for ch in ("linear", "angular")}
+    if types <= {"constant", "none"}:
         return "linear"
-    if laws <= {"pybullet_builtin", "speed_dependent"}:
+    if types <= {"pybullet_builtin", "speed_dependent"}:
         return "nonlinear"
     return "mixed"
 
@@ -623,8 +626,8 @@ def legacy_damping_law(cfg: dict) -> str:
 def dissipation_record(cfg: dict) -> dict[str, Any]:
     out = {}
     for ch, (v, J) in (("linear", ("v_b", "m")), ("angular", ("w_b", "J"))):
-        name = law(cfg, "dissipation", ch); c = float(cfg["dissipation"][ch]["c"]) if name != "none" else 0.0
-        out[ch] = {"law": name, "c": c, "equation": {
+        name = channel_type(cfg, "dissipation", ch); c = float(cfg["dissipation"][ch]["c"]) if name != "none" else 0.0
+        out[ch] = {"type": name, "c": c, "equation": {
             "none": "0", "constant": f"-c {J} {v}", "speed_dependent": f"-c {J} (1+|{v}|) {v}",
             "pybullet_builtin": f"Bullet body damping with coefficient c (documented as -c {J} (1+|{v}|) {v})"}[name]}
     return out
@@ -634,24 +637,24 @@ def diffusion_record(cfg: dict) -> dict[str, Any]:
     """Ground-truth wind. When both channels are white (none/constant/speed_dependent) the legacy white_state_dependent
     block is filled, which evaluate_windsde_ground_truth.py reads; M^-1 Sigma(x) = diag(sigma_a(x) I3, sigma_alpha(x) I3)."""
     d = cfg["diffusion"]
-    laws = {ch: law(cfg, "diffusion", ch) for ch in ("linear", "angular")}
-    record = {"linear": {"law": laws["linear"], **{k: v for k, v in d["linear"].items() if k != "law"}},
-              "angular": {"law": laws["angular"], **{k: v for k, v in d["angular"].items() if k != "law"}},
+    types = {ch: channel_type(cfg, "diffusion", ch) for ch in ("linear", "angular")}
+    record = {"linear": {"type": types["linear"], **{k: v for k, v in d["linear"].items() if k != "type"}},
+              "angular": {"type": types["angular"], **{k: v for k, v in d["angular"].items() if k != "type"}},
               "hold_seconds": d.get("hold_seconds")}
-    if set(laws.values()) == {"none"}:
+    if set(types.values()) == {"none"}:
         return {"model": "none", **record}
-    if "ou" not in laws.values():
+    if "ou" not in types.values():
         def sg(ch):
-            if laws[ch] == "none":
+            if types[ch] == "none":
                 return 0.0, 0.0
-            return float(d[ch]["sigma"]), float(d[ch].get("gain", 0.0)) if laws[ch] == "speed_dependent" else 0.0
+            return float(d[ch]["sigma"]), float(d[ch].get("gain", 0.0)) if types[ch] == "speed_dependent" else 0.0
         (ls, lg), (as_, ag) = sg("linear"), sg("angular")
         return {"model": "white_state_dependent",
                 "equation": "dp_v += m*sigma_a(x) dW, dp_w += J*sigma_alpha(x) dW; sigma_a = linear_sigma*(1+speed_gain*|v_b|), "
                             "sigma_alpha = angular_sigma*(1+rate_gain*|omega_b|)",
                 "identifiable_product": "M^-1 Sigma(x) = diag(sigma_a(x) I_3, sigma_alpha(x) I_3)  (twist units per sqrt(s))",
                 "linear_sigma": ls, "speed_gain": lg, "angular_sigma": as_, "rate_gain": ag, **record}
-    return {"model": "ou" if set(laws.values()) <= {"ou", "none"} else "mixed",
+    return {"model": "ou" if set(types.values()) <= {"ou", "none"} else "mixed",
             "note": "OU wind is coloured noise: the state alone is not Markov, so there is no closed-form Sigma(x)", **record}
 
 
@@ -674,8 +677,8 @@ def build(cfg: dict) -> dict[str, dict]:
         "dissipation": diss, "damping_law": legacy_damping_law(cfg),
         "linear_damping_coefficient": diss["linear"]["c"], "angular_damping_coefficient": diss["angular"]["c"],
         "damping_equation": f"linear: {diss['linear']['equation']}; angular: {diss['angular']['equation']}",
-        "pybullet_builtin_damping": any(diss[ch]["law"] == "pybullet_builtin" for ch in diss),
-        "custom_external_linear_damping": any(diss[ch]["law"] in ("constant", "speed_dependent") for ch in diss),
+        "pybullet_builtin_damping": any(diss[ch]["type"] == "pybullet_builtin" for ch in diss),
+        "custom_external_linear_damping": any(diss[ch]["type"] in ("constant", "speed_dependent") for ch in diss),
         "diffusion_ground_truth": diffusion_record(cfg), "kick_torque_recording": cfg["recording"]["kick_torque"],
         "kick_alignment": cfg["recording"].get("kick_alignment", "none"),
         "state_layout": "x_w(3), vec(R)(9), v_b(3), omega_b(3), wrench(4)",
@@ -764,7 +767,7 @@ def write_pdf(variants: dict[str, dict], cfg: dict, path: Path) -> None:
                   f"({', '.join(s['splits'][label]['segments'])}), key {s['splits'][label]['key']}" for label, arr, _ in parts]
         lines += [f"dissipation: linear {s['dissipation']['linear']['equation']} (c={s['dissipation']['linear']['c']}), "
                   f"angular {s['dissipation']['angular']['equation']} (c={s['dissipation']['angular']['c']})",
-                  f"diffusion: linear {s['diffusion_ground_truth']['linear']['law']}, angular {s['diffusion_ground_truth']['angular']['law']} "
+                  f"diffusion: linear {s['diffusion_ground_truth']['linear']['type']}, angular {s['diffusion_ground_truth']['angular']['type']} "
                   f"(model {s['diffusion_ground_truth']['model']}); kick torque recorded as {s['kick_torque_recording']}, kicks aligned to {s['kick_alignment']}",
                   f"rejected attempts {rej}; mean saturation {np.mean([a['saturation_fraction'] for a in main_audits]):.4f}",
                   f"noise variants: {', '.join(k for k in variants if k != 'clean') or 'none'}", "", "config:"] + yaml.safe_dump(cfg, sort_keys=False).splitlines()
@@ -828,8 +831,8 @@ def write_pdf(variants: dict[str, dict], cfg: dict, path: Path) -> None:
         p = SPLIT_PREFIX[main_label]
         fig, axes = plt.subplots(3, 1, figsize=(11, 8.5))
         g, gt = clean[f"{p}gust_force"][0], clean[f"{p}gust_torque"][0]
-        axes[0].plot(t, g); axes[0].set(title=f"wind force, flight 0 (N), law {s['diffusion_ground_truth']['linear']['law']}", ylabel="N"); axes[0].grid(alpha=0.3)
-        axes[1].plot(t, gt); axes[1].set(title=f"wind torque, flight 0 (N m), law {s['diffusion_ground_truth']['angular']['law']}", ylabel="N m"); axes[1].grid(alpha=0.3)
+        axes[0].plot(t, g); axes[0].set(title=f"wind force, flight 0 (N), type {s['diffusion_ground_truth']['linear']['type']}", ylabel="N"); axes[0].grid(alpha=0.3)
+        axes[1].plot(t, gt); axes[1].set(title=f"wind torque, flight 0 (N m), type {s['diffusion_ground_truth']['angular']['type']}", ylabel="N m"); axes[1].grid(alpha=0.3)
         for series, lab in ((g[:, 0], "force x"), (gt[:, 0], "torque x")):
             centred = series - series.mean()
             if np.any(centred):
