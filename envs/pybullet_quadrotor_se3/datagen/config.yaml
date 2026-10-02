@@ -1,0 +1,221 @@
+# ONE config for envs/pybullet_quadrotor_se3/datagen/generate_dataset.py
+#
+#   python envs/pybullet_quadrotor_se3/datagen/generate_dataset.py --config envs/pybullet_quadrotor_se3/datagen/config.yaml
+#
+# Output: datasets/QUADROTOR-DATASET-<name>/<name>_<drone>_<T>s_h<h>_<variant>.pkl  (+ audits.json, config_used.yaml,
+# generation.log, dataset_analysis.pdf). The run stops if that folder already holds files of this dataset (use --force).
+#
+# Settings that rebuild the existing datasets bit-for-bit (everything else as below):
+#   HARD     trajectory_set hard;      dissipation pybullet_builtin c 0.5 (both); diffusion none (both); kick_torque last_step
+#   EVALSET  trajectory_set eval;      seeds.eval [498, 499]; as HARD, plus gates.max_saturation_fraction 0.08,
+#                                      envelope.max_speed 3.5, output.pdf_example_flights 6
+#   WIND     trajectory_set hard+eval; seeds.eval [499]; as HARD, plus diffusion.linear ou sigma_fraction_of_weight 0.1
+#   WIND25   as WIND with sigma_fraction_of_weight 0.25
+#   WINDSDE* trajectory_set hard+eval; seeds.eval [499]; dissipation constant c 0.5 (both);
+#            diffusion white (constant / speed_dependent, rate_dependent), hold_seconds 0.01; gates.envelope_margin 1.5;
+#            observation_noise.absolute_levels [0.25], sensor disabled; physics_hz 100/500/1000/2000 per variant
+#            (the per-variant sigma, gain and physics_hz are in each datasets/QUADROTOR-DATASET-WINDSDE/*_config_used.yaml)
+#            kick_torque: last_step for HI, LO, C05, C05A005 (made on 24-25 Sep, before the averaging fix);
+#                         interval_mean for C05P100, C05A005P100, C05A005P2000, C025A001P2000
+
+name: CUSTOM                    # -> datasets/QUADROTOR-DATASET-CUSTOM/CUSTOM_CF2P_10s_h0p01_*.pkl
+
+# hard      : train (seeds.train) + test (seeds.test) flown on the hard library; observation-noise variants of both
+# eval      : eval (seeds.eval) flown on the eval library, stored as heldout_trajectories, always clean
+# hard+eval : train + test from the hard library and a heldout split (seeds.eval) from the eval library (clean)
+trajectory_set: hard
+
+# Damping, per channel, body frame.            law: none | constant | speed_dependent (angular: rate_dependent) | pybullet_builtin
+#   constant         F = -c m v_b               tau = -c J w_b
+#   speed_dependent  F = -c m (1 + |v_b|) v_b   tau = -c J (1 + |w_b|) w_b
+#   pybullet_builtin Bullet's own body damping with coefficient c (the HARD / EVALSET / WIND plant)
+dissipation:
+  linear:  {law: constant, c: 0.5}
+  angular: {law: constant, c: 0.5}
+
+# Wind = the SDE (diffusion) term, per channel; force m*a and torque J*alpha in the body frame.
+#                                              law: none | constant | speed_dependent (angular: rate_dependent) | ou
+#   constant         dv_b += sigma dW                            sigma in m s^-1.5 (angular: rad s^-1.5)
+#   speed_dependent  dv_b += sigma (1 + gain |v_b|) dW           angular uses |w_b|
+#      white laws are redrawn every hold_seconds and held in between: F = m sigma(x) xi / sqrt(hold), xi ~ N(0, I3)
+#   ou               a <- a exp(-dt/T) + s sqrt(1 - exp(-2 dt/T)) xi, every physics step (coloured, no closed-form Sigma(x))
+#      linear  s = sigma_fraction_of_weight * g (stationary force std / weight)
+#      angular s = sigma (stationary angular-acceleration std, rad s^-2)
+# A segment's gust_multiplier (disturbed_hover) scales every law.
+diffusion:
+  hold_seconds: 0.01
+  linear:  {law: none, sigma: 0.25, gain: 0.5, sigma_fraction_of_weight: 0.1, time_constant_seconds: 0.5}
+  angular: {law: none, sigma: 0.4, gain: 0.25, time_constant_seconds: 0.5}
+
+# Recorded torque = motor torque + external kick torque of the kick segments.
+#   interval_mean : kick averaged over the sample interval (correct)   last_step : value at the interval's last physics step (legacy)
+recording:
+  kick_torque: interval_mean
+
+seeds:
+  train: [300, 301, 302, 303, 304]
+  test: [399]
+  eval: [498, 499]
+  flights_per_seed: 10
+  flight_seed_base: 7000000   # flight rng seed = base + 1000*seed + index + 100000*attempt
+
+plant:
+  drone_model: CF2P
+  physics: PYB
+  physics_hz: 1000
+  sample_hz: 100
+  contact_free: true
+actuator:
+  input_mode: wrench
+  motor_gain_spread: 0.0
+  motor_lag_seconds: 0.0
+controller:
+  type: dsl_pid
+  gain_scale: 0.5
+flight:
+  duration_seconds: 10.0
+initial_state:
+  position_box:
+    x: [-2.0, 2.0]
+    y: [-2.0, 2.0]
+    z: [1.5, 4.0]
+  max_tilt_deg: 30
+  max_speed: 2.0
+  max_angular_rate: 1.0
+envelope:
+  position_box:
+    x: [-3.5, 3.5]
+    y: [-3.5, 3.5]
+    z: [0.5, 5.0]
+  max_tilt_deg: 45
+  max_speed: 3.0
+  max_angular_rate: 6.0
+gates:
+  max_tilt_deg: 90
+  min_altitude: 0.3
+  envelope_margin: 0.5
+  max_saturation_fraction: 0.05
+  max_attempts: 20
+
+# Manoeuvre libraries. Each flight chains random segments (chosen by weight) until flight.duration_seconds is filled.
+# The two libraries must share no segment name (checked at start).
+libraries:
+  hard:
+    waypoint_hop:
+      duration: [1.5, 2.5]
+      max_distance: 3.5
+      weight: 1.0
+    figure_eight:
+      duration: [3.0, 4.0]
+      radius: [1.0, 2.0]
+      speed: [1.0, 3.0]
+      weight: 1.0
+    circle:
+      duration: [3.0, 4.0]
+      radius: [1.0, 2.0]
+      speed: [1.0, 3.0]
+      weight: 1.0
+    vertical_step:
+      duration: [1.5, 2.0]
+      height: [1.5, 2.5]
+      weight: 0.8
+    yaw_turn:
+      duration: [1.0, 2.0]
+      rate: [1.0, 4.0]
+      weight: 1.0
+    aggressive_recovery:
+      duration: [1.5, 2.0]
+      rate: [3.0, 5.0]
+      kick_seconds: 0.1
+      weight: 0.7
+    yaw_kick:
+      duration: [1.5, 2.5]
+      rate: [3.0, 6.0]
+      kick_seconds: 0.1
+      weight: 1.2
+    coast:
+      duration: [1.5, 2.5]
+      entry_speed: [2.0, 3.0]
+      entry_seconds: 2.0
+      entry_radius: 1.5
+      kp: 0.0015
+      kd: 0.00027
+      weight: 1.3
+    coast_yaw:
+      duration: [1.5, 2.5]
+      rate: [2.0, 4.0]
+      kick_seconds: 0.1
+      entry_speed: [1.5, 2.5]
+      entry_seconds: 1.5
+      entry_radius: 1.5
+      kp: 0.0015
+      kd: 0.00027
+      weight: 0.8
+  eval:
+    dash:
+      duration: [2.0, 3.0]
+      speed: [0.5, 3.2]
+      weight: 2.0
+    thrust_pulse:
+      duration: [1.8, 2.5]
+      cut_seconds: [0.35, 0.5]
+      thrust_fraction: [0.25, 0.45]
+      min_altitude: 1.5
+      kp: 0.0015
+      kd: 0.00027
+      weight: 2.0
+    disturbed_hover:
+      duration: [1.0, 2.0]
+      gust_multiplier: 3.0
+      weight: 1.0
+    slalom:
+      duration: [3.0, 4.0]
+      speed: [2.0, 3.4]
+      amplitude: [0.3, 0.5]
+      period: [2.5, 3.5]
+      weight: 1.2
+    helix:
+      duration: [3.0, 4.0]
+      radius: [1.5, 2.0]
+      speed: [2.0, 3.4]
+      climb_rate: [0.3, 0.5]
+      weight: 1.5
+    chirp:
+      duration: [3.0, 4.0]
+      amplitude: [0.5, 1.0]
+      yaw_amplitude: [0.2, 0.4]
+      f0: 0.2
+      f1: 1.5
+      weight: 1.0
+    bounce:
+      duration: [3.0, 4.0]
+      height: [0.3, 0.6]
+      period: [1.0, 1.6]
+      weight: 1.0
+    tumble:
+      duration: [2.0, 3.0]
+      rate: [3.0, 5.0]
+      kick_seconds: 0.1
+      gap_seconds: 0.4
+      weight: 0.7
+
+# Observation noise, added AFTER the flights to train and test only (separate pickles; eval/heldout always clean).
+observation_noise:
+  absolute_levels: [0.05, 0.1, 0.25, 0.5]
+  train_noise_seed: 0
+  test_noise_seed: 1999
+  sensor:
+    enabled: true
+    position_sigma: 0.005
+    attitude_sigma_deg: 1.0
+    velocity_from: central_difference
+    savitzky_golay_window: 7
+    gyro_white_sigma: 0.01
+    gyro_bias_random_walk: 0.0001
+audits:
+  horizons_seconds: [0.1, 0.25, 0.5, 1.0, 2.0]
+output:
+  window_points: 6
+  window_stride: 5
+  write_pdf: true
+  pdf_example_flights: 4

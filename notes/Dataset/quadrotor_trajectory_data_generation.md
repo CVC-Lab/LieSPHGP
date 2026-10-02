@@ -11,7 +11,8 @@ Every older version (HARD-V2, V3, V3-LINEAR, V4, V4-LINEAR, V5-LINEAR, V6) and t
 `tmp/archived_quadrotor_datasets_2026-09-18/`.
 
 The two datasets are produced by the same procedure; only the manoeuvre library, the seeds and the number of splits differ.
-Line numbers below refer to `generate_quadrotor_evalset.py`, which is the HARD generator with a single split.
+Line numbers below refer to `generate_quadrotor_evalset.py`, which is the HARD generator with a single split. That file was
+merged into `envs/pybullet_quadrotor_se3/datagen/generate_dataset.py` on 2 Oct 2026; the line numbers refer to it in git commit `86803c9`.
 
 ---
 

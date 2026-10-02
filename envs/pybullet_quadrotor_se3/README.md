@@ -6,7 +6,7 @@ Every current quadrotor training and evaluation dataset is generated here.
 | Path | Role |
 |---|---|
 | `gym-pybullet-drones/` | vendored clone (git-ignored), found through `sys.path`, not pip-installed |
-| `datagen/generate_quadrotor_{hard_v2,evalset,wind,wind25,windsde}.py` | dataset generators; input configs in `datagen/configs/` |
+| `datagen/generate_dataset.py` + `datagen/config.yaml` | the one dataset generator and its one config: trajectory set (hard / eval / hard+eval), dissipation and wind laws per channel, seeds, noise, output name |
 | `datagen/generate_reference_flights.py` | clean PID reference flights → `datasets/QUADROTOR-EVAL-REFERENCE/` |
 | `datagen/real/` | converter and input check for the real IDSIA flights |
 | `plots/` | dataset plots (HARD clean vs noisy, obs-noise trajectories) |
