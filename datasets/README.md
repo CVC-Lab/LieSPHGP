@@ -18,7 +18,6 @@ Commands are run from the project root.
 | `QUADROTOR-DATASET-WINDSDE/` | `envs/pybullet_quadrotor_se3/datagen/generate_quadrotor_windsde.py` | one config per variant: `--config configs/windsde_<variant>_config.yaml` |
 | `QUADROTOR-EVAL-REFERENCE/` | `envs/pybullet_quadrotor_se3/datagen/generate_reference_flights.py` | `... generate_reference_flights.py --duration-seconds 3.0` |
 | `QUADROTOR-DATASET-IDSIA/` | real flights, converted by `envs/pybullet_quadrotor_se3/datagen/real/convert_idsia.py` (raw data in `tmp/idsia_raw/`) | `... real/convert_idsia.py --help` |
-| `QUADROTOR-DATASET-NANOBENCH/` | real flights, converted by `envs/pybullet_quadrotor_se3/datagen/real/convert_nanobench.py` (raw data in `tmp/nanobench_raw/`) | `... real/convert_nanobench.py --help` |
 
 Notes
 - The quadrotor generators read their input config from `envs/pybullet_quadrotor_se3/datagen/configs/`.

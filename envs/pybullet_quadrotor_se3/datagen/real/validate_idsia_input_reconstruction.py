@@ -1,9 +1,8 @@
 """Is the IDSIA wrench right?  The same four checks that condemned the NanoBench torque channel.
 
 Here the input comes from MEASURED rotor speeds rather than a commanded PWM, so there is no thrust map to
-calibrate and no command-to-delivery gap.  The tests are identical to
-envs/pybullet_quadrotor_se3/datagen/real/validate_nanobench_input_reconstruction.py so the two datasets can be compared
-directly.
+calibrate and no command-to-delivery gap.  The tests are the ones that rejected the (since removed) NanoBench
+conversion; its numbers are quoted in the printout for comparison.
 
   A  independent sensor: reconstructed T against m * a_z,body from the onboard accelerometer.
   B  parameter-free translational fit  dv_w/dt + g e_3 = (1/m) T R e_3, which returns 1/m.

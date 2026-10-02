@@ -17,7 +17,7 @@ Usage:
     python -m src.models.SE3_Quadrotor.comparision.evaluate_real_dataset \
         --run experiments/quadrotor/train_runs/<gp run> \
         --run experiments/quadrotor/train_runs/<other run> \
-        --dataset datasets/QUADROTOR-DATASET-NANOBENCH/NANOBENCH_CF2_10s_h0p01_clean.pkl@test
+        --dataset datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_clean.pkl@test
 """
 from __future__ import annotations
 
