@@ -5,7 +5,7 @@
 # Output: datasets/QUADROTOR-DATASET-<name>/<name>_<drone>_<T>s_h<h>_<variant>.pkl  (+ audits.json, config_used.yaml,
 # generation.log, dataset_analysis.pdf). The run stops if that folder already holds files of this dataset (use --force).
 #
-# Settings that rebuild the existing datasets bit-for-bit (everything else as below):
+# Settings that rebuild the existing datasets bit-for-bit (everything else as below; ALL of them need kick_alignment none):
 #   HARD     trajectory_set hard;      dissipation pybullet_builtin c 0.5 (both); diffusion none (both); kick_torque last_step
 #   EVALSET  trajectory_set eval;      seeds.eval [498, 499]; as HARD, plus gates.max_saturation_fraction 0.08,
 #                                      envelope.max_speed 3.5, output.pdf_example_flights 6
@@ -48,9 +48,14 @@ diffusion:
   angular: {law: none, sigma: 0.4, gain: 0.25, time_constant_seconds: 0.5}
 
 # Recorded torque = motor torque + external kick torque of the kick segments.
-#   interval_mean : kick averaged over the sample interval (correct)   last_step : value at the interval's last physics step (legacy)
+#   kick_torque    interval_mean : kick averaged over the sample interval (correct)
+#                  last_step     : kick value at the interval's last physics step (legacy; wrong where a kick starts or ends)
+#   kick_alignment none   : a kick starts at its segment's start time, usually in the middle of a sample (all existing datasets)
+#                  sample : a kick starts on the next sample boundary (<= 1 sample later) and lasts whole samples, so it is
+#                           constant inside every recorded interval: the stored u is exact and both kick_torque rules agree
 recording:
   kick_torque: interval_mean
+  kick_alignment: sample
 
 seeds:
   train: [300, 301, 302, 303, 304]

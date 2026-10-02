@@ -29,6 +29,10 @@ Switches
   recording.kick_torque
                    interval_mean     recorded torque = motors + kick averaged over the sample interval (correct)
                    last_step         recorded torque = motors + kick of the last physics step (HARD / EVALSET / WIND legacy)
+  recording.kick_alignment
+                   none              a kick starts at its segment's start time, usually mid-sample (all existing datasets)
+                   sample            a kick starts on the next sample boundary and lasts whole samples, so it is constant inside
+                                     every recorded interval and the stored u is exact (both kick_torque rules then agree)
 """
 from __future__ import annotations
 
@@ -101,6 +105,8 @@ def validate(cfg: dict) -> None:
             raise ValueError(f"diffusion.{channel}.law must be one of {DIFFUSION_LAWS}")
     if cfg["recording"]["kick_torque"] not in ("interval_mean", "last_step"):
         raise ValueError("recording.kick_torque must be interval_mean or last_step")
+    if cfg["recording"].get("kick_alignment", "none") not in ("none", "sample"):
+        raise ValueError("recording.kick_alignment must be none or sample")
     shared = sorted(set(cfg["libraries"]["hard"]) & set(cfg["libraries"]["eval"]))
     if shared:
         raise ValueError(f"the eval library must share no segment with the hard library; shared: {shared}")
@@ -315,6 +321,28 @@ def coast_rpm(state: np.ndarray, pd_gains: list, hover_force: float, mixer_inver
     return np.sqrt(forces / kf)
 
 
+def sample_aligned_kick(seg: dict, step: int, sub: int, sample_hz: int) -> tuple[list | None, bool]:
+    """Kick axis active in physics step ``step`` when kicks are snapped to the sample grid (recording.kick_alignment: sample).
+
+    A kick starts at the first sample boundary at or after its nominal time and lasts round(kick_seconds * sample_hz) whole
+    samples, so it is constant inside every recorded interval and the stored u is exact under any recording rule.
+    Physics step s acts on ((s-1) dt, s dt]; sample k covers steps (k-1)*sub+1 .. k*sub. Returns (axis or None, onset).
+    """
+    if seg["name"] in KICK_SEGMENTS:
+        pulses = [(0, seg["kick_axis"])]
+    elif seg["name"] == "tumble":                                   # second kick a whole number of samples after the first
+        pulses = [(0, seg["kick_axis"]), (int(round(seg["gap_seconds"] * sample_hz)), seg["kick_axis_2"])]
+    else:
+        return None, False
+    boundary = int(np.ceil(round(seg["start"] * sample_hz, 9)))     # first sample boundary at or after the segment start
+    length = int(round(seg["kick_seconds"] * sample_hz)) * sub      # physics steps in the kick
+    for offset, axis in pulses:
+        first = (boundary + offset) * sub + 1
+        if first <= step < first + length:
+            return axis, step == first
+    return None, False
+
+
 # --------------------------------------------------------------------------- Step 4: wind (the diffusion term)
 class Wind:
     """Body-frame wind force m*a and torque J*alpha, one law per channel (see the module docstring).
@@ -377,6 +405,7 @@ def generate_flight(cfg: dict, seed: int, index: int, attempt: int, library: dic
     sub, dt = physics_hz // sample_hz, 1.0 / physics_hz
     n_samples = int(round(cfg["flight"]["duration_seconds"] * sample_hz)) + 1
     last_step_kick = cfg["recording"]["kick_torque"] == "last_step"
+    aligned_kicks = cfg["recording"].get("kick_alignment", "none") == "sample"
     env = make_env(cfg, init["xyz"], init["rpy"])
     try:
         observation, _ = env.reset(seed=int(rng.integers(1 << 31)))
@@ -426,7 +455,9 @@ def generate_flight(cfg: dict, seed: int, index: int, attempt: int, library: dic
             wind.apply(env)
             kick_torque = np.zeros(3)
             kick_axis, local = None, t - seg["start"]
-            if seg["name"] in KICK_SEGMENTS and local < seg["kick_seconds"]:              # torque kick (a shove)
+            if aligned_kicks:                                                               # kicks on whole samples only
+                kick_axis, kick_onset = sample_aligned_kick(seg, step, sub, sample_hz)
+            elif seg["name"] in KICK_SEGMENTS and local < seg["kick_seconds"]:            # torque kick (a shove)
                 kick_axis, kick_onset = seg["kick_axis"], local < dt * 1.5
             elif seg["name"] == "tumble":                                                   # two kicks, the second mid-recovery
                 if local < seg["kick_seconds"]:
@@ -646,6 +677,7 @@ def build(cfg: dict) -> dict[str, dict]:
         "pybullet_builtin_damping": any(diss[ch]["law"] == "pybullet_builtin" for ch in diss),
         "custom_external_linear_damping": any(diss[ch]["law"] in ("constant", "speed_dependent") for ch in diss),
         "diffusion_ground_truth": diffusion_record(cfg), "kick_torque_recording": cfg["recording"]["kick_torque"],
+        "kick_alignment": cfg["recording"].get("kick_alignment", "none"),
         "state_layout": "x_w(3), vec(R)(9), v_b(3), omega_b(3), wrench(4)",
         "control_layout": "wrench [T, tau_x, tau_y, tau_z]: motor wrench after rpm clipping plus the external kick torque of recovery segments",
         "input_mode": cfg["actuator"]["input_mode"], "true_control_map": "selection matrix S" if cfg["actuator"]["input_mode"] == "wrench" else "S @ M_mix @ kf @ rpm_max^2",
@@ -733,7 +765,7 @@ def write_pdf(variants: dict[str, dict], cfg: dict, path: Path) -> None:
         lines += [f"dissipation: linear {s['dissipation']['linear']['equation']} (c={s['dissipation']['linear']['c']}), "
                   f"angular {s['dissipation']['angular']['equation']} (c={s['dissipation']['angular']['c']})",
                   f"diffusion: linear {s['diffusion_ground_truth']['linear']['law']}, angular {s['diffusion_ground_truth']['angular']['law']} "
-                  f"(model {s['diffusion_ground_truth']['model']}); kick torque recorded as {s['kick_torque_recording']}",
+                  f"(model {s['diffusion_ground_truth']['model']}); kick torque recorded as {s['kick_torque_recording']}, kicks aligned to {s['kick_alignment']}",
                   f"rejected attempts {rej}; mean saturation {np.mean([a['saturation_fraction'] for a in main_audits]):.4f}",
                   f"noise variants: {', '.join(k for k in variants if k != 'clean') or 'none'}", "", "config:"] + yaml.safe_dump(cfg, sort_keys=False).splitlines()
         ax.text(0.01, 0.99, "\n".join(lines[:75]), va="top", family="monospace", fontsize=6.0); pdf.savefig(fig); plt.close(fig)
