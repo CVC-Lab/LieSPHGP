@@ -13,8 +13,8 @@
 *.pkl
 __pycache__/
 datasets/**/*.pkl
-# vendored third-party code and retired data
-third_party/
+# vendored gym-pybullet-drones clone and retired data
+envs/pybullet_quadrotor_se3/gym-pybullet-drones/
 archive/
 results/
 stats/

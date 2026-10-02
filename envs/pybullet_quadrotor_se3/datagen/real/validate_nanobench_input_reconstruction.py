@@ -35,7 +35,7 @@ import numpy as np
 import pandas as pd
 
 THIS_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = THIS_DIR.parents[3]  # envs/quadrotor_se3/datagen/real -> project root
+PROJECT_ROOT = THIS_DIR.parents[3]  # envs/pybullet_quadrotor_se3/datagen/real -> project root
 DATASET_DIR = PROJECT_ROOT / "datasets/QUADROTOR-DATASET-NANOBENCH"
 
 PWM2RPM_SCALE, PWM2RPM_CONST, KF, V_NOMINAL = 0.2685, 4070.3, 3.16e-10, 3.8

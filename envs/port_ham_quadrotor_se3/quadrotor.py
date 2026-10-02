@@ -674,13 +674,13 @@ class quadrotor_se3(gym.Env):
         p.loadURDF("plane.urdf", physicsClientId=self._pb_client)
 
         urdf = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "..", "..", "third_party",
+            os.path.dirname(os.path.abspath(__file__)), "..", "pybullet_quadrotor_se3",
             "gym-pybullet-drones", "gym_pybullet_drones", "assets", "cf2x.urdf",
         )
         if not os.path.isfile(urdf):
             raise FileNotFoundError(
                 f"CF2X model not found at {urdf} — clone gym-pybullet-drones "
-                "into third_party/ or use render_backend='matplotlib'."
+                "into envs/pybullet_quadrotor_se3/ or use render_backend='matplotlib'."
             )
         # Scale the visual model so its arm length matches this env's arm.
         self._pb_drone_id = p.loadURDF(
@@ -899,7 +899,7 @@ if __name__ == "__main__":
                             is_stochastic, load_config, SDE_CONFIG)
 
     # Every env argument is overridable on the command line, e.g.
-    #   python envs/quadrotor_se3/quadrotor.py \
+    #   python envs/port_ham_quadrotor_se3/quadrotor.py \
     #       --config configs/quadrotor_se3/envs/ode.yaml \
     #       --external_force_type random --external_force_std 1.5
     _parser = build_parser(

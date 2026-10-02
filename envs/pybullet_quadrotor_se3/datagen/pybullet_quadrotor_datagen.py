@@ -28,7 +28,7 @@ import numpy as np
 
 THIS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(THIS, "..", "..", ".."))
-GPD = os.path.join(ROOT, "third_party", "gym-pybullet-drones")
+GPD = os.path.join(ROOT, "envs", "pybullet_quadrotor_se3", "gym-pybullet-drones")
 for p in (ROOT, GPD):
     if p not in sys.path:
         sys.path.insert(0, p)

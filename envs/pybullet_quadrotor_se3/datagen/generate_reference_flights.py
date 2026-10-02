@@ -9,7 +9,7 @@ u = A (KF rpm^2)) but with a configurable flight duration.  Every control window
 in the ``test_x`` split so ``report_evaluation.shared_truth`` can use the whole flight.
 
 Usage:
-    python envs/quadrotor_se3/datagen/generate_reference_flights.py --duration-seconds 3.0
+    python envs/pybullet_quadrotor_se3/datagen/generate_reference_flights.py --duration-seconds 3.0
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from pathlib import Path
 
 import numpy as np
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]  # envs/quadrotor_se3/datagen -> project root
+PROJECT_ROOT = Path(__file__).resolve().parents[3]  # envs/pybullet_quadrotor_se3/datagen -> project root
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 

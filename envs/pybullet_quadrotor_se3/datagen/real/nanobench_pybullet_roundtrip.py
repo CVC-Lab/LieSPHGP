@@ -29,9 +29,9 @@ from pathlib import Path
 import numpy as np
 
 THIS_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = THIS_DIR.parents[3]  # envs/quadrotor_se3/datagen/real -> project root
+PROJECT_ROOT = THIS_DIR.parents[3]  # envs/pybullet_quadrotor_se3/datagen/real -> project root
 DATASET_DIR = PROJECT_ROOT / "datasets/QUADROTOR-DATASET-NANOBENCH"
-for path in (PROJECT_ROOT, PROJECT_ROOT / "third_party/gym-pybullet-drones"):
+for path in (PROJECT_ROOT, PROJECT_ROOT / "envs/pybullet_quadrotor_se3/gym-pybullet-drones"):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 

@@ -18,7 +18,7 @@ HARD-V6 = HARD-V5 plus three changes, made so the physics is identifiable from t
       slalom, helix, chirp, bounce, tumble.
 
 Everything else (plant, envelope, gates, noise variants, audits, files, PDF) follows the V5 generator, which is
-envs/quadrotor_se3/datagen/generate_quadrotor_hard_v2.py and is left untouched.
+envs/pybullet_quadrotor_se3/datagen/generate_quadrotor_hard_v2.py and is left untouched.
 
 Original V2/V5 procedure, still in force:
   0   Gym-PyBullet-Drones CF2P, Physics.PYB, contact-free, built-in damping
@@ -50,8 +50,8 @@ import numpy as np
 import yaml
 
 THIS_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = THIS_DIR.parents[2]  # envs/quadrotor_se3/datagen -> project root
-for path in (PROJECT_ROOT, PROJECT_ROOT / "third_party/gym-pybullet-drones"):
+PROJECT_ROOT = THIS_DIR.parents[2]  # envs/pybullet_quadrotor_se3/datagen -> project root
+for path in (PROJECT_ROOT, PROJECT_ROOT / "envs/pybullet_quadrotor_se3/gym-pybullet-drones"):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 

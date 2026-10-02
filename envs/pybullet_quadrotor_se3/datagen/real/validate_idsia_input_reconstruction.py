@@ -2,7 +2,7 @@
 
 Here the input comes from MEASURED rotor speeds rather than a commanded PWM, so there is no thrust map to
 calibrate and no command-to-delivery gap.  The tests are identical to
-envs/quadrotor_se3/datagen/real/validate_nanobench_input_reconstruction.py so the two datasets can be compared
+envs/pybullet_quadrotor_se3/datagen/real/validate_nanobench_input_reconstruction.py so the two datasets can be compared
 directly.
 
   A  independent sensor: reconstructed T against m * a_z,body from the onboard accelerometer.
@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 
 THIS_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = THIS_DIR.parents[3]  # envs/quadrotor_se3/datagen/real -> project root
+PROJECT_ROOT = THIS_DIR.parents[3]  # envs/pybullet_quadrotor_se3/datagen/real -> project root
 DATASET_DIR = PROJECT_ROOT / "datasets/QUADROTOR-DATASET-IDSIA"
 
 KT, KC, ARM = 3.72e-8, 7.74e-12, 0.0353

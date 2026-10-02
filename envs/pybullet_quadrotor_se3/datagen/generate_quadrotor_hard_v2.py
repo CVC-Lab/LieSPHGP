@@ -1,26 +1,6 @@
-"""QUADROTOR-DATASET-HARD-V6 generator.
+"""QUADROTOR-DATASET-HARD-V2 generator.
 
-HARD-V6 = HARD-V5 plus three changes, made so the physics is identifiable from the data alone:
-
-  * two new TRAINING segments
-      dash        straight run at a sustained random speed 0.5-3 m/s: at steady speed the PID's thrust balances
-                  drag, an algebraic (T, v) relation per speed that a free initial state cannot absorb, so the
-                  |v|-dependence of the translational damping becomes first-order in the window loss;
-      thrust_pulse collective thrust dropped to 25-45 % of weight for 0.3-0.5 s, then raised by the same margin
-                  for the same time (net vertical impulse ~0, so it runs at any altitude), then PID recovery: breaks
-                  the thrust/gravity collinearity of near-hover data (HARD-V5: 74 % of samples within 10 % of hover).
-  * THREE splits instead of two
-      train    seeds 300-304, training library                  -> train_trajectories (noised in the variants)
-      val      seed 399,      same library, i.i.d.              -> test_trajectories  (clean; the loss-curve split,
-                                                                  key name kept so the model loaders are unchanged)
-      heldout  seed 499,      a DISJOINT library                -> heldout_trajectories (clean; the generalisation split)
-  * a heldout library sharing no segment name with training, matched in speed/rate coverage, different in shape:
-      slalom, helix, chirp, bounce, tumble.
-
-Everything else (plant, envelope, gates, noise variants, audits, files, PDF) follows the V5 generator, which is
-envs/quadrotor_se3/datagen/generate_quadrotor_hard_v2.py and is left untouched.
-
-Original V2/V5 procedure, still in force:
+Implements tmp/AGGR_v2_generation_procedure.md step by step:
   0   Gym-PyBullet-Drones CF2P, Physics.PYB, contact-free, built-in damping
   0b  wrench (default) or motor input; both inputs always stored
   1-3 10 s flights, wide envelope, DSL PID tracking a random manoeuvre sequence
@@ -50,8 +30,8 @@ import numpy as np
 import yaml
 
 THIS_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = THIS_DIR.parents[2]  # envs/quadrotor_se3/datagen -> project root
-for path in (PROJECT_ROOT, PROJECT_ROOT / "third_party/gym-pybullet-drones"):
+PROJECT_ROOT = THIS_DIR.parents[2]  # envs/pybullet_quadrotor_se3/datagen -> project root
+for path in (PROJECT_ROOT, PROJECT_ROOT / "envs/pybullet_quadrotor_se3/gym-pybullet-drones"):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
@@ -142,9 +122,9 @@ def random_initial_state(rng: np.random.Generator, cfg: dict) -> dict[str, np.nd
 
 
 # --------------------------------------------------------------------------- Step 3: manoeuvres
-def plan_manoeuvres(rng: np.random.Generator, cfg: dict, library: dict) -> list[dict[str, Any]]:
-    """A random sequence of segments from ``library`` covering the flight duration. Targets are resolved at run time."""
-    lib = library
+def plan_manoeuvres(rng: np.random.Generator, cfg: dict) -> list[dict[str, Any]]:
+    """A random sequence of segments covering the flight duration. Targets are resolved at run time."""
+    lib = cfg["manoeuvres"]["library"]
     names, weights = list(lib), np.array([lib[n]["weight"] for n in lib], dtype=float)
     total, segments = float(cfg["flight"]["duration_seconds"]), []
     t = 0.0
@@ -172,7 +152,7 @@ def plan_manoeuvres(rng: np.random.Generator, cfg: dict, library: dict) -> list[
             # Free decay: position loop off, hover thrust, roll/pitch held level by a PD, yaw torque zero. A coast only
             # carries damping information if it starts with speed, so a short circle at coast_entry_speed is inserted
             # first unless the previous segment already moves the vehicle.
-            moving = ("figure_eight", "circle", "waypoint_hop", "vertical_step", "dash", "slalom", "helix")
+            moving = ("figure_eight", "circle", "waypoint_hop", "vertical_step")
             if not segments or segments[-1]["name"] not in moving:
                 entry = {"name": "circle", "start": t, "duration": float(p.get("entry_seconds", 2.0)),
                          "radius": float(p.get("entry_radius", 1.0)), "speed": float(rng.uniform(*p["entry_speed"]))}
@@ -185,38 +165,6 @@ def plan_manoeuvres(rng: np.random.Generator, cfg: dict, library: dict) -> list[
                 seg["kick_axis"] = [0.0, 0.0, float(rng.choice([-1.0, 1.0]))]
         if name == "waypoint_hop":
             seg["target"] = uniform_box(rng, cfg["envelope"]["position_box"]).tolist(); seg["max_distance"] = float(p["max_distance"])
-        # ---- V6 training segments ----
-        if name in ("dash", "slalom"):
-            # Straight (dash) or serpentine (slalom) run at a sustained speed. The heading is drawn here and blended
-            # toward the box centre at run time, because the anchor is only known then and the run needs room.
-            seg["speed"] = float(rng.uniform(*p["speed"]))
-            heading = rng.normal(size=2); seg["heading"] = (heading / np.linalg.norm(heading)).tolist()
-            if name == "slalom":
-                seg["amplitude"], seg["period"] = float(rng.uniform(*p["amplitude"])), float(rng.uniform(*p["period"]))
-        if name == "thrust_pulse":
-            # Collective thrust at thrust_fraction of weight for cut_seconds, then at (2 - thrust_fraction) of weight for
-            # the same time (attitude held level by the coast PD throughout), then PID recovery to the anchor. The two
-            # halves cancel in vertical impulse, so the pulse needs no altitude margin beyond min_altitude.
-            seg["cut_seconds"], seg["thrust_fraction"] = float(rng.uniform(*p["cut_seconds"])), float(rng.uniform(*p["thrust_fraction"]))
-            seg["min_altitude"], seg["pd_gains"] = float(p["min_altitude"]), [float(p.get("kp", 1.5e-3)), float(p.get("kd", 2.7e-4))]
-        # ---- V6 heldout segments ----
-        if name == "helix":
-            seg["radius"], seg["speed"] = float(rng.uniform(*p["radius"])), float(rng.uniform(*p["speed"]))
-            seg["climb_rate"] = float(rng.choice([-1, 1]) * rng.uniform(*p["climb_rate"]))
-        if name == "chirp":
-            # Lateral position chirp plus a yaw chirp, frequency swept f0 -> f1 across the segment: inertia dominates
-            # the response at high frequency and damping at low, which separates M2^-1 g_tau from M2^-1 D_omega.
-            seg["amplitude"], seg["yaw_amplitude"] = float(rng.uniform(*p["amplitude"])), float(rng.uniform(*p["yaw_amplitude"]))
-            seg["f0"], seg["f1"] = float(p["f0"]), float(p["f1"])
-            heading = rng.normal(size=2); seg["heading"] = (heading / np.linalg.norm(heading)).tolist()
-        if name == "bounce":
-            seg["height"], seg["period"] = float(rng.uniform(*p["height"])), float(rng.uniform(*p["period"]))
-        if name == "tumble":
-            # Two torque kicks about different random axes, the second landing mid-recovery: compound rotation about
-            # several axes at once. Every training kick is a single impulse.
-            seg["rate"], seg["kick_seconds"], seg["gap_seconds"] = float(rng.uniform(*p["rate"])), float(p["kick_seconds"]), float(p["gap_seconds"])
-            a1, a2 = rng.normal(size=3), rng.normal(size=3)
-            seg["kick_axis"], seg["kick_axis_2"] = (a1 / np.linalg.norm(a1)).tolist(), (a2 / np.linalg.norm(a2)).tolist()
         seg["duration"] = min(seg["duration"], total - t)
         segments.append(seg); t += seg["duration"]
     return segments
@@ -238,28 +186,7 @@ def segment_target(seg: dict, t_local: float, anchor_xyz: np.ndarray, anchor_yaw
         xyz = anchor_xyz + np.array([0.0, 0.0, seg["height"]])
     elif name == "yaw_turn":
         yaw = anchor_yaw + seg["rate"] * t_local
-    elif name in ("dash", "slalom", "chirp"):
-        # Heading blended half-and-half toward the box centre so a long run does not leave the envelope at once.
-        centre = np.array([(box["x"][0] + box["x"][1]) / 2, (box["y"][0] + box["y"][1]) / 2])
-        to_centre = centre - anchor_xyz[:2]; to_centre /= max(np.linalg.norm(to_centre), 1e-9)
-        heading = 0.5 * np.asarray(seg["heading"]) + 0.5 * to_centre; heading /= max(np.linalg.norm(heading), 1e-9)
-        perpendicular = np.array([-heading[1], heading[0]])
-        if name == "dash":
-            offset = seg["speed"] * t_local * heading
-        elif name == "slalom":
-            offset = seg["speed"] * t_local * heading + seg["amplitude"] * np.sin(2 * np.pi * t_local / seg["period"]) * perpendicular
-        else:                                                   # chirp: linear frequency sweep f0 -> f1 over the segment
-            phase = 2 * np.pi * (seg["f0"] * t_local + 0.5 * (seg["f1"] - seg["f0"]) * t_local**2 / max(seg["duration"], 1e-9))
-            offset = seg["amplitude"] * np.sin(phase) * heading
-            yaw = anchor_yaw + seg["yaw_amplitude"] * np.sin(phase)
-        xyz = anchor_xyz + np.array([offset[0], offset[1], 0.0])
-    elif name == "helix":                                        # a circle that climbs (or descends) at a steady rate
-        a, omega = seg["radius"], seg["speed"] / seg["radius"]
-        xyz = anchor_xyz + np.array([a * (np.cos(omega * t_local) - 1.0), a * np.sin(omega * t_local), seg["climb_rate"] * t_local])
-    elif name == "bounce":                                       # square wave in height: every edge is a thrust transient
-        up = int(t_local // (seg["period"] / 2)) % 2 == 0
-        xyz = anchor_xyz + np.array([0.0, 0.0, seg["height"] if up else 0.0])
-    # aggressive_recovery, yaw_kick, disturbed_hover, thrust_pulse, tumble: hold the anchor (the kick / pulse does the work)
+    # aggressive_recovery, yaw_kick and disturbed_hover: hold the anchor (the kick / stronger gusts do the work)
     xyz = np.array([np.clip(xyz[i], *box[k]) for i, k in enumerate("xyz")])
     return xyz, np.array([0.0, 0.0, np.arctan2(np.sin(yaw), np.cos(yaw))])
 
@@ -276,9 +203,9 @@ def coast_rpm(state: np.ndarray, pd_gains: list, hover_force: float, mixer_inver
 
 
 # --------------------------------------------------------------------------- Steps 0b-5: one flight
-def generate_flight(cfg: dict, seed: int, index: int, attempt: int, library: dict) -> tuple[np.ndarray, dict[str, Any], dict[str, Any]]:
+def generate_flight(cfg: dict, seed: int, index: int, attempt: int) -> tuple[np.ndarray, dict[str, Any], dict[str, Any]]:
     rng = np.random.default_rng(int(cfg["splits"]["flight_seed_base"]) + 1000 * seed + index + 100_000 * attempt)
-    init, segments = random_initial_state(rng, cfg), plan_manoeuvres(rng, cfg, library)
+    init, segments = random_initial_state(rng, cfg), plan_manoeuvres(rng, cfg)
     e, act, gust_cfg, box = cfg["environment"], cfg["actuator"], cfg["gusts"], cfg["envelope"]["position_box"]
     physics_hz, sample_hz = int(e["physics_hz"]), int(e["sample_hz"])
     sub, dt = physics_hz // sample_hz, 1.0 / physics_hz
@@ -318,10 +245,6 @@ def generate_flight(cfg: dict, seed: int, index: int, attempt: int, library: dic
                 target_xyz, target_rpy = segment_target(seg, t - seg["start"], anchor_xyz, anchor_yaw, box)
                 if seg["name"] in ("coast", "coast_yaw"):
                     rpm_cmd = coast_rpm(state, seg["pd_gains"], mass * grav, mixer_inverse, kf)
-                elif seg["name"] == "thrust_pulse" and t - seg["start"] < 2 * seg["cut_seconds"] and anchor_xyz[2] >= seg["min_altitude"]:
-                    # Cut, then the compensating boost, with the coast PD holding attitude level; the PID resumes after.
-                    fraction = seg["thrust_fraction"] if t - seg["start"] < seg["cut_seconds"] else 2.0 - seg["thrust_fraction"]
-                    rpm_cmd = coast_rpm(state, seg["pd_gains"], fraction * mass * grav, mixer_inverse, kf)
                 else:
                     rpm_cmd, _, _ = controller.computeControlFromState(control_timestep=1.0 / sample_hz, state=state, target_pos=target_xyz, target_rpy=target_rpy)
                 rpm_cmd = np.clip(np.asarray(rpm_cmd, dtype=np.float64), 0.0, rpm_max)
@@ -332,18 +255,10 @@ def generate_flight(cfg: dict, seed: int, index: int, attempt: int, library: dic
                 gust = gust * np.exp(-dt / tau_w) + mult * sigma_w * np.sqrt(1 - np.exp(-2 * dt / tau_w)) * rng.normal(size=3)
                 pb.applyExternalForce(int(env.DRONE_IDS[0]), -1, gust.tolist(), [0, 0, 0], pb.LINK_FRAME, physicsClientId=int(env.CLIENT))
             kick_torque = np.zeros(3)
-            kick_axis, local = None, t - seg["start"]
-            if seg["name"] in ("aggressive_recovery", "yaw_kick", "coast_yaw") and local < seg["kick_seconds"]:   # torque kick (a shove)
-                kick_axis, kick_onset = seg["kick_axis"], local < dt * 1.5
-            elif seg["name"] == "tumble":                                                   # two kicks, the second mid-recovery
-                if local < seg["kick_seconds"]:
-                    kick_axis, kick_onset = seg["kick_axis"], local < dt * 1.5
-                elif seg["gap_seconds"] <= local < seg["gap_seconds"] + seg["kick_seconds"]:
-                    kick_axis, kick_onset = seg["kick_axis_2"], local - seg["gap_seconds"] < dt * 1.5
-            if kick_axis is not None:
-                kick_torque = inertia @ np.asarray(kick_axis) * seg["rate"] / seg["kick_seconds"]   # impulse J*rate over kick_seconds
+            if seg["name"] in ("aggressive_recovery", "yaw_kick", "coast_yaw") and t - seg["start"] < seg["kick_seconds"]:  # torque kick (a shove)
+                kick_torque = inertia @ np.asarray(seg["kick_axis"]) * seg["rate"] / seg["kick_seconds"]   # impulse J*rate over kick_seconds
                 pb.applyExternalTorque(int(env.DRONE_IDS[0]), -1, kick_torque.tolist(), pb.LINK_FRAME, physicsClientId=int(env.CLIENT))
-                if kick_onset:
+                if t - seg["start"] < dt * 1.5:
                     kicks.append({"time": round(t, 3), "torque": kick_torque.tolist()})
             if cfg["environment"].get("damping_law", "nonlinear") == "linear":
                 apply_linear_damping(env, state, float(cfg["environment"]["builtin_damping_coefficient"]), mass, inertia)
@@ -374,13 +289,13 @@ def generate_flight(cfg: dict, seed: int, index: int, attempt: int, library: dic
     return trajectory, {"commands": commands, "commanded": commanded, "gusts": gusts}, audit
 
 
-def generate_split(cfg: dict, seeds: list[int], label: str, library: dict) -> tuple[np.ndarray, dict[str, np.ndarray], list[dict]]:
+def generate_split(cfg: dict, seeds: list[int], label: str) -> tuple[np.ndarray, dict[str, np.ndarray], list[dict]]:
     flights, extras, audits = [], {"commands": [], "commanded": [], "gusts": []}, []
     for seed in seeds:
         for index in range(int(cfg["splits"]["flights_per_seed"])):
             for attempt in range(int(cfg["gates"]["max_attempts"])):
                 tic = time.perf_counter()
-                trajectory, extra, audit = generate_flight(cfg, seed, index, attempt, library)
+                trajectory, extra, audit = generate_flight(cfg, seed, index, attempt)
                 log(f"[{label}] seed={seed} flight={index} attempt={attempt} {time.perf_counter() - tic:.1f}s "
                     f"segments={[s['name'] for s in audit['segments']]} saturation={audit['saturation_fraction']:.3f} violation={audit['violation']}")
                 if audit["violation"] is None:
@@ -513,13 +428,8 @@ def save(path: Path, payload: dict, force: bool) -> None:
 def build(cfg: dict, base_cfg: dict) -> dict[str, dict]:
     e, out = cfg["environment"], cfg["output"]
     h = 1.0 / e["sample_hz"]
-    lib_train, lib_heldout = cfg["manoeuvres"]["library"], cfg["manoeuvres"]["heldout_library"]
-    shared = sorted(set(lib_train) & set(lib_heldout))
-    if shared:
-        raise ValueError(f"heldout library must share no segment with training; shared: {shared}")
-    train, train_extra, train_audits = generate_split(cfg, cfg["splits"]["train_seeds"], "train", lib_train)
-    test, test_extra, test_audits = generate_split(cfg, cfg["splits"]["val_seeds"], "val", lib_train)        # i.i.d. loss-curve split
-    heldout, heldout_extra, heldout_audits = generate_split(cfg, cfg["splits"]["heldout_seeds"], "heldout", lib_heldout)
+    train, train_extra, train_audits = generate_split(cfg, cfg["splits"]["train_seeds"], "train")
+    test, test_extra, test_audits = generate_split(cfg, cfg["splits"]["test_seeds"], "test")
     t = np.arange(train.shape[1]) * h
     tag = dataset_tag(cfg, base_cfg)
     settings = {
@@ -537,24 +447,15 @@ def build(cfg: dict, base_cfg: dict) -> dict[str, dict]:
         "input_mode": cfg["actuator"]["input_mode"], "true_control_map": "selection matrix S" if cfg["actuator"]["input_mode"] == "wrench" else "S @ M_mix @ kf @ rpm_max^2",
         "motor_command_layout": "(rpm_i / rpm_max)^2 applied; 'motor_commands_commanded' before the motor lag",
         "sample_dt": h, "physics_hz": e["physics_hz"], "flight_seconds": cfg["flight"]["duration_seconds"],
-        "splits": {"train": {"seeds": cfg["splits"]["train_seeds"], "library": list(lib_train), "key": "train_trajectories"},
-                   "val": {"seeds": cfg["splits"]["val_seeds"], "library": list(lib_train), "key": "test_trajectories",
-                           "note": "i.i.d. with training; draws the loss curves; key name kept so the model loaders are unchanged"},
-                   "heldout": {"seeds": cfg["splits"]["heldout_seeds"], "library": list(lib_heldout), "key": "heldout_trajectories",
-                               "note": "disjoint segment library, matched envelope; the generalisation split, always clean"},
-                   "segment_names_shared_between_train_and_heldout": shared},
-        "train_flight_audits": train_audits, "test_flight_audits": test_audits, "heldout_flight_audits": heldout_audits,
-        "audits_train": audits(train, cfg, h), "audits_test": audits(test, cfg, h), "audits_heldout": audits(heldout, cfg, h),
+        "train_flight_audits": train_audits, "test_flight_audits": test_audits,
+        "audits_train": audits(train, cfg, h), "audits_test": audits(test, cfg, h),
         "clean_training_state_sha256": array_sha256(train[..., :STATE_DIM]), "clean_test_state_sha256": array_sha256(test[..., :STATE_DIM]),
-        "clean_heldout_state_sha256": array_sha256(heldout[..., :STATE_DIM]),
-        "observation_noise": {"enabled": False, "test_split_clean": True, "heldout_split_clean": True},
+        "observation_noise": {"enabled": False, "test_split_clean": True},
     }
     clean = {"x": sliding_windows(train, out["window_points"], out["window_stride"]), "test_x": sliding_windows(test, out["window_points"], out["window_stride"]),
              "t": t[:out["window_points"]], "train_trajectories": train, "test_trajectories": test,
              "motor_commands": train_extra["commands"], "motor_commands_commanded": train_extra["commanded"], "gust_force": train_extra["gusts"],
-             "test_motor_commands": test_extra["commands"], "test_gust_force": test_extra["gusts"],
-             "heldout_trajectories": heldout, "heldout_x": sliding_windows(heldout, out["window_points"], out["window_stride"]),
-             "heldout_motor_commands": heldout_extra["commands"], "heldout_gust_force": heldout_extra["gusts"], "settings": settings}
+             "test_motor_commands": test_extra["commands"], "test_gust_force": test_extra["gusts"], "settings": settings}
     variants = {"clean": clean}
     n = cfg["noise"]
     for level in n["absolute_levels"]:
@@ -569,7 +470,7 @@ def build(cfg: dict, base_cfg: dict) -> dict[str, dict]:
 def _noisy_variant(clean: dict, noisy_train: np.ndarray, noisy_test: np.ndarray, record: dict, cfg: dict) -> dict:
     out = cfg["output"]
     s = copy.deepcopy(clean["settings"])
-    s["observation_noise"] = {"enabled": True, "test_split_clean": True, "heldout_split_clean": True, "noisy_test_split_saved": True, "controls_unchanged_by_noise": True,
+    s["observation_noise"] = {"enabled": True, "test_split_clean": True, "noisy_test_split_saved": True, "controls_unchanged_by_noise": True,
                               "noise_added_before_windowing": True, "train_noise_seed": cfg["noise"]["train_noise_seed"], "test_noise_seed": cfg["noise"]["test_noise_seed"],
                               "noisy_training_state_sha256": array_sha256(noisy_train[..., :STATE_DIM]), "rotation_validity": rotation_validity(noisy_train),
                               "train_noise_std_per_channel": (noisy_train[..., :STATE_DIM] - clean["train_trajectories"][..., :STATE_DIM]).std((0, 1)).tolist(), **record}
@@ -589,18 +490,12 @@ def write_pdf(variants: dict[str, dict], cfg: dict, path: Path) -> None:
     train, h = clean["train_trajectories"], s["sample_dt"]
     t = np.arange(train.shape[1]) * h
     a_train, box = s["audits_train"], cfg["envelope"]["position_box"]
-    heldout = clean["heldout_trajectories"]
-    names = list(cfg["manoeuvres"]["library"]) + list(cfg["manoeuvres"]["heldout_library"])
-    colours = {n: c for n, c in zip(names, plt.cm.tab20.colors)}
+    colours = {n: c for n, c in zip(cfg["manoeuvres"]["library"], plt.cm.tab10.colors)}
     with PdfPages(path) as pdf:
         # 1 summary + config
         fig, ax = plt.subplots(figsize=(11, 8.5)); ax.axis("off")
         rej = sum(a["attempt"] for a in s["train_flight_audits"] + s["test_flight_audits"])
-        lines = [f"Dataset {s['dataset_name']}",
-                 f"train flights {train.shape[0]} x {s['flight_seconds']} s, val flights {clean['test_trajectories'].shape[0]} (i.i.d., key test_trajectories), "
-                 f"heldout flights {heldout.shape[0]} (disjoint library, key heldout_trajectories), h = {h} s, git {s['git_hash'][:10]}",
-                 f"training library: {', '.join(cfg['manoeuvres']['library'])}",
-                 f"heldout library : {', '.join(cfg['manoeuvres']['heldout_library'])}   (shared with training: {s['splits']['segment_names_shared_between_train_and_heldout'] or 'none'})",
+        lines = [f"Dataset {s['dataset_name']}", f"train flights {train.shape[0]} x {s['flight_seconds']} s, test flights {clean['test_trajectories'].shape[0]}, h = {h} s, git {s['git_hash'][:10]}",
                  f"input mode {s['input_mode']}; true control map: {s['true_control_map']}", f"rejected attempts {rej}; mean saturation {np.mean([a['saturation_fraction'] for a in s['train_flight_audits']]):.4f}",
                  f"noise variants: {', '.join(k for k in variants if k != 'clean')}", "", "config:"] + yaml.safe_dump(cfg, sort_keys=False).splitlines()
         ax.text(0.01, 0.99, "\n".join(lines[:70]), va="top", family="monospace", fontsize=6.5); pdf.savefig(fig); plt.close(fig)
@@ -608,30 +503,15 @@ def write_pdf(variants: dict[str, dict], cfg: dict, path: Path) -> None:
         fig = plt.figure(figsize=(11, 8.5)); ax = fig.add_subplot(projection="3d")
         for f in train: ax.plot(f[:, 0], f[:, 1], f[:, 2], lw=0.6, alpha=0.7)
         ax.set(xlim=box["x"], ylim=box["y"], zlim=box["z"], xlabel="x (m)", ylabel="y (m)", zlabel="z (m)", title="training flights over the envelope box"); pdf.savefig(fig); plt.close(fig)
-        fig = plt.figure(figsize=(11, 8.5)); ax = fig.add_subplot(projection="3d")
-        for f in heldout: ax.plot(f[:, 0], f[:, 1], f[:, 2], lw=0.6, alpha=0.7)
-        ax.set(xlim=box["x"], ylim=box["y"], zlim=box["z"], xlabel="x (m)", ylabel="y (m)", zlabel="z (m)", title="HELDOUT flights (disjoint library) over the same envelope box"); pdf.savefig(fig); plt.close(fig)
-        # 2b coverage: train vs val vs heldout must overlap in state, differ only in shape
-        fig, axes = plt.subplots(2, 2, figsize=(11, 8.5)); axes = axes.ravel()
-        parts = (("train", train), ("val", clean["test_trajectories"]), ("heldout", heldout))
-        for ax, (fn, lab, lim) in zip(axes, ((lambda a: np.linalg.norm(a[..., 12:15], axis=-1).ravel(), "speed |v_b| (m/s)", cfg["envelope"]["max_speed"]),
-                                             (lambda a: np.linalg.norm(a[..., 15:18], axis=-1).ravel(), "angular rate |omega_b| (rad/s)", cfg["envelope"]["max_angular_rate"]),
-                                             (lambda a: a[..., 18].ravel() / (s["vehicle_parameters"]["mass"] * s["vehicle_parameters"]["gravity_acceleration"]), "collective thrust T / (m g)", None),
-                                             (lambda a: np.degrees(np.arccos(np.clip(a[..., 11].ravel(), -1, 1))), "tilt (deg)", cfg["envelope"]["max_tilt_deg"]))):
-            for name_, arr in parts: ax.hist(fn(arr), 50, density=True, histtype="step", lw=1.4, label=name_)
-            if lim is not None: ax.axvline(lim, c="r", lw=0.8)
-            ax.set_title(lab); ax.grid(alpha=0.3); ax.legend()
-        fig.suptitle("state coverage by split (densities). Design check: the three must overlap; only the shapes differ"); pdf.savefig(fig); plt.close(fig)
-        # 3 example flights: training, then heldout
-        examples = [(train[i], s["train_flight_audits"][i], f"TRAIN flight {i}") for i in range(min(int(cfg["output"]["pdf_example_flights"]), train.shape[0]))]
-        examples += [(heldout[i], s["heldout_flight_audits"][i], f"HELDOUT flight {i}") for i in range(min(2, heldout.shape[0]))]
-        for f, aud, title in examples:
+        # 3 example flights
+        for i in range(min(int(cfg["output"]["pdf_example_flights"]), train.shape[0])):
+            f, aud = train[i], s["train_flight_audits"][i]
             rpy = Rotation.from_matrix(f[:, 3:12].reshape(-1, 3, 3)).as_euler("xyz")
             fig, axes = plt.subplots(5, 1, figsize=(11, 8.5), sharex=True)
             for ax, y, lab in zip(axes, (f[:, :3], rpy, f[:, 12:15], f[:, 15:18], f[:, 18:22]), ("x (m)", "roll pitch yaw (rad)", "v_b (m/s)", "omega_b (rad/s)", "wrench (N, N m)")):
                 ax.plot(t, y, lw=0.8); ax.set_ylabel(lab); ax.grid(alpha=0.3)
                 for seg in aud["segments"]: ax.axvspan(seg["start"], seg["start"] + seg["duration"], color=colours[seg["name"]], alpha=0.08)
-            axes[0].set_title(f"{title}: " + " > ".join(seg["name"] for seg in aud["segments"])); axes[-1].set_xlabel("t (s)"); pdf.savefig(fig); plt.close(fig)
+            axes[0].set_title(f"flight {i}: " + " > ".join(seg["name"] for seg in aud["segments"])); axes[-1].set_xlabel("t (s)"); pdf.savefig(fig); plt.close(fig)
         # 4 coverage
         flat = train.reshape(-1, 22); fig, axes = plt.subplots(2, 3, figsize=(11, 8.5)); axes = axes.ravel()
         for ax, (i, k) in zip(axes[:3], enumerate("xyz")): ax.hist(flat[:, i], 40); ax.axvline(box[k][0], c="r"); ax.axvline(box[k][1], c="r"); ax.set_title(f"{k} (m)")
@@ -681,12 +561,12 @@ def write_pdf(variants: dict[str, dict], cfg: dict, path: Path) -> None:
 # --------------------------------------------------------------------------- main
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=THIS_DIR / "configs" / "wind_config.yaml")
+    parser.add_argument("--config", type=Path, default=THIS_DIR / "configs" / "hard_v2_config.yaml")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--no-save", action="store_true")
     args = parser.parse_args()
     cfg = yaml.safe_load(Path(args.config).read_text())
-    base_cfg = cfg   # the tag encodes differences from a base config; this generator has none
+    base_cfg = yaml.safe_load((THIS_DIR / "configs" / "hard_v2_config.yaml").read_text())
     out_dir = (PROJECT_ROOT / cfg["output"]["directory"]).resolve(); out_dir.mkdir(parents=True, exist_ok=True)
     tic = time.perf_counter()
     variants = build(cfg, base_cfg)
