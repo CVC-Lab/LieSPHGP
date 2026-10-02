@@ -1,6 +1,6 @@
 r"""Dissipative port-Hamiltonian **SDE** on $SO(3)^n$ with GP subnetworks.
 
-The learned counterpart of ``envs/arm_nlink_SO3/arm_nlink_physics.py``: identical
+The learned counterpart of ``envs/arm_nlink_so3/arm_nlink_physics.py``: identical
 port-Hamiltonian structure, but $M^{-1}$, $V$, $D$, $g$ and $\Sigma$ are replaced
 by variational random-Fourier-feature GPs on the product manifold.
 

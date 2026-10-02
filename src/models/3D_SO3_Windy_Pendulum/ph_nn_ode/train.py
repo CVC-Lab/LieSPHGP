@@ -17,7 +17,7 @@ THIS_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(THIS_FILE_DIR, '../../../..'))
 sys.path.insert(0, PROJECT_ROOT)
 sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src/utils'))
-sys.path.insert(0, os.path.join(PROJECT_ROOT, 'datasets'))
+sys.path.insert(0, os.path.join(PROJECT_ROOT, 'envs', 'pendulum_so3', 'datagen'))
 sys.path.insert(0, THIS_FILE_DIR)
 
 from torchdiffeq import odeint
@@ -33,7 +33,7 @@ from loss_utils import (
 
 
 DEFAULT_SAVE_DIR = os.path.join(THIS_FILE_DIR, 'data', 'run_wp3d')
-DEFAULT_DATA_DIR = os.path.join(PROJECT_ROOT, 'datasets/data/windy_pendulum_3d')
+DEFAULT_DATA_DIR = os.path.join(PROJECT_ROOT, 'datasets/windy_pendulum_3d')
 
 
 # ──────────────────────────────────────────────────────────────────────

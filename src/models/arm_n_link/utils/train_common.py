@@ -54,8 +54,8 @@ for _p in (_HERE, _PKG, _ROOT):
 # primal/tangent dtype mismatch when float64 GP weights met a float32 batch.
 jax.config.update('jax_enable_x64', True)
 
-from datasets.windy_arm_nlink_datagen import get_dataset             # noqa: E402
-from envs.arm_nlink_SO3 import arm_nlink_physics as phys             # noqa: E402
+from envs.arm_nlink_so3.datagen.windy_arm_nlink_datagen import get_dataset             # noqa: E402
+from envs.arm_nlink_so3 import arm_nlink_physics as phys             # noqa: E402
 
 import structured_subnets                                            # noqa: E402
 from ph_network_nlink import ArmPortHamiltonian, KeyedArmModel, SUBNET_NAMES  # noqa: E402
@@ -64,7 +64,7 @@ from lie_integrator_nlink import (                                   # noqa: E40
 )
 from elbo_loss_nlink import elbo_nll_nlink, pl_loss_nlink, kl_per_subnet  # noqa: E402
 
-DEFAULT_DATA_DIR = os.path.join(_ROOT, 'datasets', 'data', 'windy_arm_nlink')
+DEFAULT_DATA_DIR = os.path.join(_ROOT, 'datasets', 'windy_arm_nlink')
 N_SUBSTEPS = 10                      # must match the environment
 
 

@@ -22,7 +22,7 @@ trained through the dynamics.
 
 .. important::
    This module is **self-contained** — it must never import
-   ``envs.arm_nlink_SO3``. The whole value of
+   ``envs.arm_nlink_so3``. The whole value of
    ``ph_gp_sde/eval_ground_truth_match.py`` is that it compares two
    *independent* implementations of the same algebra; sharing code would make
    that gate vacuous. The kinematics below are therefore rewritten here.

@@ -53,7 +53,7 @@ import jax
 import jax.numpy as jnp
 
 THIS_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-# This file is a verbatim copy of envs/arm_nlink_SO3/arm_nlink_physics.py, moved
+# This file is a verbatim copy of envs/arm_nlink_so3/arm_nlink_physics.py, moved
 # two levels deeper (src/models/arm_n_link_mojoco/mujoco_env/), so reaching the
 # project root -- which is what makes `src.utils.JAX.ode_utils_jax` importable
 # -- takes four hops instead of two. This is the ONLY edit relative to the
@@ -159,7 +159,7 @@ def uniform_chain_params(
 
        The default `inertia_scale=1.0` with `com_fraction=1.0` gives
        $M = m L^2 I_3$ at $n=1$, reproducing the existing single pendulum
-       exactly (see :func:`envs.arm_nlink_SO3.windy_arm_nlink_so3.pendulum_equivalent_params`
+       exactly (see :func:`envs.arm_nlink_so3.windy_arm_nlink_so3.pendulum_equivalent_params`
        and §13.1 of `multi-joint-ph-system.md`).
     """
     L = float(link_length)
@@ -332,7 +332,7 @@ def input_map(params: ArmParams, R: jnp.ndarray) -> jnp.ndarray:
     scales each commanded torque before it reaches the joint, so the delivered
     torque is $\Gamma u$ and the power identity becomes
     $(\Gamma u)^\top\Omega=(gu)^\top\omega$. This mirrors `g_diag` in the single
-    pendulum (``envs/windy_pendulum_3d.py``): without it $g$ is fully determined
+    pendulum (``envs/pendulum_so3/windy_pendulum_3d.py``): without it $g$ is fully determined
     by the state and there is nothing for a model to identify, which would make
     the arm a strictly easier problem than the pendulum. $\gamma_i=(1,1,1)$
     recovers $T(q)^\top$ exactly.
@@ -418,7 +418,7 @@ def friction_modulation(params: ArmParams, R: jnp.ndarray,
     r"""Per-link friction multiplier $\rho_i \ge 1$, `(n,)`.
 
     Generalizes the single-pendulum modulation in
-    ``envs/windy_pendulum_3d.py::_variable_friction``:
+    ``envs/pendulum_so3/windy_pendulum_3d.py::_variable_friction``:
 
     .. math::
         \rho_i = 1 + \tfrac12\underbrace{\tfrac12\big(1 - (R_ie_z)_z\big)}_{\text{height}}
@@ -599,7 +599,7 @@ def stochastic_increment_p(params: ArmParams, R: jnp.ndarray,
 
     `dW` is a `(3,)` Wiener increment **already scaled** by $\sqrt{h}$ so that
     $\mathrm{Var}(dW) = h$ — matching the convention in
-    ``envs/windy_pendulum_3d.py`` and ``src/utils/JAX/lie_integrator.py``.
+    ``envs/pendulum_so3/windy_pendulum_3d.py`` and ``src/utils/JAX/lie_integrator.py``.
     """
     n = n_links(params)
     return (sigma * (wind_map(params, R) @ dW)).reshape(n, 3)
@@ -632,7 +632,7 @@ def lie_heun_step(params: ArmParams, R: jnp.ndarray, p: jnp.ndarray,
     re-projection is needed anywhere in the loop.
 
     Reusing the same `dW` across both stages is what makes this the Stratonovich
-    (not Itô) scheme, matching ``envs/windy_pendulum_3d.py::_lie_heun_step``.
+    (not Itô) scheme, matching ``envs/pendulum_so3/windy_pendulum_3d.py::_lie_heun_step``.
     """
     # ── Stage 1: evaluate at the current state ──
     p_dot_1 = drift_p(params, R, p, u, wind_force)

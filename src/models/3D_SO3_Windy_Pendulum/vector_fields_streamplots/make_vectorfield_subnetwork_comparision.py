@@ -33,7 +33,7 @@ Predicted trajectory (used only for grid range and slice anchor — NOT
 plotted as a line):
     GP_SDE : Lie-Heun SDE rollout from src.utils.JAX.lie_integrator
     NN_ODE : torchdiffeq RK4 rollout
-    GT     : env Lie-Heun rollout (envs.windy_pendulum_3d)
+    GT     : env Lie-Heun rollout (envs.pendulum_so3.windy_pendulum_3d)
 all from a shared (R0, ω0) and dW.
 
 β scale-invariance correction (from M⁻¹ along the predicted trajectory):
@@ -75,7 +75,7 @@ import equinox as eqx
 import torch
 from torchdiffeq import odeint
 
-from envs.windy_pendulum_3d import windy_pendulum_3d
+from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d
 from src.utils.JAX.lie_integrator import lie_heun_sde_rollout
 
 

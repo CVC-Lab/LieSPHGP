@@ -87,7 +87,7 @@ import equinox as eqx
 
 jax.config.update("jax_enable_x64", True)
 
-from envs.arm_nlink_SO3 import arm_nlink_physics as phys          # noqa: E402
+from envs.arm_nlink_so3 import arm_nlink_physics as phys          # noqa: E402
 from network import DissipativeArmHamSDE, KeyedArmModel           # noqa: E402
 from utils.lie_integrator_nlink import (                          # noqa: E402
     lie_heun_sde_rollout_nlink, exp_so3_batch,

@@ -24,7 +24,7 @@ import numpy as np
 THIS_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(THIS_FILE_DIR, '..'))
 for p in (PROJECT_ROOT,
-          os.path.join(PROJECT_ROOT, 'envs'),
+          os.path.join(PROJECT_ROOT, 'envs', 'pendulum_so3'),
           os.path.join(PROJECT_ROOT, 'src/utils')):
     if p not in sys.path:
         sys.path.insert(0, p)

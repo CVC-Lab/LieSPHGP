@@ -31,8 +31,8 @@ import numpy as np
 
 THIS_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT  = os.path.abspath(os.path.join(THIS_FILE_DIR, '../../../..'))
-DATASETS_DIR  = os.path.join(PROJECT_ROOT, 'datasets')
-for p in (PROJECT_ROOT, os.path.join(PROJECT_ROOT, 'src/utils'), DATASETS_DIR):
+DATAGEN_DIR  = os.path.join(PROJECT_ROOT, 'envs', 'pendulum_so3', 'datagen')
+for p in (PROJECT_ROOT, os.path.join(PROJECT_ROOT, 'src/utils'), DATAGEN_DIR):
     if p not in sys.path:
         sys.path.insert(0, p)
 
@@ -53,7 +53,7 @@ from physics_losses import physics_aux_losses                      # noqa: E402
 
 
 DEFAULT_SAVE_DIR = os.path.join(THIS_FILE_DIR, 'data', 'run_wp3d_jax')
-DEFAULT_DATA_DIR = os.path.join(PROJECT_ROOT, 'datasets/data/windy_pendulum_3d')
+DEFAULT_DATA_DIR = os.path.join(PROJECT_ROOT, 'datasets/windy_pendulum_3d')
 
 
 # ──────────────────────────────────────────────────────────────────────

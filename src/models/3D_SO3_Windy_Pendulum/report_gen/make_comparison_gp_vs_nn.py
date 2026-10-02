@@ -40,7 +40,7 @@ for p in (PROJECT_ROOT,
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from envs.windy_pendulum_3d import windy_pendulum_3d
+from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d
 
 # ── Env / rollout constants ──────────────────────────────────────────────────
 ENV_KW = dict(

@@ -35,7 +35,7 @@ import numpy as np
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(THIS_DIR, ".."))
 ENVS_DIR = os.path.join(PROJECT_ROOT, "envs")
-QUAD_DIR = os.path.join(ENVS_DIR, "SE3_quadrotor")
+QUAD_DIR = os.path.join(ENVS_DIR, "quadrotor_se3")
 for _p in (PROJECT_ROOT, ENVS_DIR, QUAD_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)

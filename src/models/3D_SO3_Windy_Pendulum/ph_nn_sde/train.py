@@ -43,9 +43,9 @@ if PROJECT_ROOT not in sys.path:
 if THIS_FILE_DIR not in sys.path:
     sys.path.insert(0, THIS_FILE_DIR)
 
-DATASETS_DIR = os.path.join(PROJECT_ROOT, 'datasets')
-if DATASETS_DIR not in sys.path:
-    sys.path.insert(0, DATASETS_DIR)
+DATAGEN_DIR = os.path.join(PROJECT_ROOT, 'envs', 'pendulum_so3', 'datagen')
+if DATAGEN_DIR not in sys.path:
+    sys.path.insert(0, DATAGEN_DIR)
 
 from windy_pendulum_3d_datagen import get_dataset, arrange_data    # noqa: E402
 
@@ -63,7 +63,7 @@ from src.utils.JAX.ode_utils_jax import to_pickle, exp_so3          # noqa: E402
 
 
 DEFAULT_SAVE_DIR = os.path.join(THIS_FILE_DIR, 'data', 'run_wp3d_sde')
-DEFAULT_DATA_DIR = os.path.join(PROJECT_ROOT, 'datasets/data/windy_pendulum_3d')
+DEFAULT_DATA_DIR = os.path.join(PROJECT_ROOT, 'datasets/windy_pendulum_3d')
 
 
 # ─────────────────────────────────────────────────────────────────────

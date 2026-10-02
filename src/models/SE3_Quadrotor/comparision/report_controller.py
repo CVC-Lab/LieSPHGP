@@ -31,7 +31,7 @@ from scipy.spatial.transform import Rotation
 from .report_evaluation import DAMPING_COEFFICIENT, DT, PHYSICS_HZ, sha256
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
-PYBULLET_DRONES_DIR = PROJECT_ROOT / "envs/SE3_quadrotor/gym-pybullet-drones"
+PYBULLET_DRONES_DIR = PROJECT_ROOT / "third_party/gym-pybullet-drones"
 if str(PYBULLET_DRONES_DIR) not in sys.path:
     sys.path.insert(0, str(PYBULLET_DRONES_DIR))
 

@@ -1,7 +1,7 @@
 """Stratonovich Heun integrator on SO(3) × ℝ³ in (q, p) form.
 
 Mirrors the env's Lie-group Heun integrator
-(envs/windy_pendulum_3d.py::windy_pendulum_3d._lie_heun_step) geometrically,
+(envs/pendulum_so3/windy_pendulum_3d.py::windy_pendulum_3d._lie_heun_step) geometrically,
 but the substep state carried inside the scan is angular **momentum** p
 rather than angular velocity ω. ω is reconstructed only when needed for
 the SO(3) Lie-step (φ = ω·h) and at outer-step output (so downstream

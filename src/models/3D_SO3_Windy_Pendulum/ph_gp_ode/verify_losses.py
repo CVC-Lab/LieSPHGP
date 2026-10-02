@@ -41,7 +41,7 @@ THIS_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(THIS_FILE_DIR, '../../../..'))
 for p in (PROJECT_ROOT,
           os.path.join(PROJECT_ROOT, 'src/utils'),
-          os.path.join(PROJECT_ROOT, 'datasets')):
+          os.path.join(PROJECT_ROOT, 'envs', 'pendulum_so3', 'datagen')):
     if p not in sys.path:
         sys.path.insert(0, p)
 
@@ -166,7 +166,7 @@ def main():
     ap.add_argument('--seed', type=int, default=0)
     ap.add_argument('--data_dir', type=str,
                     default=os.path.join(PROJECT_ROOT,
-                                         'datasets/data/windy_pendulum_3d'))
+                                         'datasets/windy_pendulum_3d'))
     ap.add_argument('--varying_friction', action='store_true')
     ap.add_argument('--random_u', action='store_true')
     ap.add_argument('--sigma_obs', type=float, default=None,

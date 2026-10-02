@@ -691,7 +691,7 @@ zero).
 export PYTHONPATH="$PWD"
 
 # §3.1 identification sweep (CPU)
-python3 datasets/QUADROTOR-DATASET-WIND/identification_table.py \
+python3 src/models/SE3_Quadrotor/comparision/wind_identification_table.py \
   --run experiments/quadrotor/train_runs/<run> [--run ...]
 
 # §3.2 full simulator report (identification + open loop + closed loop)
@@ -701,10 +701,10 @@ python3 -m src.models.SE3_Quadrotor.comparision.generate_comparison_report_v2 \
   --controller-recorded-reference datasets/QUADROTOR-DATASET-EVALSET/EVALSET_CF2P_10s_h0p01_clean.pkl@heldout
 
 # §4.2 the benchmark's own protocol
-python3 datasets/QUADROTOR-DATASET-IDSIA/benchmark_protocol.py --run <gp run> --stride 2
+python3 src/models/SE3_Quadrotor/comparision/idsia/benchmark_protocol.py --run <gp run> --stride 2
 
 # §4.3 open loop against their baselines
-python3 datasets/QUADROTOR-DATASET-IDSIA/plot_open_loop_baselines.py --run <gp run>
+python3 src/models/SE3_Quadrotor/comparision/idsia/plot_open_loop_baselines.py --run <gp run>
 
 # §5.2 closed loop under the gust
 python3 -m src.models.SE3_Quadrotor.comparision.generate_comparison_report_v2 \
@@ -726,7 +726,7 @@ python3 -m src.models.SE3_Quadrotor.comparision.evaluate_ensemble \
   --horizon-seconds 1.0 --samples 50 --flights 180
 
 # §5.3 predictive band / calibration
-python3 datasets/QUADROTOR-DATASET-IDSIA/evaluate_sde_band.py --run <run> \
+python3 src/models/SE3_Quadrotor/comparision/idsia/evaluate_sde_band.py --run <run> \
   --dataset datasets/QUADROTOR-DATASET-WIND25/WIND25_CF2P_10s_h0p01_clean.pkl@heldout \
   --samples 32 --exclude-observation-noise
 ```

@@ -5,7 +5,7 @@ Self-contained (including the $SO(3)$ helpers) so nothing outside
 
 This is the **model-side** integrator: it drives a learned network through the
 same geometry as the ground-truth environment
-(``envs/arm_nlink_SO3/arm_nlink_physics.py::lie_heun_step``). The model is
+(``envs/arm_nlink_so3/arm_nlink_physics.py::lie_heun_step``). The model is
 expected to expose
 
     drift_p(q, p, u)                -> $\dot p$          $\in\mathbb{R}^{3n}$

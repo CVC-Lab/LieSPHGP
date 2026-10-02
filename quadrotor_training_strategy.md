@@ -122,10 +122,10 @@ Unless a dataset section overrides a value, use the following common setup:
 
 The current environment calculates the deterministic rigid-body drift and the
 two stochastic channels in
-[`envs/SE3_quadrotor/quadrotor.py`](envs/SE3_quadrotor/quadrotor.py#L409).
+[`envs/quadrotor_se3/quadrotor.py`](envs/quadrotor_se3/quadrotor.py#L409).
 The current dataset generator stores clean test states separately from noisy
 test observations in
-[`datasets/windy_quadrotor_datagen.py`](datasets/windy_quadrotor_datagen.py#L312).
+[`envs/quadrotor_se3/datagen/windy_quadrotor_datagen.py`](envs/quadrotor_se3/datagen/windy_quadrotor_datagen.py#L312).
 
 ## 5. D0 — Official PyBullet clean dataset
 
@@ -259,7 +259,7 @@ deterministic ODE.
 - Training observations are noisy, while the primary test target is clean.
 
 The geometric observation-noise implementation is in
-[`windy_quadrotor_datagen.py`](datasets/windy_quadrotor_datagen.py#L70).
+[`windy_quadrotor_datagen.py`](envs/quadrotor_se3/datagen/windy_quadrotor_datagen.py#L70).
 
 ### Models trained
 
@@ -308,7 +308,7 @@ D3 isolates true physical process noise without observation noise.
 - Torque diffusion is additive in body coordinates.
 
 The environment implements the stochastic force and torque increments in
-[`quadrotor.py`](envs/SE3_quadrotor/quadrotor.py#L452).
+[`quadrotor.py`](envs/quadrotor_se3/quadrotor.py#L452).
 
 ### Models trained
 

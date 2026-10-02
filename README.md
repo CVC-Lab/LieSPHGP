@@ -16,7 +16,7 @@ Stochastic Port-Hamiltonian Neural Networks for learning dynamics on Lie groups 
 
 1. Generate data:
    ```bash
-   python datasets/windy_pendulum_3d_datagen.py
+   python envs/pendulum_so3/datagen/windy_pendulum_3d_datagen.py
    ```
 2. Train a model, e.g.:
    ```bash

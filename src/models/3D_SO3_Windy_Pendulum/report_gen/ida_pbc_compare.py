@@ -55,7 +55,7 @@ for _p in (PROJECT_ROOT,):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from envs.windy_pendulum_3d import windy_pendulum_3d, _exp_so3, _log_so3   # noqa: E402
+from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d, _exp_so3, _log_so3   # noqa: E402
 
 
 def _load_module_from_path(modname: str, path: str):

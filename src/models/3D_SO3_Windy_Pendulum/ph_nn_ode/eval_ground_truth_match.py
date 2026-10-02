@@ -49,7 +49,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(THIS_FILE_DIR, '../../../..'))
 sys.path.insert(0, PROJECT_ROOT)
 
 from torchdiffeq import odeint
-from envs.windy_pendulum_3d import windy_pendulum_3d
+from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ def get_args():
 
 
 # ─────────────────────────────────────────────────────────────────────
-# Plotting helpers (mirrors datasets/3d_pendulum_trajectory_dataset_plot.py
+# Plotting helpers (mirrors envs/pendulum_so3/plots/3d_pendulum_trajectory_dataset_plot.py
 # but overlays env vs model on a single axis instead of many trajectories).
 # ─────────────────────────────────────────────────────────────────────
 

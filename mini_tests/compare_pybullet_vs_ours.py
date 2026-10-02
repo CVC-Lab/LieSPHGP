@@ -34,8 +34,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 THIS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(THIS, ".."))
-GPD = os.path.join(ROOT, "envs", "SE3_quadrotor", "gym-pybullet-drones")
-for p in (ROOT, GPD, os.path.join(ROOT, "envs", "SE3_quadrotor")):
+GPD = os.path.join(ROOT, "third_party", "gym-pybullet-drones")
+for p in (ROOT, GPD, os.path.join(ROOT, "envs", "quadrotor_se3")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
@@ -132,7 +132,7 @@ def _ax(t, figsize=(11, 6)):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out_pdf", default=os.path.join(
-        ROOT, "envs/SE3_quadrotor/reports/pybullet_vs_ours.pdf"))
+        ROOT, "reports/SE3_Quadrotor/env_checks/pybullet_vs_ours.pdf"))
     ap.add_argument("--n_traj", type=int, default=10)
     ap.add_argument("--duration", type=float, default=1.0)
     ap.add_argument("--freq", type=int, default=240)

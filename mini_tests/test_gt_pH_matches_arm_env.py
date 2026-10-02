@@ -36,17 +36,17 @@ PROJECT_ROOT = os.path.abspath(os.path.join(THIS_FILE_DIR, '..'))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from envs.arm_nlink_SO3.arm_nlink_physics import (                       # noqa: E402
+from envs.arm_nlink_so3.arm_nlink_physics import (                       # noqa: E402
     uniform_chain_params, exp_so3_batch, exp_so3,
     mass_matrix, potential, com_positions, translational_jacobians,
     joint_rate_map, input_map, wind_map, analytic_gravity_torque,
     trivialized_grad, dissipation_matrix, total_energy,
     vertical_angular_momentum, so3_defect, momentum_from_omega,
 )
-from envs.arm_nlink_SO3.windy_arm_nlink_so3 import (                     # noqa: E402
+from envs.arm_nlink_so3.windy_arm_nlink_so3 import (                     # noqa: E402
     windy_arm_nlink_so3, pendulum_equivalent_params,
 )
-from envs.windy_pendulum_3d import windy_pendulum_3d       # noqa: E402
+from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d       # noqa: E402
 
 
 # ══════════════════════════════════════════════════════════════════════

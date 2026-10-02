@@ -1,7 +1,7 @@
 r"""Correctness gate for the $n$-link model: **ground-truth subnetworks**.
 
 Replaces every GP subnetwork with the exact analytic physics from
-``envs/arm_nlink_SO3/arm_nlink_physics.py`` and checks that the model's
+``envs/arm_nlink_so3/arm_nlink_physics.py`` and checks that the model's
 port-Hamiltonian algebra and integrator reproduce the environment.
 
 This separates two questions that are otherwise impossible to tell apart when
@@ -33,8 +33,8 @@ for _p in (PKG_ROOT, PROJECT_ROOT):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from envs.arm_nlink_SO3 import arm_nlink_physics as phys          # noqa: E402
-from envs.arm_nlink_SO3.windy_arm_nlink_so3 import windy_arm_nlink_so3  # noqa: E402
+from envs.arm_nlink_so3 import arm_nlink_physics as phys          # noqa: E402
+from envs.arm_nlink_so3.windy_arm_nlink_so3 import windy_arm_nlink_so3  # noqa: E402
 from utils.lie_integrator_nlink import (                          # noqa: E402
     lie_heun_sde_rollout_nlink, exp_so3_batch,
 )

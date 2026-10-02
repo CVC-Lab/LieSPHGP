@@ -34,7 +34,7 @@ if PROJECT_ROOT not in sys.path:
 if THIS_FILE_DIR not in sys.path:
     sys.path.insert(0, THIS_FILE_DIR)
 
-from envs.windy_pendulum_3d import windy_pendulum_3d
+from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d
 from src.utils.JAX.lie_integrator import lie_heun_sde_rollout
 
 

@@ -5,7 +5,7 @@ Status on 18 Sep 2026. Two datasets exist:
 | dataset | folder | role | flights | generator |
 |---|---|---|---|---|
 | **HARD** | `datasets/QUADROTOR-DATASET-HARD/` | training (50 flights) + validation (10 flights, key `test_trajectories`) | 60 × 10 s | the former HARD-V5 files, byte-identical (`HARDV5_*` renamed to `HARD_*`); produced by the archived `generate_quadrotor_hard_v2.py` with the V5 config |
-| **EVALSET** | `datasets/QUADROTOR-DATASET-EVALSET/` | unseen-shape evaluation, open loop and closed loop (key `heldout_trajectories`) | 20 × 10 s, clean | `datasets/QUADROTOR-DATASET-EVALSET/generate_quadrotor_evalset.py` + `evalset_config.yaml` |
+| **EVALSET** | `datasets/QUADROTOR-DATASET-EVALSET/` | unseen-shape evaluation, open loop and closed loop (key `heldout_trajectories`) | 20 × 10 s, clean | `envs/quadrotor_se3/datagen/generate_quadrotor_evalset.py` + `evalset_config.yaml` |
 
 Every older version (HARD-V2, V3, V3-LINEAR, V4, V4-LINEAR, V5-LINEAR, V6) and the D0 files were moved, not deleted, to
 `tmp/archived_quadrotor_datasets_2026-09-18/`.

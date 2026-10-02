@@ -1,6 +1,6 @@
 """(R, p)-form integrator wrapper around `windy_pendulum_3d`.
 
-Original env (`envs/windy_pendulum_3d.py`) integrates the rigid-body SDE in
+Original env (`envs/pendulum_so3/windy_pendulum_3d.py`) integrates the rigid-body SDE in
 (R, ω) state. This wrapper carries angular **momentum** p = I·ω inside the
 Lie-Heun substep instead, recovering ω via ω = I⁻¹·p whenever the SO(3)
 exponential needs it.
@@ -38,7 +38,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(THIS_FILE_DIR, '../../../..'))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from envs.windy_pendulum_3d import (
+from envs.pendulum_so3.windy_pendulum_3d import (
     windy_pendulum_3d, _exp_so3, _project_to_so3,
 )
 

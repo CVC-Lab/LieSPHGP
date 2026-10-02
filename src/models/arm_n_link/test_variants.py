@@ -57,7 +57,7 @@ from elbo_loss_nlink import pl_loss_nlink                        # noqa: E402
 from structured_subnets import (                                 # noqa: E402
     StructuredMass, StructuredPotential,
 )
-from envs.arm_nlink_SO3 import arm_nlink_physics as phys         # noqa: E402
+from envs.arm_nlink_so3 import arm_nlink_physics as phys         # noqa: E402
 
 N, HID, DT = 2, 8, jnp.float64
 D = 3 * N

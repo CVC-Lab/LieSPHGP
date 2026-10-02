@@ -10,7 +10,7 @@ the training loop in [`train.py`](train.py).
 The **ground-truth system** this model learns is specified separately in
 [`multi-joint-ph-system.md`](../../../../multi-joint-ph-system.md) and
 implemented in
-[`envs/arm_nlink_SO3/arm_nlink_physics.py`](../../../../envs/arm_nlink_SO3/arm_nlink_physics.py).
+[`envs/arm_nlink_so3/arm_nlink_physics.py`](../../../../envs/arm_nlink_so3/arm_nlink_physics.py).
 This document is about the *learned* counterpart.
 
 ---

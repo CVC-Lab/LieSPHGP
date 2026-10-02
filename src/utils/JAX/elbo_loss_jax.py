@@ -145,7 +145,7 @@ def pl_loss(model, batch_x_cat, dt, sigma_obs_omega, gp_keys_batch,
 
     The factor of 2 in 2·σ_obs_ω² is because Δω_obs is the difference of
     two independent obs-noisy ω samples (env applies σ_obs to ω in
-    `add_proper_noise_3d`, see datasets/windy_pendulum_3d_datagen.py).
+    `add_proper_noise_3d`, see envs/pendulum_so3/datagen/windy_pendulum_3d_datagen.py).
 
     Per-increment NLL (3-D Gaussian normaliser):
 

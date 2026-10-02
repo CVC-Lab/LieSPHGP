@@ -2,7 +2,7 @@
 
 **Status:** environment built and verified at *both* levels — the env level (§20.1) and the
 port-Hamiltonian-structure level (§20.2, **6/6 passing**).
-Code: [`envs/SE3_quadrotor/quadrotor.py`](../envs/SE3_quadrotor/quadrotor.py) (class
+Code: [`envs/quadrotor_se3/quadrotor.py`](../envs/quadrotor_se3/quadrotor.py) (class
 `quadrotor_se3`, line 144), tests
 [`mini_tests/test_gt_pH_matches_quad_env.py`](../mini_tests/test_gt_pH_matches_quad_env.py).
 Dataset generator and learned model **not yet started**.
@@ -61,7 +61,7 @@ analytic ground truth for every learned block.
 | $\sigma_f,\ \sigma_\tau$ | stochastic wind force / torque scales | — | $\mathbb{R}_{\ge0}$ | `wind_force_std`, `wind_torque_std` |
 | $e_3$ | $(0,0,1)^\top$ | — | $\mathbb{R}^3$ | — |
 
-**Hat / vee** ([`quadrotor.py:14-24`](../envs/SE3_quadrotor/quadrotor.py#L14-L24)):
+**Hat / vee** ([`quadrotor.py:14-24`](../envs/quadrotor_se3/quadrotor.py#L14-L24)):
 
 $$
 [a]_\times=\begin{pmatrix}0&-a_3&a_2\\ a_3&0&-a_1\\ -a_2&a_1&0\end{pmatrix},
@@ -78,7 +78,7 @@ $$
 
 ## 1. What we are generalizing from
 
-The existing benchmark, [`envs/windy_pendulum_3d.py`](../envs/windy_pendulum_3d.py), is a **single
+The existing benchmark, [`envs/pendulum_so3/windy_pendulum_3d.py`](../envs/pendulum_so3/windy_pendulum_3d.py), is a **single
 rigid body pinned at a point** — configuration on $SO(3)$, momentum $p\in\mathbb{R}^3$, and the
 left-trivialized pH drift
 
@@ -127,7 +127,7 @@ This choice drives everything that follows:
 1. **Every coefficient becomes constant.** In the body frame the mass matrix
    $\mathcal M=\mathrm{blkdiag}(mI_3,\,J)$, the dissipation
    $D=\mathrm{blkdiag}(d_{\text{lin}}I_3,\,d_{\text{ang}}I_3)$ and the control matrix $G$ are
-   all **state-independent** ground truths ([`quadrotor.py:147-163`](../envs/SE3_quadrotor/quadrotor.py#L147-L163)).
+   all **state-independent** ground truths ([`quadrotor.py:147-163`](../envs/quadrotor_se3/quadrotor.py#L147-L163)).
    In the world frame each of them would pick up $R$-dependence.
 2. **The wrench is linear in the input** because the input is defined as $u_i=\text{rpm}_i^2$:
    propeller physics gives thrust $f_i=k_f\,\text{rpm}_i^2$, so $[F_b;\tau_b]=G\,u$ exactly (§8).
@@ -142,7 +142,7 @@ $$
 \boxed{\;\dot x_w = R\,v_b,\qquad \dot R = R\,[\omega_b]_\times\;}
 $$
 
-([`quadrotor.py:414`](../envs/SE3_quadrotor/quadrotor.py#L414) for the first equation; the second
+([`quadrotor.py:414`](../envs/quadrotor_se3/quadrotor.py#L414) for the first equation; the second
 is realized by the exponential-map update of §14.) The pair is exactly the left-trivialization
 of $\dot g = g\,\hat\xi$ on $SE(3)$ with
 
@@ -182,7 +182,7 @@ $V$ depends on the configuration **only through the height $z=x_{w,3}$** — not
 Compare the pendulum, where $V=mg\ell R_{22}$ lived entirely in $R$. Two consequences:
 
 - the gravity port is a **constant world-frame force** $-mge_3$, rotated to body by $R^\top$
-  ([`quadrotor.py:411`](../envs/SE3_quadrotor/quadrotor.py#L411));
+  ([`quadrotor.py:411`](../envs/quadrotor_se3/quadrotor.py#L411));
 - $V$ is invariant under horizontal translations and *all* rotations — the residual symmetry
   group is $SE(2)\times\mathbb{R}$, which yields conserved momenta for testing (§13.3).
 
@@ -213,10 +213,10 @@ $$
 Applying this to the Hamiltonian of §4.3:
 
 - **translation channel:** $-R^\top\nabla_{x_w}V=-m\,g\,R^\top e_3$ — exactly the gravity term
-  in [`quadrotor.py:418-421`](../envs/SE3_quadrotor/quadrotor.py#L418-L421);
+  in [`quadrotor.py:418-421`](../envs/quadrotor_se3/quadrotor.py#L418-L421);
 - **rotation channel:** $\mathcal T_R(H)=0$, because $H$ does not depend on $R$ — gravity acting
   at the COM produces **no torque**, so the rotational drift contains no gravity term
-  ([`quadrotor.py:425-428`](../envs/SE3_quadrotor/quadrotor.py#L425-L428)).
+  ([`quadrotor.py:425-428`](../envs/quadrotor_se3/quadrotor.py#L425-L428)).
 
 As with the pendulum, $\mathcal T_R$ and $R^\top\nabla_{x_w}$ are directional derivatives *along
 the group action*, hence independent of how $F$ is extended off the manifold — the redundant
@@ -254,7 +254,7 @@ $$
 
 **The elegant simplification:** $\mathbf p\times v_b=m\,v_b\times v_b=0$ — the $SE(3)$
 cross-coupling vanishes *because the mass matrix is block-diagonal* ($\mathbf p\parallel v_b$).
-This is why [`_compute_rates`](../envs/SE3_quadrotor/quadrotor.py#L389-L444) contains only
+This is why [`_compute_rates`](../envs/quadrotor_se3/quadrotor.py#L389-L444) contains only
 $v_b\times\omega_b$ (line 419) and $(J\omega_b)\times\omega_b$ (line 427), and yet is the *exact*
 $SE(3)$ pH drift, not an approximation.
 
@@ -307,10 +307,10 @@ $$
 $$
 
 giving the friction force $-d_{\text{lin}}v_b$
-([`quadrotor.py:420`](../envs/SE3_quadrotor/quadrotor.py#L420)) and torque
-$-d_{\text{ang}}\omega_b$ ([`quadrotor.py:427`](../envs/SE3_quadrotor/quadrotor.py#L427)).
+([`quadrotor.py:420`](../envs/quadrotor_se3/quadrotor.py#L420)) and torque
+$-d_{\text{ang}}\omega_b$ ([`quadrotor.py:427`](../envs/quadrotor_se3/quadrotor.py#L427)).
 Constant and isotropic — simpler than the pendulum's state-modulated
-[`_variable_friction`](../envs/windy_pendulum_3d.py#L227-L234) — but the environment replaces
+[`_variable_friction`](../envs/pendulum_so3/windy_pendulum_3d.py#L227-L234) — but the environment replaces
 state-modulation with **parameter randomization**:
 
 $$
@@ -322,11 +322,11 @@ d_{\text{coeff}} & \text{std}=0 \quad(\text{fixed}),\\[4pt]
 $$
 
 applied independently to $k_f,k_m,d_{\text{lin}},d_{\text{ang}}$
-([`_draw_coeff`, `quadrotor.py:301-305`](../envs/SE3_quadrotor/quadrotor.py#L301-L305)), re-drawn
+([`_draw_coeff`, `quadrotor.py:301-305`](../envs/quadrotor_se3/quadrotor.py#L301-L305)), re-drawn
 **per step** (`resample_coeffs_every_step=True`, held across the 10 substeps — piecewise-constant
 parameter noise) or **per trajectory** (`False` — domain randomization)
-([`_resample_coeffs`, `quadrotor.py:307-318`](../envs/SE3_quadrotor/quadrotor.py#L307-L318)).
-The realized values are exposed each step in `info` ([`quadrotor.py:564-570`](../envs/SE3_quadrotor/quadrotor.py#L564-L570))
+([`_resample_coeffs`, `quadrotor.py:307-318`](../envs/quadrotor_se3/quadrotor.py#L307-L318)).
+The realized values are exposed each step in `info` ([`quadrotor.py:564-570`](../envs/quadrotor_se3/quadrotor.py#L564-L570))
 — the ground truth a learned $D$ is compared against.
 
 ---
@@ -334,7 +334,7 @@ The realized values are exposed each step in `info` ([`quadrotor.py:564-570`](..
 ## 8. Input map $G$
 
 The action is $u\in\mathbb{R}^4$ = squared rotor speeds. The body wrench is one constant matrix
-multiply ([`_build_G`, `quadrotor.py:320-342`](../envs/SE3_quadrotor/quadrotor.py#L320-L342)):
+multiply ([`_build_G`, `quadrotor.py:320-342`](../envs/quadrotor_se3/quadrotor.py#L320-L342)):
 
 $$
 \begin{bmatrix}F_b\\ \tau_b\end{bmatrix}=G\,u,\qquad
@@ -354,7 +354,7 @@ Row by row:
 
 Signs follow the **CF2X X-configuration** of gym-pybullet-drones (`BaseAviary._dynamics`), with
 rotor positions $r_0=(+a,-a,0),\ r_1=(-a,-a,0),\ r_2=(-a,+a,0),\ r_3=(+a,+a,0)$
-([`_rotor_positions`, `quadrotor.py:344-350`](../envs/SE3_quadrotor/quadrotor.py#L344-L350)).
+([`_rotor_positions`, `quadrotor.py:344-350`](../envs/quadrotor_se3/quadrotor.py#L344-L350)).
 
 Two structural points, mirroring the arm note's §8:
 
@@ -370,7 +370,7 @@ Two structural points, mirroring the arm note's §8:
    the power each rotor injects per unit $u_i$ — the natural passive output for §11 and for any
    future IDA-PBC controller. The 4×4 submatrix $A=G_{3:6,:}$ (thrust + torque rows) is
    invertible; the demo hover controller uses exactly $u=A^{-1}[T;\tau]$
-   ([`quadrotor.py:928-930`](../envs/SE3_quadrotor/quadrotor.py#L928-L930)).
+   ([`quadrotor.py:928-930`](../envs/quadrotor_se3/quadrotor.py#L928-L930)).
 
 ---
 
@@ -378,7 +378,7 @@ Two structural points, mirroring the arm note's §8:
 
 ### 9.1 Deterministic wind
 
-A world-frame force at the COM ([`update_wind`, `quadrotor.py:354-363`](../envs/SE3_quadrotor/quadrotor.py#L354-L363)),
+A world-frame force at the COM ([`update_wind`, `quadrotor.py:354-363`](../envs/quadrotor_se3/quadrotor.py#L354-L363)),
 identical menu to the pendulum:
 
 $$
@@ -407,7 +407,7 @@ d\Pi_{\text{stoch}}=\sigma_\tau\,dW_\tau\ \ (\text{additive}),
 \qquad W_f,W_\tau\in\mathbb{R}^3\ \text{independent}\;}
 $$
 
-([`quadrotor.py:434-442`](../envs/SE3_quadrotor/quadrotor.py#L434-L442)). The full diffusion is
+([`quadrotor.py:434-442`](../envs/quadrotor_se3/quadrotor.py#L434-L442)). The full diffusion is
 
 $$
 \Xi(q)=\begin{pmatrix}0_{12\times6}\\ \mathrm{blkdiag}\big(\sigma_f R^\top,\ \sigma_\tau I_3\big)\end{pmatrix}
@@ -424,7 +424,7 @@ $$
 - **A structural subtlety absent from the pendulum:** the force channel's covariance is
   *isotropic*, $\sigma_f^2R^\top R^{-\top}=\sigma_f^2 I_3$ — the $R$-dependence is statistically
   invisible at the level of increment covariances (§15.3, §18.3). The pendulum's lever-arm
-  diffusion $\ell\,[e_z]_\times R^\top$ ([`windy_pendulum_3d.py:281`](../envs/windy_pendulum_3d.py#L281))
+  diffusion $\ell\,[e_z]_\times R^\top$ ([`windy_pendulum_3d.py:281`](../envs/pendulum_so3/windy_pendulum_3d.py#L281))
   was rank-deficient and anisotropic, hence identifiable from covariances; here only the
   *scale* $\sigma_f$ is.
 - The torque channel has **no deterministic counterpart** — it stands in for unmodelled
@@ -494,7 +494,7 @@ Consequences:
 - $D\succ0$, $u=0$, wind off $\Rightarrow$ $\dot H\le0$ strictly — **verified** (§20).
 - At hover, $\xi=0\Rightarrow y=0$: the hover input $u^\star=\frac{mg}{4k_f}\mathbf 1_4$ injects
   zero power in steady state — thrust exactly cancels gravity, checked as an *exact* fixed
-  point of the integrator ([`quadrotor.py:554`](../envs/SE3_quadrotor/quadrotor.py#L554) uses
+  point of the integrator ([`quadrotor.py:554`](../envs/quadrotor_se3/quadrotor.py#L554) uses
   $u^\star$ in the reward; §20).
 - The energy-shaping / IDA-PBC story from the pendulum carries over with $y\in\mathbb{R}^4$; the
   underactuation ($\mathrm{rank}\,G=4<6$) is now *real*, which is exactly the regime where
@@ -511,11 +511,11 @@ Consequences:
 | momentum | $p\in\mathbb{R}^3$ | $(\mathbf p,\Pi)\in\mathbb{R}^6$ |
 | $(q,p)$ coupling | $B(q)$ | $\mathrm{blkdiag}(R,\ B(q))$ |
 | $\mathrm{ad}^*$ block | $[p]_\times$ | $\begin{pmatrix}0&[\mathbf p]_\times\\ [\mathbf p]_\times&[\Pi]_\times\end{pmatrix}$, cross-term silent ($\mathbf p\parallel v_b$) |
-| $\mathcal M$ | $m\ell^2 I_3$ ([`windy_pendulum_3d.py:179`](../envs/windy_pendulum_3d.py#L179)) | $\mathrm{blkdiag}(mI_3,J)$ — constant |
+| $\mathcal M$ | $m\ell^2 I_3$ ([`windy_pendulum_3d.py:179`](../envs/pendulum_so3/windy_pendulum_3d.py#L179)) | $\mathrm{blkdiag}(mI_3,J)$ — constant |
 | $V(q)$ | $mg\ell\,R_{22}$ — in $R$ | $mg\,e_3^\top x_w$ — in $x_w$ only |
-| gravity port | torque $\mathcal T_R(V)\ne0$ ([`windy_pendulum_3d.py:261`](../envs/windy_pendulum_3d.py#L261)) | force $-mgR^\top e_3$, torque $=0$ |
+| gravity port | torque $\mathcal T_R(V)\ne0$ ([`windy_pendulum_3d.py:261`](../envs/pendulum_so3/windy_pendulum_3d.py#L261)) | force $-mgR^\top e_3$, torque $=0$ |
 | $D$ | $\kappa I_3$ + state modulation | $\mathrm{blkdiag}(d_{\text{lin}}I_3,d_{\text{ang}}I_3)$ + parameter randomization |
-| $g(q)$ | $\approx I_3$, full rank ([`windy_pendulum_3d.py:172`](../envs/windy_pendulum_3d.py#L172)) | constant $6\times4$ mixer, **underactuated** |
+| $g(q)$ | $\approx I_3$, full rank ([`windy_pendulum_3d.py:172`](../envs/pendulum_so3/windy_pendulum_3d.py#L172)) | constant $6\times4$ mixer, **underactuated** |
 | diffusion | $\ell[e_z]_\times R^\top$ — rank 2, anisotropic | $\mathrm{blkdiag}(\sigma_fR^\top,\sigma_\tau I_3)$ — full rank, force block isotropic |
 | state dim | $9+3=12$ | $12+6=18$ |
 
@@ -571,9 +571,9 @@ $O(h^2)$ — §20.2 test 13.
 ## 14. Geometric integrator
 
 One Stratonovich Heun substep of size $h=dt/10$ on $SE(3)$
-([`_lie_heun_step`, `quadrotor.py:448-509`](../envs/SE3_quadrotor/quadrotor.py#L448-L509)),
+([`_lie_heun_step`, `quadrotor.py:448-509`](../envs/quadrotor_se3/quadrotor.py#L448-L509)),
 reusing the same $dW_f,dW_\tau\sim\mathcal N(0,hI_3)$ in both stages
-(sampled once per substep, [`quadrotor.py:533-540`](../envs/SE3_quadrotor/quadrotor.py#L533-L540)):
+(sampled once per substep, [`quadrotor.py:533-540`](../envs/quadrotor_se3/quadrotor.py#L533-L540)):
 
 $$
 \begin{aligned}
@@ -591,9 +591,9 @@ $$
 Properties, all inherited from the pendulum scheme:
 
 - $R$ stays on $SO(3)$ **by construction** — Rodrigues' formula
-  ([`_exp_so3`, `quadrotor.py:27-50`](../envs/SE3_quadrotor/quadrotor.py#L27-L50)), averaging in
+  ([`_exp_so3`, `quadrotor.py:27-50`](../envs/quadrotor_se3/quadrotor.py#L27-L50)), averaging in
   the Lie *algebra* then one exponential; measured drift $\sim10^{-14}$ over 500 noisy steps.
-  A safety-net projection exists ([`quadrotor.py:549-551`](../envs/SE3_quadrotor/quadrotor.py#L549-L551))
+  A safety-net projection exists ([`quadrotor.py:549-551`](../envs/quadrotor_se3/quadrotor.py#L549-L551))
   and never triggers in practice.
 - Second order in the deterministic part — self-convergence ratio 4.03 measured (§20.1), and
   the momentum-conservation residuals scale at ratio 4.00 (§20.2 test 13).
@@ -610,7 +610,7 @@ Properties, all inherited from the pendulum scheme:
   averaging; a full $SE(3)$-exponential variant is a possible refinement, §19).
 
 RNG draw order per step is fixed (wind $\to$ coefficients $\to$ $dW$'s,
-[`quadrotor.py:519-540`](../envs/SE3_quadrotor/quadrotor.py#L519-L540)) so trajectories are
+[`quadrotor.py:519-540`](../envs/quadrotor_se3/quadrotor.py#L519-L540)) so trajectories are
 bitwise reproducible per seed — verified (§20).
 
 ---
@@ -623,7 +623,7 @@ $$
 \text{obs}=[\,x_w,\ \mathrm{vec}(R),\ v_b,\ \omega_b\,]\in\mathbb{R}^{18}
 $$
 
-([`_get_obs`, `quadrotor.py:367-385`](../envs/SE3_quadrotor/quadrotor.py#L367-L385)). With
+([`_get_obs`, `quadrotor.py:367-385`](../envs/quadrotor_se3/quadrotor.py#L367-L385)). With
 `obs_noise_std` $=\sigma_o>0$, geometric noise on the manifold:
 
 $$
@@ -633,10 +633,10 @@ x_{\text{obs}},v_{\text{obs}},\omega_{\text{obs}}\ \text{additive}\ \mathcal N(0
 $$
 
 the same recipe as `add_proper_noise_3d`
-([`windy_pendulum_3d_datagen.py:79`](../datasets/windy_pendulum_3d_datagen.py#L79)). A separate
+([`windy_pendulum_3d_datagen.py:79`](../envs/pendulum_so3/datagen/windy_pendulum_3d_datagen.py#L79)). A separate
 RNG (seeded `seed+1`) generates observation noise, so toggling it never perturbs the dynamics
 realization; `get_state()` always returns the clean state
-([`quadrotor.py:295-297`](../envs/SE3_quadrotor/quadrotor.py#L295-L297)).
+([`quadrotor.py:295-297`](../envs/quadrotor_se3/quadrotor.py#L295-L297)).
 
 ### 15.2 Rollout likelihood
 
@@ -737,7 +737,7 @@ help?" is the reviewer's first question, and this answers it directly.
 A quadrotor is **open-loop unstable**: stochastic torques tilt it, tilted thrust stops
 cancelling gravity, and it crashes within seconds — physically correct, and observed (every
 seed crashed until the demo gained its geometric PD controller,
-[`quadrotor.py:902-930`](../envs/SE3_quadrotor/quadrotor.py#L902-L930)). Consequences for the
+[`quadrotor.py:902-930`](../envs/quadrotor_se3/quadrotor.py#L902-L930)). Consequences for the
 learning experiments, parallel to the arm note's chaos section:
 
 - long-horizon single-trajectory MSE will explode for **every** method — say so in the paper
@@ -815,7 +815,7 @@ Group ($SE(3)$), frame convention (left-trivialized/body), and input definition
 | 9 | Heun self-convergence | ratio 4.03 $\approx$ 4 — second order ✅ |
 | 10 | Richardson closure | residual gap (1.42e-3 m / 7.93e-4 rad) equals their predicted Euler error to 3 digits ✅ |
 
-Details in [`envs/SE3_quadrotor/quadrotor.md`](../envs/SE3_quadrotor/quadrotor.md) §11. Test 7–10
+Details in [`envs/quadrotor_se3/quadrotor.md`](../envs/quadrotor_se3/quadrotor.md) §11. Test 7–10
 jointly answer the *"you built the simulator in the form your model assumes"* objection: an
 independent simulator (gym-pybullet-drones) solves provably the same continuous dynamics.
 
@@ -858,19 +858,19 @@ precision without ever being used to write it (test 11).
 
 **Phase 1 — environment. ✅ DONE.**
 
-1. ✅ [`envs/SE3_quadrotor/quadrotor.py`](../envs/SE3_quadrotor/quadrotor.py) — env with
+1. ✅ [`envs/quadrotor_se3/quadrotor.py`](../envs/quadrotor_se3/quadrotor.py) — env with
    mean$\pm$std coefficients, two wind channels, geometric obs noise, Lie–Heun stepper,
    PyBullet/matplotlib rendering, demo video.
 2. ✅ Smoke tests + cross-validation vs gym-pybullet-drones (§20.1).
-3. ✅ Algorithm documentation, [`envs/SE3_quadrotor/quadrotor.md`](../envs/SE3_quadrotor/quadrotor.md).
+3. ✅ Algorithm documentation, [`envs/quadrotor_se3/quadrotor.md`](../envs/quadrotor_se3/quadrotor.md).
 
 **Phase 2 — data & ground truth.**
 
 4. ✅ [`mini_tests/test_gt_pH_matches_quad_env.py`](../mini_tests/test_gt_pH_matches_quad_env.py) —
    tests 11–16 of §20.2, all passing (mirror of
    [`mini_tests/test_gt_pH_matches_env.py`](../mini_tests/test_gt_pH_matches_env.py)).
-5. `datasets/windy_quadrotor_datagen.py` — mirror of
-   [`datasets/windy_pendulum_3d_datagen.py`](../datasets/windy_pendulum_3d_datagen.py):
+5. `envs/quadrotor_se3/datagen/windy_quadrotor_datagen.py` — mirror of
+   [`envs/pendulum_so3/datagen/windy_pendulum_3d_datagen.py`](../envs/pendulum_so3/datagen/windy_pendulum_3d_datagen.py):
    random-$u$-near-hover policy (§18.1), obs $\in\mathbb{R}^{18}$, geometric noise, all
    `*_std = 0` for the headline set.
 
@@ -895,7 +895,7 @@ protocol of §18.1.
 ## 22. Appendix: all environment arguments
 
 `quadrotor_se3(...)` takes **25 constructor arguments**
-([`quadrotor.py:179-206`](../envs/SE3_quadrotor/quadrotor.py#L179-L206)); defaults below are
+([`quadrotor.py:179-206`](../envs/quadrotor_se3/quadrotor.py#L179-L206)); defaults below are
 the code's own. The `symbol` column ties each one back to the math in this document.
 
 ### 22.1 Rigid-body constants
@@ -906,13 +906,13 @@ the code's own. The `symbol` column ties each one back to the math in this docum
 | `m` | `1.0` | $m$ | mass; the $mI_3$ block of $\mathcal M$ (§4.1) |
 | `J_diag` | `(0.5, 0.5, 1.0)` | $\mathrm{diag}(J)$ | body inertia — **diagonal only**; the $J$ block of $\mathcal M$ |
 | `arm` | `1.0` | — | rotor arm length; sets the lever $a=\text{arm}/\sqrt2$ in $G$ (§8). **Never randomized** |
-| `dt` | `0.05` | $\Delta t$ | env step. Split internally into **10 substeps** of $h=\Delta t/10$ (§14) — `n_substeps` is hardcoded at [line 528](../envs/SE3_quadrotor/quadrotor.py#L528) and is *not* an argument |
+| `dt` | `0.05` | $\Delta t$ | env step. Split internally into **10 substeps** of $h=\Delta t/10$ (§14) — `n_substeps` is hardcoded at [line 528](../envs/quadrotor_se3/quadrotor.py#L528) and is *not* an argument |
 
 ### 22.2 Randomizable coefficients (mean ± std)
 
 Each pair follows $\text{value}=\text{coeff}$ if $\text{std}=0$, else
 $\max\!\big(0,\ \mathcal N(\text{coeff},\text{std}^2)\big)$ (§7). Every `*_std` must be
-$\ge0$ or the constructor raises ([line 229](../envs/SE3_quadrotor/quadrotor.py#L229)).
+$\ge0$ or the constructor raises ([line 229](../envs/quadrotor_se3/quadrotor.py#L229)).
 
 | argument | default | symbol | meaning |
 |---|---|---|---|
@@ -930,9 +930,9 @@ against.
 
 | argument | default | symbol | meaning |
 |---|---|---|---|
-| `external_force_type` | `"sine"` | $w(t)$ shape | one of `sine`, `square`, `random`, `constant`; anything else raises ([line 363](../envs/SE3_quadrotor/quadrotor.py#L363)) |
+| `external_force_type` | `"sine"` | $w(t)$ shape | one of `sine`, `square`, `random`, `constant`; anything else raises ([line 363](../envs/quadrotor_se3/quadrotor.py#L363)) |
 | `external_force_std` | `1.0` | $\sigma_w$ | amplitude of the deterministic wind $w(t)$ |
-| `external_force_direction` | `(1.0, 0.0, 0.0)` | $\hat d$ | world-frame direction; **normalized internally**, must be non-zero ([line 244](../envs/SE3_quadrotor/quadrotor.py#L244)) |
+| `external_force_direction` | `(1.0, 0.0, 0.0)` | $\hat d$ | world-frame direction; **normalized internally**, must be non-zero ([line 244](../envs/quadrotor_se3/quadrotor.py#L244)) |
 | `wind_force_std` | `0.0` | $\sigma_f$ | stochastic force channel $\sigma_f R^\top dW_f$ — *multiplicative* |
 | `wind_torque_std` | `0.0` | $\sigma_\tau$ | stochastic body-torque channel $\sigma_\tau dW_\tau$ — *additive* |
 
@@ -946,7 +946,7 @@ against.
 | argument | default | symbol | meaning |
 |---|---|---|---|
 | `obs_noise_std` | `0.0` | $\sigma_o$ | geometric observation noise $R\exp([\epsilon]_\times)$ plus additive noise on $x_w,v_b,\omega_b$ (§15.1). Uses a **separate RNG** seeded `seed+1`, so toggling it never perturbs the dynamics; `get_state()` always returns the clean state |
-| `ori_rep` | `"rotmat"` | — | only `"rotmat"` is accepted; anything else raises ([line 210](../envs/SE3_quadrotor/quadrotor.py#L210)) |
+| `ori_rep` | `"rotmat"` | — | only `"rotmat"` is accepted; anything else raises ([line 210](../envs/quadrotor_se3/quadrotor.py#L210)) |
 | `max_u` | `25.0` | — | defines the `action_space` upper bound **only**. The env does **not** clip $u$ (mirrors the pendulum) |
 
 Derived spaces: `action_space = Box(0, max_u, (4,))`,
@@ -957,7 +957,7 @@ Derived spaces: `action_space = Box(0, max_u, (4,))`,
 | argument | default | meaning |
 |---|---|---|
 | `render_mode` | `None` | `None`, `"human"`, or `"rgb_array"` |
-| `render_backend` | `"pybullet"` | `"pybullet"` (real CF2X model; **renderer only**, never steps physics) or `"matplotlib"` (schematic fallback); anything else raises ([line 212](../envs/SE3_quadrotor/quadrotor.py#L212)) (§9 of `quadrotor.md`) |
+| `render_backend` | `"pybullet"` | `"pybullet"` (real CF2X model; **renderer only**, never steps physics) or `"matplotlib"` (schematic fallback); anything else raises ([line 212](../envs/quadrotor_se3/quadrotor.py#L212)) (§9 of `quadrotor.md`) |
 | `seed` | `None` | seeds the dynamics RNG; the observation-noise RNG gets `seed+1`. Draw order per step is fixed (wind → coefficients → $dW$) so trajectories are bitwise reproducible |
 
 ### 22.6 `reset(seed=..., options={...})`
@@ -993,14 +993,14 @@ Resolution order is **constructor defaults < config file < CLI flags / kwargs**:
 
 ```bash
 # use a config as-is
-python envs/SE3_quadrotor/quadrotor.py --config configs/quadrotor_se3/envs/sde.yaml
+python envs/quadrotor_se3/quadrotor.py --config configs/quadrotor_se3/envs/sde.yaml
 
 # override anything from the command line
-python envs/SE3_quadrotor/quadrotor.py --config configs/quadrotor_se3/envs/sde.yaml \
+python envs/quadrotor_se3/quadrotor.py --config configs/quadrotor_se3/envs/sde.yaml \
     --external_force_type random --wind_force_std 0.8 --seed 7
 
 # see what a config + flags resolve to, without building the env
-python envs/SE3_quadrotor/env_config.py --config configs/quadrotor_se3/envs/ode.yaml
+python envs/quadrotor_se3/env_config.py --config configs/quadrotor_se3/envs/ode.yaml
 ```
 
 ```python
@@ -1009,5 +1009,5 @@ env = quadrotor_se3.from_config("configs/quadrotor_se3/envs/sde.yaml", seed=7)  
 ```
 
 The CLI flags are **generated by reflecting over `quadrotor_se3.__init__`**
-([`env_config.py`](../envs/SE3_quadrotor/env_config.py)), so every argument in §22.1–22.5 is
+([`env_config.py`](../envs/quadrotor_se3/env_config.py)), so every argument in §22.1–22.5 is
 overridable and a new env argument becomes configurable with no edit to the plumbing.

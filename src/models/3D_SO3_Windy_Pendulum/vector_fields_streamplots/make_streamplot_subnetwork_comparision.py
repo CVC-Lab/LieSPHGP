@@ -73,7 +73,7 @@ import equinox as eqx
 import torch
 from torchdiffeq import odeint
 
-from envs.windy_pendulum_3d import windy_pendulum_3d
+from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d
 from src.utils.JAX.lie_integrator import lie_heun_sde_rollout
 
 

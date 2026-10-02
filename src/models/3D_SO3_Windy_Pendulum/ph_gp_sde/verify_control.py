@@ -9,7 +9,7 @@ Resolves the four open questions before any controller code gets written:
 
   (2) Whether the trained g_theta(R) is close enough to identity that we can
       hardcode g = I in the controller (the env's actuation is u_body added
-      directly to the body torque — see envs/windy_pendulum_3d.py
+      directly to the body torque — see envs/pendulum_so3/windy_pendulum_3d.py
       `_compute_omega_rates`, line "tau_det = ... + u - tau_fric").
 
   (3) The Itô correction to dH_cl in the *consistent* state-space (the
@@ -41,7 +41,7 @@ for _p in (PROJECT_ROOT, THIS_FILE_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from envs.windy_pendulum_3d import windy_pendulum_3d, _exp_so3, _log_so3, _hat
+from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d, _exp_so3, _log_so3, _hat
 from network import DissipativeSO3HamSDE  # local import (THIS_FILE_DIR on sys.path)
 
 

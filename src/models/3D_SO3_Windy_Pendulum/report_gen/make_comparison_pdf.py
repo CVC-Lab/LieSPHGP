@@ -68,7 +68,7 @@ import equinox as eqx
 import torch
 from torchdiffeq import odeint
 
-from envs.windy_pendulum_3d import windy_pendulum_3d
+from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d
 from src.utils.JAX.lie_integrator import lie_heun_sde_rollout
 
 import importlib.util
@@ -512,7 +512,7 @@ def eval_subnets_gt(traj_12, sigma_const):
     """Analytic port-Hamiltonian terms for the spherical pendulum.
 
     V uses the env's *physical* convention (V = m·g·l · R[2,2]), matching
-    the gravity torque `Fg = −m·g·ê_z` in envs/windy_pendulum_3d.py and the
+    the gravity torque `Fg = −m·g·ê_z` in envs/pendulum_so3/windy_pendulum_3d.py and the
     Hamiltonian H = ½ pᵀM⁻¹p + V used by ph_gp_sde/network.py. This is the
     target the GP_SDE V_net is trained against, so it's the right reference
     for the subnet-evolution V(q) plot. Note: only ∂V/∂q drives dynamics,

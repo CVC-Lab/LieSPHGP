@@ -1,7 +1,7 @@
 """Record an MP4 of the SO(3) Energy-Casimir controller stabilising the
 windy 3D pendulum at the upright equilibrium.
 
-Layout mirrors `envs/windy_pendulum_3d.py::windy_pendulum_3d.render`:
+Layout mirrors `envs/pendulum_so3/windy_pendulum_3d.py::windy_pendulum_3d.render`:
   * 3-D scene with the bob, body-frame axes, gravity, and the wind vector.
   * Top-left HUD: t, wind value, |omega|.
   * Top-right HUD (added by this script): u_x / u_y / u_z body-frame torque.
@@ -30,7 +30,7 @@ for _p in (PROJECT_ROOT, THIS_FILE_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from envs.windy_pendulum_3d import windy_pendulum_3d, _exp_so3, _log_so3   # noqa: E402
+from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d, _exp_so3, _log_so3   # noqa: E402
 from qp_env import QPWindyPendulum3D                                        # noqa: E402
 from controller import EnergyCasimirController, ControllerConfig            # noqa: E402
 

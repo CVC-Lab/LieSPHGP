@@ -74,8 +74,8 @@ for _p in (PKG_ROOT, PROJECT_ROOT, THIS_FILE_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from datasets.windy_arm_nlink_datagen import get_dataset            # noqa: E402
-from envs.arm_nlink_SO3 import arm_nlink_physics as phys            # noqa: E402
+from envs.arm_nlink_so3.datagen.windy_arm_nlink_datagen import get_dataset            # noqa: E402
+from envs.arm_nlink_so3 import arm_nlink_physics as phys            # noqa: E402
 
 from network import DissipativeArmHamSDE, KeyedArmModel             # noqa: E402
 from utils.lie_integrator_nlink import lie_heun_sde_rollout_nlink   # noqa: E402
@@ -85,7 +85,7 @@ from utils.elbo_loss_nlink import (                                 # noqa: E402
 )
 
 DEFAULT_SAVE_DIR = os.path.join(THIS_FILE_DIR, 'data')
-DEFAULT_DATA_DIR = os.path.join(PROJECT_ROOT, 'datasets', 'data', 'windy_arm_nlink')
+DEFAULT_DATA_DIR = os.path.join(PROJECT_ROOT, 'datasets', 'windy_arm_nlink')
 
 SUBNETS = ('M', 'V', 'Dw', 'g', 'Sigma')
 

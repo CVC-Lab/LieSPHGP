@@ -13,7 +13,9 @@
 *.pkl
 __pycache__/
 datasets/**/*.pkl
-envs/gym-pybullet-drones/
+# vendored third-party code and retired data
+third_party/
+archive/
 results/
 stats/
 *.json

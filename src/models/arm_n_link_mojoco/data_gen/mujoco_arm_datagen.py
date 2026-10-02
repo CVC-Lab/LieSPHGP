@@ -1,7 +1,7 @@
 r"""Trajectory dataset generator backed by **MuJoCo** instead of our own
 integrator.
 
-This is a drop-in replacement for ``datasets/windy_arm_nlink_datagen.py``: same
+This is a drop-in replacement for ``envs/arm_nlink_so3/datagen/windy_arm_nlink_datagen.py``: same
 function name, same dict keys, same array layout, same torque-time convention.
 That is deliberate — the dataset is the *seam* at which MuJoCo enters the
 project. Everything downstream (``utils/train_common.py``, the trainers, the

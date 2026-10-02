@@ -410,7 +410,7 @@ $$
 ### 7.3 Total, with the existing "varying friction" modulation
 
 Keeping the modulation used in the current env
-([`_variable_friction`](envs/windy_pendulum_3d.py#L227-L234)) — height term + speed term —
+([`_variable_friction`](envs/pendulum_so3/windy_pendulum_3d.py#L227-L234)) — height term + speed term —
 generalized per link:
 
 $$
@@ -641,12 +641,12 @@ Set $n=1$, $c_1=\ell e_z$, $\mathbb{I}_1=\mathrm{diag}(0,0,m\ell^2)$, $a_1=1$
 
 | quantity | our formula | existing code | match |
 |---|---|---|---|
-| $M$ | $\mathrm{diag}(0,0,m\ell^2)+m\ell^2\,\mathrm{diag}(1,1,0)=m\ell^2 I_3$ | `self.I` [windy_pendulum_3d.py:179](envs/windy_pendulum_3d.py#L179) | ✔ |
+| $M$ | $\mathrm{diag}(0,0,m\ell^2)+m\ell^2\,\mathrm{diag}(1,1,0)=m\ell^2 I_3$ | `self.I` [windy_pendulum_3d.py:179](envs/pendulum_so3/windy_pendulum_3d.py#L179) | ✔ |
 | $V$ | $m g\,e_z^\top R c_1=m g \ell\,R_{22}$ | `V_GT` [test_gt_pH_matches_env.py:44](envs/test_gt_pH_matches_env.py#L44) | ✔ |
-| $\mathcal T(V)$ | $-mg\ell\,[e_z]_\times R^\top e_z=mg\ell\,(R^\top e_z)\times e_z$ | `tau_g_body` [windy_pendulum_3d.py:261](envs/windy_pendulum_3d.py#L261) | ✔ |
-| $\Sigma$ | $[c_1]_\times R^\top\Rightarrow\tau=\ell\,(e_z\times R^\top F)$ | `tau_stoch_body` [windy_pendulum_3d.py:281](envs/windy_pendulum_3d.py#L281) | ✔ |
+| $\mathcal T(V)$ | $-mg\ell\,[e_z]_\times R^\top e_z=mg\ell\,(R^\top e_z)\times e_z$ | `tau_g_body` [windy_pendulum_3d.py:261](envs/pendulum_so3/windy_pendulum_3d.py#L261) | ✔ |
+| $\Sigma$ | $[c_1]_\times R^\top\Rightarrow\tau=\ell\,(e_z\times R^\top F)$ | `tau_stoch_body` [windy_pendulum_3d.py:281](envs/pendulum_so3/windy_pendulum_3d.py#L281) | ✔ |
 | $D$ | $\kappa_1 I_3$ (no joint-relative term since $\omega_0=0$) | `D_GT` [test_gt_pH_matches_env.py:54](envs/test_gt_pH_matches_env.py#L54) | ✔ |
-| $g$ | $T^\top=I_3$ | `g_diag_mat` [windy_pendulum_3d.py:172](envs/windy_pendulum_3d.py#L172) | ✔ |
+| $g$ | $T^\top=I_3$ | `g_diag_mat` [windy_pendulum_3d.py:172](envs/pendulum_so3/windy_pendulum_3d.py#L172) | ✔ |
 
 Derivation of the $\mathcal T(V)$ row: $\tau_g^{\text{env}}=R^\top(\ell Re_z\times(-mge_z))
 =-mg\ell\,(e_z\times R^\top e_z)=mg\ell\,(R^\top e_z)\times e_z$. ✔
@@ -729,7 +729,7 @@ $$
 
 Observation vector: $\mathrm{concat}\big(\mathrm{vec}(\tilde R_1),\dots,\mathrm{vec}(\tilde R_n),\tilde\omega\big)\in\mathbb{R}^{12n}$.
 This is exactly `add_proper_noise_3d`
-([windy_pendulum_3d_datagen.py:79](datasets/windy_pendulum_3d_datagen.py#L79)) applied
+([windy_pendulum_3d_datagen.py:79](envs/pendulum_so3/datagen/windy_pendulum_3d_datagen.py#L79)) applied
 per link.
 
 ### 15.2 Rollout likelihood
@@ -935,7 +935,7 @@ makes that verifiable rather than merely asserted.
    `varying_friction`, wind type/std, `wind_force_std`, actuation gains. Observation $\in\mathbb{R}^{12n}$.
    Lie–Heun Stratonovich stepper (§14).
 2. `envs/test_gt_pH_matches_arm_env.py` — tests 1–8 of §20.
-3. `datasets/windy_arm_nlink_datagen.py` — mirror of the existing datagen with per-link
+3. `envs/arm_nlink_so3/datagen/windy_arm_nlink_datagen.py` — mirror of the existing datagen with per-link
    $SO(3)$ observation noise.
 
 **Phase 2 — model (after Phase 1 is signed off).**

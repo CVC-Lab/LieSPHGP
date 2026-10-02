@@ -62,7 +62,7 @@ import jax.numpy as jnp
 import equinox as eqx
 import torch
 
-from envs.windy_pendulum_3d import windy_pendulum_3d
+from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d
 
 import importlib.util
 

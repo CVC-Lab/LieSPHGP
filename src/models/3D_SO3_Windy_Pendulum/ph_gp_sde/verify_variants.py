@@ -34,7 +34,7 @@ for _p in (PROJECT_ROOT, THIS_FILE_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from envs.windy_pendulum_3d import _exp_so3, _log_so3                   # noqa: E402
+from envs.pendulum_so3.windy_pendulum_3d import _exp_so3, _log_so3                   # noqa: E402
 from qp_env import QPWindyPendulum3D                                    # noqa: E402
 from controller import EnergyCasimirController, ControllerConfig        # noqa: E402
 from verify_control import load_trained_model                           # noqa: E402

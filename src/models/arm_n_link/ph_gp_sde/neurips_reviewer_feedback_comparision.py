@@ -83,7 +83,7 @@ for _p in (PKG_ROOT, PROJECT_ROOT, THIS_FILE_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from envs.arm_nlink_SO3 import arm_nlink_physics as phys       # noqa: E402
+from envs.arm_nlink_so3 import arm_nlink_physics as phys       # noqa: E402
 from utils.elbo_loss_nlink import geodesic_distance            # noqa: E402
 from utils.lie_integrator_nlink import exp_so3_batch           # noqa: E402
 from make_comparison_pdf import (                              # noqa: E402
