@@ -12,20 +12,20 @@ trajectory_set: hard              # hard      : train + test splits, hard librar
 # Damping (friction), set separately for the linear and the angular channel.
 dissipation:
   linear:
-    type: constant                # none | constant: -c m v_b | speed_dependent: -c m (1+|v_b|) v_b | pybullet_builtin
+    type: constant                # none | constant: -c m v_b | rate_dependent: -c m (1+|v_b|) v_b | pybullet_builtin
     c: 0.5                        # coefficient (1/s)
   angular:
     type: constant                # none | constant: -c J w_b | rate_dependent: -c J (1+|w_b|) w_b | pybullet_builtin
     c: 0.5
-                                  # pybullet_builtin = PyBullet's own damping; identical to speed/rate_dependent
+                                  # pybullet_builtin = PyBullet's own damping; identical to rate_dependent
 
 # Wind = the SDE noise term, set separately for the linear and the angular channel.
 diffusion:
   hold_seconds: 0.01              # constant / dependent types: new random draw every hold_seconds
   linear:
-    type: none                    # none | constant: dv_b += sigma dW | speed_dependent: dv_b += sigma (1+gain |v_b|) dW | ou
-    sigma: 0.25                   # constant, speed_dependent (m s^-1.5)
-    gain: 0.5                     # speed_dependent only
+    type: none                    # none | constant: dv_b += sigma dW | rate_dependent: dv_b += sigma (1+gain |v_b|) dW | ou
+    sigma: 0.25                   # constant, rate_dependent (m s^-1.5)
+    gain: 0.5                     # rate_dependent only
     sigma_fraction_of_weight: 0.1 # ou only: gust force std / (m g)
     time_constant_seconds: 0.5    # ou only: gust correlation time
   angular:
@@ -221,6 +221,6 @@ output:
 #   EVALSET  eval;      as HARD + seeds.eval [498, 499], gates.max_saturation_fraction 0.08, envelope.max_speed 3.5,
 #                       pdf_example_flights 6
 #   WIND     hard+eval; as HARD + seeds.eval [499], linear wind ou with sigma_fraction_of_weight 0.1 (WIND25: 0.25)
-#   WINDSDE* hard+eval; damping constant; wind constant / speed_dependent; seeds.eval [499]; gates.envelope_margin 1.5;
+#   WINDSDE* hard+eval; damping constant; wind constant / rate_dependent; seeds.eval [499]; gates.envelope_margin 1.5;
 #            absolute_levels [0.25], sensor off; kick_torque last_step for HI, LO, C05, C05A005, else interval_mean;
 #            sigma, gain and physics_hz per variant: datasets/QUADROTOR-DATASET-WINDSDE/*_config_used.yaml

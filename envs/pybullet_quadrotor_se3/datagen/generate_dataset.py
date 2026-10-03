@@ -18,12 +18,12 @@ Switches
   dissipation.<linear|angular>.type
                    none              0
                    constant          F = -c m v_b             tau = -c J w_b                 (external force)
-                   speed_dependent   F = -c m (1+|v_b|) v_b   tau = -c J (1+|w_b|) w_b       (external force; angular alias rate_dependent)
+                   rate_dependent    F = -c m (1+|v_b|) v_b   tau = -c J (1+|w_b|) w_b       (external force)
                    pybullet_builtin  Bullet's own body damping (changeDynamics linearDamping / angularDamping = c)
   diffusion.<linear|angular>.type  (the wind; body-frame force m*a and torque J*alpha)
                    none              0
                    constant          dv_b += sigma dW                                     (white, redrawn every hold_seconds)
-                   speed_dependent   dv_b += sigma (1 + gain |v_b|) dW                    (angular alias rate_dependent, |w_b|)
+                   rate_dependent    dv_b += sigma (1 + gain |v_b|) dW                    (angular: |w_b|)
                    ou                Ornstein-Uhlenbeck: a <- a e^{-dt/T} + s sqrt(1 - e^{-2dt/T}) xi every physics step
                                      (linear: s = sigma_fraction_of_weight * g, angular: s = sigma in rad/s^2)
   recording.kick_torque
@@ -69,8 +69,8 @@ from src.models.SE3_Quadrotor.comparision.report_controller import (  # noqa: E4
 STATE_DIM, CONTROL_DIM = 18, 4          # x(3) vec(R)(9) v_b(3) omega_b(3) | wrench(4)
 EUCLIDEAN = np.asarray([0, 1, 2, 12, 13, 14, 15, 16, 17])
 TRAJECTORY_SETS = ("hard", "eval", "hard+eval")
-DISSIPATION_TYPES = ("none", "constant", "speed_dependent", "rate_dependent", "pybullet_builtin")
-DIFFUSION_TYPES = ("none", "constant", "speed_dependent", "rate_dependent", "ou")
+DISSIPATION_TYPES = ("none", "constant", "rate_dependent", "pybullet_builtin")
+DIFFUSION_TYPES = ("none", "constant", "rate_dependent", "ou")
 KICK_SEGMENTS = ("aggressive_recovery", "yaw_kick", "coast_yaw")
 LOG_LINES: list[str] = []
 
@@ -90,9 +90,9 @@ def log(message: str) -> None:
 
 # --------------------------------------------------------------------------- config
 def channel_type(cfg: dict, block: str, channel: str) -> str:
-    """Normalised type of a dissipation/diffusion channel; rate_dependent is the angular spelling of speed_dependent."""
+    """Type of a dissipation/diffusion channel."""
     name = str(cfg[block][channel]["type"])
-    return "speed_dependent" if name == "rate_dependent" else name
+    return name
 
 
 def validate(cfg: dict) -> None:
@@ -102,6 +102,8 @@ def validate(cfg: dict) -> None:
         for block in ("dissipation", "diffusion"):
             if "type" not in cfg[block][channel]:
                 raise ValueError(f"{block}.{channel} needs a `type:` key (it was called `law:` before 2 Oct 2026)")
+            if cfg[block][channel]["type"] == "speed_dependent":
+                raise ValueError(f"{block}.{channel}.type: speed_dependent is now called rate_dependent")
         if cfg["dissipation"][channel]["type"] not in DISSIPATION_TYPES:
             raise ValueError(f"dissipation.{channel}.type must be one of {DISSIPATION_TYPES}")
         if cfg["diffusion"][channel]["type"] not in DIFFUSION_TYPES:
@@ -151,9 +153,9 @@ def configure_plant(env: CtrlAviary, cfg: dict) -> dict[str, Any]:
 
 
 def apply_external_dissipation(env: CtrlAviary, state: np.ndarray, cfg: dict, mass: float, inertia: np.ndarray) -> None:
-    """External damping for one physics step (body frame): constant -c m v_b / -c J w_b, speed_dependent x (1 + |.|)."""
+    """External damping for one physics step (body frame): constant -c m v_b / -c J w_b, rate_dependent x (1 + |.|)."""
     lin, ang = channel_type(cfg, "dissipation", "linear"), channel_type(cfg, "dissipation", "angular")
-    external = ("constant", "speed_dependent")
+    external = ("constant", "rate_dependent")
     if lin not in external and ang not in external:
         return
     rotation = np.asarray(pb.getMatrixFromQuaternion(state[3:7]), dtype=np.float64).reshape(3, 3)
@@ -371,11 +373,11 @@ class Wind:
 
     def _white_scale(self, channel: str, mult: float, magnitude: float) -> float:
         p = self.cfg[channel]
-        gain = float(p.get("gain", 0.0)) if self.type[channel] == "speed_dependent" else 0.0
+        gain = float(p.get("gain", 0.0)) if self.type[channel] == "rate_dependent" else 0.0
         return mult * float(p["sigma"]) * (1.0 + gain * magnitude)
 
     def step(self, rng: np.random.Generator, step: int, state: np.ndarray, mult: float) -> None:
-        white = [ch for ch in ("linear", "angular") if self.type[ch] in ("constant", "speed_dependent")]
+        white = [ch for ch in ("linear", "angular") if self.type[ch] in ("constant", "rate_dependent")]
         if white:
             rotation = np.asarray(pb.getMatrixFromQuaternion(state[3:7]), dtype=np.float64).reshape(3, 3)
             speed = float(np.linalg.norm(rotation.T @ np.asarray(state[10:13], dtype=np.float64)))
@@ -618,7 +620,7 @@ def legacy_damping_law(cfg: dict) -> str:
     types = {channel_type(cfg, "dissipation", ch) for ch in ("linear", "angular")}
     if types <= {"constant", "none"}:
         return "linear"
-    if types <= {"pybullet_builtin", "speed_dependent"}:
+    if types <= {"pybullet_builtin", "rate_dependent"}:
         return "nonlinear"
     return "mixed"
 
@@ -628,13 +630,13 @@ def dissipation_record(cfg: dict) -> dict[str, Any]:
     for ch, (v, J) in (("linear", ("v_b", "m")), ("angular", ("w_b", "J"))):
         name = channel_type(cfg, "dissipation", ch); c = float(cfg["dissipation"][ch]["c"]) if name != "none" else 0.0
         out[ch] = {"type": name, "c": c, "equation": {
-            "none": "0", "constant": f"-c {J} {v}", "speed_dependent": f"-c {J} (1+|{v}|) {v}",
+            "none": "0", "constant": f"-c {J} {v}", "rate_dependent": f"-c {J} (1+|{v}|) {v}",
             "pybullet_builtin": f"Bullet body damping with coefficient c (documented as -c {J} (1+|{v}|) {v})"}[name]}
     return out
 
 
 def diffusion_record(cfg: dict) -> dict[str, Any]:
-    """Ground-truth wind. When both channels are white (none/constant/speed_dependent) the legacy white_state_dependent
+    """Ground-truth wind. When both channels are white (none/constant/rate_dependent) the legacy white_state_dependent
     block is filled, which evaluate_windsde_ground_truth.py reads; M^-1 Sigma(x) = diag(sigma_a(x) I3, sigma_alpha(x) I3)."""
     d = cfg["diffusion"]
     types = {ch: channel_type(cfg, "diffusion", ch) for ch in ("linear", "angular")}
@@ -647,7 +649,7 @@ def diffusion_record(cfg: dict) -> dict[str, Any]:
         def sg(ch):
             if types[ch] == "none":
                 return 0.0, 0.0
-            return float(d[ch]["sigma"]), float(d[ch].get("gain", 0.0)) if types[ch] == "speed_dependent" else 0.0
+            return float(d[ch]["sigma"]), float(d[ch].get("gain", 0.0)) if types[ch] == "rate_dependent" else 0.0
         (ls, lg), (as_, ag) = sg("linear"), sg("angular")
         return {"model": "white_state_dependent",
                 "equation": "dp_v += m*sigma_a(x) dW, dp_w += J*sigma_alpha(x) dW; sigma_a = linear_sigma*(1+speed_gain*|v_b|), "
@@ -678,7 +680,7 @@ def build(cfg: dict) -> dict[str, dict]:
         "linear_damping_coefficient": diss["linear"]["c"], "angular_damping_coefficient": diss["angular"]["c"],
         "damping_equation": f"linear: {diss['linear']['equation']}; angular: {diss['angular']['equation']}",
         "pybullet_builtin_damping": any(diss[ch]["type"] == "pybullet_builtin" for ch in diss),
-        "custom_external_linear_damping": any(diss[ch]["type"] in ("constant", "speed_dependent") for ch in diss),
+        "custom_external_linear_damping": any(diss[ch]["type"] in ("constant", "rate_dependent") for ch in diss),
         "diffusion_ground_truth": diffusion_record(cfg), "kick_torque_recording": cfg["recording"]["kick_torque"],
         "kick_alignment": cfg["recording"].get("kick_alignment", "none"),
         "state_layout": "x_w(3), vec(R)(9), v_b(3), omega_b(3), wrench(4)",
