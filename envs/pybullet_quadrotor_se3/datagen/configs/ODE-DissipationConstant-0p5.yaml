@@ -34,6 +34,20 @@ diffusion:
     gain: 0.25                    # rate_dependent only
     time_constant_seconds: 0.5    # ou only
 
+# Observation noise, added after the flights to train and test only (eval stays clean). One extra pickle per setting.
+observation_noise:
+  absolute_levels: [0.05, 0.1, 0.25, 0.5]   # one pickle per level: Gaussian noise std on x, v_b, w_b; rotation noise in rad
+  train_noise_seed: 0
+  test_noise_seed: 1999
+  sensor:                         # one extra pickle imitating motion capture + gyro
+    enabled: true
+    position_sigma: 0.005         # m
+    attitude_sigma_deg: 1.0
+    velocity_from: central_difference   # central_difference | savitzky_golay (of noisy positions)
+    savitzky_golay_window: 7      # savitzky_golay only
+    gyro_white_sigma: 0.01        # rad/s
+    gyro_bias_random_walk: 0.0001
+
 # How the kick torque (a short external shove in kick segments) is written into the recorded control u.
 recording:
   kick_torque: interval_mean      # interval_mean: average over the sample (correct) | last_step: value at its end (old)
@@ -195,19 +209,6 @@ libraries:
       gap_seconds: 0.4
       weight: 0.7
 
-# Observation noise, added after the flights to train and test only (eval stays clean). One extra pickle per setting.
-observation_noise:
-  absolute_levels: [0.05, 0.1, 0.25, 0.5]   # one pickle per level: Gaussian noise std on x, v_b, w_b; rotation noise in rad
-  train_noise_seed: 0
-  test_noise_seed: 1999
-  sensor:                         # one extra pickle imitating motion capture + gyro
-    enabled: true
-    position_sigma: 0.005         # m
-    attitude_sigma_deg: 1.0
-    velocity_from: central_difference   # central_difference | savitzky_golay (of noisy positions)
-    savitzky_golay_window: 7      # savitzky_golay only
-    gyro_white_sigma: 0.01        # rad/s
-    gyro_bias_random_walk: 0.0001
 audits:
   horizons_seconds: [0.1, 0.25, 0.5, 1.0, 2.0]   # horizons for the "signal vs noise" audit
 output:
