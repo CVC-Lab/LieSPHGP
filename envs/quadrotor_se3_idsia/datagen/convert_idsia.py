@@ -56,7 +56,7 @@ import pandas as pd
 from scipy.spatial.transform import Rotation
 
 THIS_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = THIS_DIR.parents[2]  # envs/idsia_quadrotor_se3/datagen -> project root
+PROJECT_ROOT = THIS_DIR.parents[2]  # envs/quadrotor_se3_idsia/datagen -> project root
 DATASET_DIR = PROJECT_ROOT / "datasets/QUADROTOR-DATASET-IDSIA"
 
 KT, KC, ARM = 3.72e-8, 7.74e-12, 0.0353

@@ -10,7 +10,7 @@ overridable — there is no hand-maintained list of parameter names in this file
 
 Command-line use (any config value can be overridden)::
 
-    python envs/port_ham_quadrotor_se3/quadrotor.py \
+    python envs/quadrotor_se3_port_ham/quadrotor.py \
         --config configs/quadrotor_se3/envs/sde.yaml \
         --external_force_type random --wind_force_std 0.8
 
@@ -21,7 +21,7 @@ Programmatic use::
 
 Inspect what a config + flags actually resolve to, without building anything::
 
-    python envs/port_ham_quadrotor_se3/env_config.py \
+    python envs/quadrotor_se3_port_ham/env_config.py \
         --config configs/quadrotor_se3/envs/sde.yaml --wind_force_std 0.8
 """
 from __future__ import annotations

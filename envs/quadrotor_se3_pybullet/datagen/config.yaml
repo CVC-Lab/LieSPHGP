@@ -1,21 +1,21 @@
-# Config for generate_dataset.py (PyBullet quadrotor datasets) -> datasets/QUADROTOR-DATASET-ODE-DissipationRateDependent-0p5/
-# Run:    python envs/pybullet_quadrotor_se3/datagen/generate_dataset.py --config envs/pybullet_quadrotor_se3/datagen/configs/ODE-DissipationRateDependent-0p5.yaml
+# Config for generate_dataset.py (PyBullet quadrotor datasets).
+# Run:    python envs/quadrotor_se3_pybullet/datagen/generate_dataset.py --config envs/quadrotor_se3_pybullet/datagen/config.yaml
 # Output: datasets/QUADROTOR-DATASET-<name>/<name>_CF2P_<T>s_h<h>_<variant>.pkl   (refuses to overwrite; add --force)
 # Notation: [a, b] = drawn uniformly from a to b.  v_b, w_b = body linear / angular velocity.
 
-name: ODE-DissipationRateDependent-0p5  # any text -> folder and file names
+name: CUSTOM                      # any text -> folder and file names
 
-trajectory_set: hard+eval         # hard      : train + test splits, hard library (+ noisy copies)
+trajectory_set: hard              # hard      : train + test splits, hard library (+ noisy copies)
                                   # eval      : one clean split, eval library (unseen shapes), key heldout_trajectories
                                   # hard+eval : both of the above
 
 # Damping (friction), set separately for the linear and the angular channel.
 dissipation:
   linear:
-    type: rate_dependent          # none | constant: -c m v_b | rate_dependent: -c m (1+|v_b|) v_b | pybullet_builtin
+    type: constant                # none | constant: -c m v_b | rate_dependent: -c m (1+|v_b|) v_b | pybullet_builtin
     c: 0.5                        # coefficient (1/s)
   angular:
-    type: rate_dependent          # none | constant: -c J w_b | rate_dependent: -c J (1+|w_b|) w_b | pybullet_builtin
+    type: constant                # none | constant: -c J w_b | rate_dependent: -c J (1+|w_b|) w_b | pybullet_builtin
     c: 0.5
                                   # pybullet_builtin = PyBullet's own damping; identical to rate_dependent
 
@@ -94,7 +94,7 @@ envelope:                         # flight box: targets are clipped to it; the s
 gates:                            # a flight breaking any gate is redrawn (next attempt)
   max_tilt_deg: 90
   min_altitude: 0.3
-  envelope_margin: 1.5            # max distance outside the envelope box (m)
+  envelope_margin: 0.5            # max distance outside the envelope box (m)
   max_saturation_fraction: 0.05   # max share of steps with a motor at its limit
   max_attempts: 20
 

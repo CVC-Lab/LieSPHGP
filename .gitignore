@@ -14,7 +14,7 @@
 __pycache__/
 datasets/**/*.pkl
 # vendored gym-pybullet-drones clone and retired data
-envs/pybullet_quadrotor_se3/gym-pybullet-drones/
+envs/quadrotor_se3_pybullet/gym-pybullet-drones/
 archive/
 results/
 stats/

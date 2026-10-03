@@ -1,6 +1,6 @@
 """One PyBullet quadrotor dataset generator, driven by one config file (config.yaml next to this script).
 
-    python envs/pybullet_quadrotor_se3/datagen/generate_dataset.py --config envs/pybullet_quadrotor_se3/datagen/config.yaml
+    python envs/quadrotor_se3_pybullet/datagen/generate_dataset.py --config envs/quadrotor_se3_pybullet/datagen/config.yaml
 
 Writes datasets/QUADROTOR-DATASET-<name>/<name>_<drone>_<T>s_h<h>_<variant>.pkl (+ audits.json, config_used.yaml,
 generation.log, dataset_analysis.pdf). It replaces the five copied generators (HARD, EVALSET, WIND, WIND25, WINDSDE); every
@@ -51,8 +51,8 @@ import numpy as np
 import yaml
 
 THIS_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = THIS_DIR.parents[2]  # envs/pybullet_quadrotor_se3/datagen -> project root
-for path in (PROJECT_ROOT, PROJECT_ROOT / "envs/pybullet_quadrotor_se3/gym-pybullet-drones"):
+PROJECT_ROOT = THIS_DIR.parents[2]  # envs/quadrotor_se3_pybullet/datagen -> project root
+for path in (PROJECT_ROOT, PROJECT_ROOT / "envs/quadrotor_se3_pybullet/gym-pybullet-drones"):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 

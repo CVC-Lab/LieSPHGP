@@ -1,4 +1,4 @@
-# pybullet_quadrotor_se3
+# quadrotor_se3_pybullet
 
 The gym-pybullet-drones quadrotor: PyBullet physics (`CtrlAviary`, CF2P) driven by `DSLPIDControl`.
 Every current quadrotor training and evaluation dataset is generated here.

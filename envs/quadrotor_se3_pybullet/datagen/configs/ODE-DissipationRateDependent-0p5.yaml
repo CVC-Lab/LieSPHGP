@@ -1,9 +1,9 @@
-# Config for generate_dataset.py (PyBullet quadrotor datasets) -> datasets/QUADROTOR-DATASET-SDE-DiffusionConstant-0p5-DissipationRateDependent-0p5/
-# Run:    python envs/pybullet_quadrotor_se3/datagen/generate_dataset.py --config envs/pybullet_quadrotor_se3/datagen/configs/SDE-DiffusionConstant-0p5-DissipationRateDependent-0p5.yaml
+# Config for generate_dataset.py (PyBullet quadrotor datasets) -> datasets/QUADROTOR-DATASET-ODE-DissipationRateDependent-0p5/
+# Run:    python envs/quadrotor_se3_pybullet/datagen/generate_dataset.py --config envs/quadrotor_se3_pybullet/datagen/configs/ODE-DissipationRateDependent-0p5.yaml
 # Output: datasets/QUADROTOR-DATASET-<name>/<name>_CF2P_<T>s_h<h>_<variant>.pkl   (refuses to overwrite; add --force)
 # Notation: [a, b] = drawn uniformly from a to b.  v_b, w_b = body linear / angular velocity.
 
-name: SDE-DiffusionConstant-0p5-DissipationRateDependent-0p5  # any text -> folder and file names
+name: ODE-DissipationRateDependent-0p5  # any text -> folder and file names
 
 trajectory_set: hard+eval         # hard      : train + test splits, hard library (+ noisy copies)
                                   # eval      : one clean split, eval library (unseen shapes), key heldout_trajectories
@@ -23,14 +23,14 @@ dissipation:
 diffusion:
   hold_seconds: 0.01              # constant / dependent types: new random draw every hold_seconds
   linear:
-    type: constant                # none | constant: dv_b += sigma dW | rate_dependent: dv_b += sigma (1+gain |v_b|) dW | ou
-    sigma: 0.5                    # constant, rate_dependent (m s^-1.5)
+    type: none                    # none | constant: dv_b += sigma dW | rate_dependent: dv_b += sigma (1+gain |v_b|) dW | ou
+    sigma: 0.25                   # constant, rate_dependent (m s^-1.5)
     gain: 0.5                     # rate_dependent only
     sigma_fraction_of_weight: 0.1 # ou only: gust force std / (m g)
     time_constant_seconds: 0.5    # ou only: gust correlation time
   angular:
-    type: constant                # none | constant: dw_b += sigma dW | rate_dependent: dw_b += sigma (1+gain |w_b|) dW | ou
-    sigma: 0.5                    # constant, rate_dependent (rad s^-1.5); ou: angular-acceleration std (rad s^-2)
+    type: none                    # none | constant: dw_b += sigma dW | rate_dependent: dw_b += sigma (1+gain |w_b|) dW | ou
+    sigma: 0.4                    # constant, rate_dependent (rad s^-1.5); ou: angular-acceleration std (rad s^-2)
     gain: 0.25                    # rate_dependent only
     time_constant_seconds: 0.5    # ou only
 

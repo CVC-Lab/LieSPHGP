@@ -1,4 +1,4 @@
-# idsia_quadrotor_se3
+# quadrotor_se3_idsia
 
 Real Crazyflie 2.1 Brushless flights from the IDSIA nano-quadrotor system-identification benchmark
 (motion-capture arena, 100 Hz). There is no simulator here: the flights are recorded data, converted to the

@@ -20,7 +20,7 @@ Source: Ullah and Baca, *NanoBench: A Multi-Task Benchmark Dataset for Nano-Quad
 Control, and State Estimation*, arXiv:2603.09908, <https://github.com/syediu/nanobench>.
 107 flight CSVs are used, each 52 synchronized columns; the raw clone lives in `tmp/nanobench_raw/`.
 
-## 2. Conversion (`envs/pybullet_quadrotor_se3/datagen/real/convert_nanobench.py`)
+## 2. Conversion (`envs/quadrotor_se3_pybullet/datagen/real/convert_nanobench.py`)
 
 The target is the same 22-channel layout as the simulator datasets, so no trainer or report code changes:
 $$s = [\,x_w(3),\ \mathrm{vec}(R)(9),\ v_b(3),\ \omega_b(3),\ u(4)\,]$$

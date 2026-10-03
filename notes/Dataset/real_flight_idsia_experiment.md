@@ -28,7 +28,7 @@ $$T = K_t\!\sum_i\Omega_i^2,\quad
 None of these constants is given to our models; they are recorded in the settings and used only by the
 validation script.
 
-## 2. Conversion (`envs/idsia_quadrotor_se3/datagen/convert_idsia.py`)
+## 2. Conversion (`envs/quadrotor_se3_idsia/datagen/convert_idsia.py`)
 
 State from motion capture: $x_w$, $R$ from the quaternion, $v_b = R^\top v_w$ (the CSV velocity is world frame)
 and $\omega_b$ taken directly, since the benchmark's own physics model uses it as a body rate. Flights are cut
