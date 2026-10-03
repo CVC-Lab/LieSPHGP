@@ -18,7 +18,7 @@ ODE runs are deterministic and rolled out once. ``DIR@STEP`` selects an intermed
 
 Usage:
     python split_protocol_table.py --run LABEL=DIR[@STEP] [--run ...] [--sde-seeds 5] \
-        --source tmp/idsia_raw/data/test --pattern "melon*.csv" [--stride 2] [--horizon 50]
+        --source envs/quadrotor_se3_idsia/idsia_raw/data/test --pattern "melon*.csv" [--stride 2] [--horizon 50]
 """
 from __future__ import annotations
 

@@ -10,7 +10,7 @@ conversion; its numbers are quoted in the printout for comparison.
   C  forward integration of the analytic rigid body from x0 driven by u alone, against a constant-velocity
      reference from the same x0.
 
-Usage: python validate_input_reconstruction.py [--split test] [--raw tmp/idsia_raw/data]
+Usage: python validate_input_reconstruction.py [--split test] [--raw envs/quadrotor_se3_idsia/idsia_raw/data]
 """
 from __future__ import annotations
 
@@ -129,7 +129,7 @@ def test_c(flights: np.ndarray, step: float, damping_values=(0.0, 0.25, 0.5), ho
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dataset", type=Path, default=DATASET_DIR / "IDSIA_CF21BL_10s_h0p01_clean.pkl")
-    parser.add_argument("--raw", type=Path, default=PROJECT_ROOT / "tmp/idsia_raw/data")
+    parser.add_argument("--raw", type=Path, default=PROJECT_ROOT / "envs/quadrotor_se3_idsia/idsia_raw/data")
     parser.add_argument("--split", default="test", choices=("train", "test"))
     arguments = parser.parse_args()
     with arguments.dataset.open("rb") as handle:

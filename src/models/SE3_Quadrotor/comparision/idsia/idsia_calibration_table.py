@@ -99,7 +99,7 @@ def score(paths_fn, sigma_obs: dict, windows: np.ndarray, samples: int, batch: i
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run", action="append", required=True, help="LABEL=DIR[@STEP]")
-    parser.add_argument("--source", type=Path, default=bp.PROJECT_ROOT / "tmp/idsia_raw/data/test")
+    parser.add_argument("--source", type=Path, default=bp.PROJECT_ROOT / "envs/quadrotor_se3_idsia/idsia_raw/data/test")
     parser.add_argument("--pattern", default="melon*.csv")
     parser.add_argument("--samples", type=int, default=32)
     parser.add_argument("--stride", type=int, default=10)

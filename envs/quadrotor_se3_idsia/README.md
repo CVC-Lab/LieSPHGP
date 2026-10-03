@@ -6,8 +6,8 @@ Real Crazyflie 2.1 Brushless flights from the IDSIA nano-quadrotor system-identi
 
 | File | Role |
 |---|---|
-| `datagen/convert_idsia.py` | raw benchmark CSVs (`tmp/idsia_raw/data`) -> `datasets/QUADROTOR-DATASET-IDSIA/*.pkl`; `--input wrench` or `rotor2` |
+| `datagen/convert_idsia.py` | raw benchmark CSVs (`envs/quadrotor_se3_idsia/idsia_raw/data`) -> `datasets/QUADROTOR-DATASET-IDSIA/*.pkl`; `--input wrench` or `rotor2` |
 | `datagen/validate_idsia_input_reconstruction.py` | checks that the reconstructed input u matches the measured motion |
 
-The raw clone lives in `tmp/idsia_raw/` (git-ignored). Model-analysis scripts for this dataset are in
+The raw clone lives in `envs/quadrotor_se3_idsia/idsia_raw/` (git-ignored). Model-analysis scripts for this dataset are in
 `src/models/SE3_Quadrotor/comparision/idsia/`; the conversion is described in `notes/Dataset/real_flight_idsia_experiment.md`.

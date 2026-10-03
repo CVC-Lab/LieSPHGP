@@ -64,7 +64,7 @@ Same protocol and metrics as Table 1b, scored on the 12 training flights (13 756
 | **PH-GP-LieIMEX-SDE** (ours) | **0.0013** | **0.0114** | 0.1201 | *2.0870* |  | 0.0112 | 0.0503 | 0.6270 | *10.7973* |  | 0.0012 | 0.0293 | 0.3066 | *6.7166* |  | 0.1294 | 0.5189 | 1.1269 | *38.4867* |
 | **PH-NN-LieIMEX-SDE** (ours) | **0.0013** | **0.0114** | **0.0895** | ***1.7555*** |  | 0.0111 | **0.0478** | 0.4287 | ***8.0732*** |  | 0.0011 | 0.0232 | 0.1824 | *4.5319* |  | 0.1075 | 0.4187 | 0.7248 | *27.8050* |
 
-Source: `src/models/SE3_Quadrotor/comparision/idsia/split_protocol_table.py --source tmp/idsia_raw/data/train --pattern "*.csv" --stride 4 --sde-seeds 5`,
+Source: `src/models/SE3_Quadrotor/comparision/idsia/split_protocol_table.py --source envs/quadrotor_se3_idsia/idsia_raw/data/train --pattern "*.csv" --stride 4 --sde-seeds 5`,
 output `experiments/quadrotor/eval_runs/26-09-01-30_IDSIA-protocol_TRAIN-shapes_4models-SDE5seeds/split_protocol_table.json`
 (per-seed rows and seed std included).
 
@@ -91,7 +91,7 @@ Benchmark baselines (Naïve to Res-LSTM): the benchmark authors' published value
 | **PH-NN-LieIMEX-SDE** (ours) | **0.0013** | **0.0112** | **0.0896** | ***1.7779*** |  | 0.0122 | 0.0644 | **0.4349** | ***9.0820*** |  | **0.0011** | 0.0254 | 0.1868 | *4.5969* |  | 0.1240 | 0.4447 | 0.6559 | *27.2143* |
 
 Units: $p$ in m, $v$ in m/s, $R$ in rad (geodesic), $\omega$ in rad/s.
-Source: `src/models/SE3_Quadrotor/comparision/idsia/split_protocol_table.py --source tmp/idsia_raw/data/test --pattern "melon*.csv" --stride 2 --sde-seeds 5`,
+Source: `src/models/SE3_Quadrotor/comparision/idsia/split_protocol_table.py --source envs/quadrotor_se3_idsia/idsia_raw/data/test --pattern "melon*.csv" --stride 2 --sde-seeds 5`,
 output `experiments/quadrotor/eval_runs/26-09-01-30_IDSIA-protocol_TEST-melon_4models-SDE5seeds/split_protocol_table.json`; baselines from
 `benchmark_protocol.REFERENCE` (= paper Table 7). Our recomputation of Naïve / Physics on the same flights agrees with the published
 values to 1–3 % (Physics cumulative $\mathrm{MAE}_p$ 2.2409 vs 2.3223). Seed-to-seed std of the cumulative MAE: PH-NN-SDE $\le 0.04$
@@ -112,7 +112,7 @@ PH-GP-SDE is weak on attitude and rate (cumulative $\mathrm{MAE}_R$ 9.79, $\math
 (the benchmark's Fig. 9 window); lines: ground truth $y_{t+50}$, Physics, Hybrid, PH-GP-LieIMEX-ODE, PH-NN-LieIMEX-ODE,
 PH-GP-LieIMEX-SDE, PH-NN-LieIMEX-SDE, each showing $\hat y_{t+50\mid t}$ (PH-NODE-RK4 has no trained model).
 
-Source: baselines from `tmp/idsia_raw/out/predictions/*/melon_multistep.csv`; ours: script still to write.
+Source: baselines from `envs/quadrotor_se3_idsia/idsia_raw/out/predictions/*/melon_multistep.csv`; ours: script still to write.
 
 ---
 

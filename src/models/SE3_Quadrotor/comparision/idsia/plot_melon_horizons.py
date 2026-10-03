@@ -62,7 +62,7 @@ def main() -> None:
                         help="rescale D_v, D_w so the identifiable product M^-1 D keeps its learned value")
     parser.add_argument("--swap-run", action="append", default=[],
                         help="LABEL=DIR: same model but with ALL FIVE operators replaced by the\nbenchmark's published truth (M1^-1, M2^-1, V, g_f, g_tau). Inference only; D_v and D_w stay learned\nbecause the real vehicle's damping is unmeasured.")
-    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "tmp/idsia_raw/data/test")
+    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "envs/quadrotor_se3_idsia/idsia_raw/data/test")
     parser.add_argument("--pattern", default="melon*.csv")
     parser.add_argument("--horizon-seconds", type=float, nargs="+", default=[1, 3, 5, 10, 20, 30])
     parser.add_argument("--substeps", type=int, default=0,

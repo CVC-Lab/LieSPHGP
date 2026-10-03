@@ -83,7 +83,7 @@ def main() -> None:
     arguments = parser.parse_args()
 
     from src.models.SE3_Quadrotor.comparision import report_evaluation as evaluation
-    flights = bp.load_melon(PROJECT_ROOT / "tmp/idsia_raw/data/test", "rotor2")
+    flights = bp.load_melon(PROJECT_ROOT / "envs/quadrotor_se3_idsia/idsia_raw/data/test", "rotor2")
     states = np.concatenate(flights)
     pick = np.linspace(0, len(states) - 1, arguments.samples).astype(int)
     poses, twists = states[pick, :12], states[pick, 12:18]

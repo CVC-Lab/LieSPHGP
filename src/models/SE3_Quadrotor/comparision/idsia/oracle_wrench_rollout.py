@@ -140,7 +140,7 @@ def load_with_reconstructed_wrench(source: Path, pattern: str, use_measured_forc
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "tmp/idsia_raw/data/test")
+    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "envs/quadrotor_se3_idsia/idsia_raw/data/test")
     parser.add_argument("--pattern", default="melon*.csv")
     parser.add_argument("--horizon-seconds", type=float, nargs="+", default=[1, 3, 5, 10])
     parser.add_argument("--stride-seconds", type=float, default=5.0)

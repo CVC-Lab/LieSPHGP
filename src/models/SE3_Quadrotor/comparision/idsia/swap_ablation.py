@@ -164,7 +164,7 @@ def errors(truth, prediction):
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run", required=True)
-    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "tmp/idsia_raw/data/test")
+    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "envs/quadrotor_se3_idsia/idsia_raw/data/test")
     parser.add_argument("--horizon-seconds", type=float, default=1.0)
     parser.add_argument("--output-name", required=True)
     arguments = parser.parse_args()

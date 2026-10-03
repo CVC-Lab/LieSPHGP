@@ -5,7 +5,7 @@ was unusable because its input is a *commanded* PWM. Here the input is the **mea
 from ESC telemetry.
 
 Source: Busetto et al., *Nonlinear System Identification for a Nano-drone Benchmark*, Control Engineering
-Practice; <https://github.com/idsia-robotics/nanodrone-sysid-benchmark>. Raw clone in `tmp/idsia_raw/`.
+Practice; <https://github.com/idsia-robotics/nanodrone-sysid-benchmark>. Raw clone in `envs/quadrotor_se3_idsia/idsia_raw/`.
 
 ## 1. What it provides that NanoBench did not
 

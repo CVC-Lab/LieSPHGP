@@ -132,7 +132,7 @@ def metrics(sim: dict, flights: list[dict], samples: int) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run", action="append", help="LABEL=DIR; default: the six IDSIA models")
-    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "tmp/idsia_raw/data/test")
+    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "envs/quadrotor_se3_idsia/idsia_raw/data/test")
     parser.add_argument("--pattern", default="melon*.csv")
     parser.add_argument("--seconds", type=float, default=0.0, help="0 = the whole recorded flight")
     parser.add_argument("--analytic-only", action="store_true", help="fly only the analytic plant (gain check)")

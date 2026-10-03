@@ -116,7 +116,7 @@ def main() -> None:
 
     flights = twin_flights(arguments.closed_loop_run)
     recorded_flights = np.stack([f["states"][:flights.shape[1]] for f in
-                                 rf.load_flights(PROJECT_ROOT / "tmp/idsia_raw/data/test", "melon*.csv")])
+                                 rf.load_flights(PROJECT_ROOT / "envs/quadrotor_se3_idsia/idsia_raw/data/test", "melon*.csv")])
     model = pl.analytic_plant().model
     folder = EVAL_ROOT / arguments.output_name
     images = folder / "images"

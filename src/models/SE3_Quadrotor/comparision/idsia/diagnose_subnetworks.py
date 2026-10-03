@@ -73,7 +73,7 @@ def relative_rms(a: np.ndarray, b: np.ndarray) -> float:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run", action="append", required=True, help="LABEL=DIR")
-    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "tmp/idsia_raw/data/test")
+    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "envs/quadrotor_se3_idsia/idsia_raw/data/test")
     parser.add_argument("--pattern", default="melon*.csv")
     parser.add_argument("--horizon-seconds", type=float, default=1.0)
     parser.add_argument("--substeps", type=int, nargs="+", default=[1, 2, 10])

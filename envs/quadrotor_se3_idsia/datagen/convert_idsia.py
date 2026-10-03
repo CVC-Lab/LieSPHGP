@@ -39,7 +39,7 @@ coefficient, any cross-coupling) instead of only rescaling four channels fixed b
 The two variants differ only in columns 18:22; the state columns are byte-identical.  The rotor2 file is named
 ``IDSIA_CF21BL_10s_h0p01_rotor2_clean.pkl`` and its settings carry ``input_mode = "rotor2"``.
 
-Usage:  python convert_idsia.py [--source tmp/idsia_raw/data] [--input wrench|rotor2] [--force]
+Usage:  python convert_idsia.py [--source envs/quadrotor_se3_idsia/idsia_raw/data] [--input wrench|rotor2] [--force]
 """
 from __future__ import annotations
 
@@ -171,7 +171,7 @@ def coverage(flights: np.ndarray, input_mode: str = "wrench") -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "tmp/idsia_raw/data")
+    parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "envs/quadrotor_se3_idsia/idsia_raw/data")
     parser.add_argument("--output", type=Path, default=DATASET_DIR)
     parser.add_argument("--input", choices=("wrench", "rotor2"), default="wrench")
     parser.add_argument("--force", action="store_true")
