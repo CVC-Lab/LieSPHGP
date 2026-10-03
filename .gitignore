@@ -26,6 +26,7 @@ stats/
 # Generated quadrotor runs and the preserved pre-cleanup archive.
 experiments/quadrotor/*/
 experiments/dynabench_se3/*/
+experiments/rov_se3/*/
 
 # local archives / scratch
 tmp/

@@ -11,6 +11,7 @@ models use. The simulator with the same vehicle is `envs/rov_se3_port_ham/`.
 | `datagen/bag_to_npz.py` | step 1: rosbag2 → `marinarium_raw/npz/<recording>.npz`, raw streams on their own clocks (needs `pip install rosbags`) |
 | `datagen/generate_dataset.py` + `datagen/config.yaml` | step 2: npz → `datasets/ROV-MARINARIUM-DATASET-<name>/<name>_clean.pkl` |
 | `datagen/validate_marinarium.py` | frame, sensor and input checks of one recording |
+| `analysis/sim_to_real_gap.py` | sim-to-real gap of the published physics (paper protocol + clean protocol + per-axis scales) → `experiments/rov_se3/analysis/sim_to_real_gap/` |
 
 ```
 python envs/rov_se3_marinarium/datagen/bag_to_npz.py --all
