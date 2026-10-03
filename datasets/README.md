@@ -17,7 +17,7 @@ Commands are run from the project root.
 | `QUADROTOR-DATASET-WIND25/` | same generator | as WIND, 0.25 of weight |
 | `QUADROTOR-DATASET-WINDSDE/` | same generator (8 variants, one `*_config_used.yaml` each) | constant damping, white wind (constant or speed/rate dependent) |
 | `QUADROTOR-EVAL-REFERENCE/` | `envs/pybullet_quadrotor_se3/datagen/generate_reference_flights.py` | `... generate_reference_flights.py --duration-seconds 3.0` |
-| `QUADROTOR-DATASET-IDSIA/` | real flights, converted by `envs/pybullet_quadrotor_se3/datagen/real/convert_idsia.py` (raw data in `tmp/idsia_raw/`) | `... real/convert_idsia.py --help` |
+| `QUADROTOR-DATASET-IDSIA/` | real flights, converted by `envs/idsia_quadrotor_se3/datagen/convert_idsia.py` (raw data in `tmp/idsia_raw/`) | `... real/convert_idsia.py --help` |
 
 Notes
 - Every PyBullet dataset comes from ONE generator and ONE config:
