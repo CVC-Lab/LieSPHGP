@@ -16,6 +16,8 @@ datasets/**/*.pkl
 # vendored gym-pybullet-drones clone and retired data
 envs/quadrotor_se3_pybullet/gym-pybullet-drones/
 envs/quadrotor_se3_idsia/idsia_raw/
+envs/dynabench_se3/raw/
+envs/rov_se3_marinarium/marinarium_raw/
 archive/
 results/
 stats/
@@ -23,6 +25,7 @@ stats/
 
 # Generated quadrotor runs and the preserved pre-cleanup archive.
 experiments/quadrotor/*/
+experiments/dynabench_se3/*/
 
 # local archives / scratch
 tmp/
