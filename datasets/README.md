@@ -1,5 +1,11 @@
 # datasets/
 
+**2 Oct 2026: every dataset that was here was moved to `tmp/old_datasets_2026-10-02/` (same folder names).**
+Run configs, trainer defaults and reports that point at `datasets/...` will not find them until the data is
+regenerated here (or copied back). The table below still says which script made each one; the PyBullet and
+pendulum sets rebuild bit-for-bit from the settings listed in `envs/quadrotor_se3_pybullet/datagen/config.yaml`
+and with `integrator: lie_heun` in `envs/pendulum_so3/datagen/config.yaml`.
+
 Data only. This folder holds `.pkl` files plus the metadata written alongside them
 (`*_config_used.yaml`, `*_generation.log`, `*_audits.json`, `*_dataset_analysis.pdf`).
 It contains no code. Every script that writes these files lives under `envs/<system>/datagen/`.
