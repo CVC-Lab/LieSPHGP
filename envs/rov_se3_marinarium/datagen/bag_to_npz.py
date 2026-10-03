@@ -8,7 +8,8 @@ step 2 (generate_dataset.py) resamples. Needs `rosbags` (pip install rosbags).
 
 Streams written (frames checked on the manual recording, see README.md):
     mocap_*   /mocap/itrl_rov_1/odom, ~100 Hz: position p (world, z DOWN), quaternion q (x, y, z, w, body -> world),
-              body-frame linear and angular velocity. The odom has dropouts (manual: 191 gaps > 30 ms, longest 6.45 s).
+              body-frame linear and angular velocity; mocap_t = bag receive time, mocap_t_header = the system's own
+              stamp (steadier) shifted onto the receive clock by its median latency. The odom has dropouts (manual: 191 gaps > 30 ms, longest 6.45 s).
     imu_*     /itrl_rov_1/fmu/out/sensor_combined, 100 Hz: PX4 gyro (rad/s) and accelerometer (m/s^2), same body axes.
     motor_*   /itrl_rov_1/fmu/out/actuator_motors, 100 Hz: 8 normalised commands in [-1, 1]; NaN = motor not commanded.
     battery_* /itrl_rov_1/fmu/out/battery_status_v1, 1 Hz: voltage (V) and current (A). The bag has no type definition
@@ -76,8 +77,9 @@ def convert(bag: Path) -> dict[str, np.ndarray]:
             msg = reader.deserialize(raw, conn.msgtype)
             if conn.topic == TOPIC_ODOM:
                 p, q, tw = msg.pose.pose.position, msg.pose.pose.orientation, msg.twist.twist
+                header = msg.header.stamp.sec * 10**9 + msg.header.stamp.nanosec
                 odom.append((stamp, p.x, p.y, p.z, q.x, q.y, q.z, q.w, tw.linear.x, tw.linear.y, tw.linear.z,
-                             tw.angular.x, tw.angular.y, tw.angular.z))
+                             tw.angular.x, tw.angular.y, tw.angular.z, header))
             elif conn.topic == TOPIC_IMU:
                 imu.append((stamp, *msg.gyro_rad, *msg.accelerometer_m_s2))
             else:
@@ -89,6 +91,9 @@ def convert(bag: Path) -> dict[str, np.ndarray]:
     return {
         "mocap_t": seconds(odom[:, 0]), "mocap_position": odom[:, 1:4], "mocap_quaternion_xyzw": odom[:, 4:8],
         "mocap_v_body": odom[:, 8:11], "mocap_omega_body": odom[:, 11:14],
+        # header stamp of the motion-capture system, shifted so its median offset to the receive clock is zero:
+        # steadier spacing (1-99 % of steps 7.5-12.5 ms vs 6-14 ms), same clock origin as the PX4 streams
+        "mocap_t_header": seconds(odom[:, 14] + np.median(odom[:, 0] - odom[:, 14])),
         "imu_t": seconds(imu[:, 0]), "imu_gyro": imu[:, 1:4], "imu_accel": imu[:, 4:7],
         "motor_t": seconds(motors[:, 0]), "motor_command": motors[:, 1:],
         "battery_t": seconds(t_bat), "battery_voltage": volt, "battery_current": amp,

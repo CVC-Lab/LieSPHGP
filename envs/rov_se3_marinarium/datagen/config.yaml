@@ -1,0 +1,38 @@
+# Config for generate_dataset.py (real BlueROV2 Heavy recordings, KTH Marinarium).
+# Run:    python envs/rov_se3_marinarium/datagen/generate_dataset.py --config envs/rov_se3_marinarium/datagen/config.yaml
+# Output: datasets/ROV-MARINARIUM-DATASET-<name>/<name>_clean.pkl   (refuses to overwrite; add --force)
+# Needs step 1 first: python envs/rov_se3_marinarium/datagen/bag_to_npz.py --all
+# Rows: [p (3), vec(R) (9), v_b (3), w_b (3), u (n_u)]; world z DOWN, body forward-right-down.
+
+name: PAPER-MANUAL                # any text -> folder and file names
+
+sources: envs/rov_se3_marinarium/marinarium_raw/npz   # npz files from bag_to_npz.py: oct30, manual, stabilized
+
+# Train / test split.
+#   chronological : one recording, first (1 - test_fraction) of its time train, the rest test (Marinarium paper: manual, 0.2)
+#   recordings    : whole recordings per split (train / test lists below)
+split:
+  type: chronological             # chronological | recordings
+  recording: manual               # chronological only: oct30 | manual | stabilized
+  test_fraction: 0.2              # chronological only
+  train: [oct30, stabilized]      # recordings only
+  test: [manual]                  # recordings only
+
+sample_hz: 50                     # resampling rate (Hz); the paper uses 50
+
+input: thrust                     # commands: 8 raw PX4 commands in [-1, 1] | thrust: 8 T200 forces (N), G = E | wrench: E @ thrust (6), G = I
+voltage: measured                 # measured: battery voltage at each motor message | a number (V): fixed voltage for the T200 map
+angular_rate: mocap               # mocap: motion-capture body rate | gyro: PX4 IMU gyro (same axes, noisier)
+disarmed: zero                    # motors not commanded (NaN): zero: thrust 0, vehicle coasts | drop: skip trajectories that contain it
+
+max_gap_seconds: 0.05             # motion-capture dropouts longer than this split the data; nothing is interpolated across them
+glitch_threshold_deg: 3.0         # one-step attitude jumps above this (and 5x the gyro) are pose glitches, excluded like dropouts | null: keep
+glitch_margin_seconds: 0.1        # time excluded on each side of a glitch
+mocap_time: header                # header: motion-capture stamps (steadier) | receive: bag receive time (as the paper's CSV)
+trajectory_seconds: 10.0          # length of each stored trajectory (s); points = seconds * sample_hz + 1
+trajectory_stride_seconds: 10.0   # step between trajectory starts (s); smaller = overlapping trajectories
+streams: true                     # also store each split as one continuous series (gaps interpolated and flagged), for the paper's H-step RMSE
+
+output:
+  window_points: 6                # stored windows (x, test_x): points per window
+  window_stride: 5                # and the step between window starts
