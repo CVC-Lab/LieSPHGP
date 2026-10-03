@@ -24,6 +24,8 @@ Commands are run from the project root.
 | `QUADROTOR-DATASET-WIND25/` | same generator | as WIND, 0.25 of weight |
 | `QUADROTOR-DATASET-WINDSDE/` | same generator (8 variants, one `*_config_used.yaml` each) | constant damping, white wind (constant or speed/rate dependent) |
 | `QUADROTOR-EVAL-REFERENCE/` | `envs/quadrotor_se3_pybullet/datagen/generate_reference_flights.py` | `... generate_reference_flights.py --duration-seconds 3.0` |
+| `ROV-DATASET-<name>/` | `envs/rov_se3_port_ham/datagen/generate_dataset.py` + `config.yaml` (BlueROV2 Heavy pH simulator; named configs in `datagen/configs/`) | `python envs/rov_se3_port_ham/datagen/generate_dataset.py --config <config>` |
+| `ROV-MARINARIUM-DATASET-<name>/` | real BlueROV2 tank recordings: `envs/rov_se3_marinarium/datagen/bag_to_npz.py` then `generate_dataset.py` + `config.yaml` | `PAPER-MANUAL` (thrust input), `PAPER-MANUAL-WRENCH` (wrench input): the Marinarium paper's split |
 | `QUADROTOR-DATASET-IDSIA/` | real flights, converted by `envs/quadrotor_se3_idsia/datagen/convert_idsia.py` (raw data in `envs/quadrotor_se3_idsia/idsia_raw/`) | `... real/convert_idsia.py --help` |
 
 Notes

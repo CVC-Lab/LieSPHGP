@@ -1,0 +1,142 @@
+# Config for generate_dataset.py (BlueROV2 Heavy, our port-Hamiltonian SE(3) simulator).
+# Run:    python envs/rov_se3_port_ham/datagen/generate_dataset.py --config envs/rov_se3_port_ham/datagen/configs/SDE-DiffusionRateDependent-DissipationLinearQuadratic.yaml
+# Output: datasets/ROV-DATASET-<name>/<name>_BLUEROV2_<T>s_h<h>_<variant>.pkl   (refuses to overwrite; add --force)
+# Notation: [a, b] = drawn uniformly from a to b. World z DOWN (depth), body forward-right-down. v_b, w_b = body velocities.
+# Ground truth (M, D, V, G, Sigma) is stored in each pickle under settings["ground_truth"].
+
+name: SDE-DiffusionRateDependent-DissipationLinearQuadratic  # any text -> folder and file names
+
+trajectory_set: hard+eval         # hard      : train + test splits, hard library (+ noisy copies)
+                                  # eval      : one clean split, eval library (unseen shapes), key heldout_trajectories
+                                  # hard+eval : both of the above
+
+# Damping (published von Benzon 2022 coefficients), set separately for the linear and the angular channel.
+dissipation:
+  linear:
+    type: linear_quadratic        # none | linear: -D_L v_b | quadratic: -D_Q |v_b| v_b | linear_quadratic: both (published model)
+  angular:
+    type: linear_quadratic        # none | linear: -D_L w_b | quadratic: -D_Q |w_b| w_b | linear_quadratic: both
+
+# Wind / current turbulence = the SDE noise term, set separately for the linear and the angular channel.
+diffusion:
+  hold_seconds: 0.02              # constant / rate_dependent: new random draw every hold_seconds
+  linear:
+    type: rate_dependent          # none | constant: dv_b += sigma dW | rate_dependent: dv_b += sigma (1+gain |v_b|) dW | ou
+    sigma: 0.05                   # constant, rate_dependent (m s^-1.5); ou: acceleration std (m s^-2)
+    gain: 2.0                     # rate_dependent only
+    time_constant_seconds: 1.0    # ou only: correlation time
+  angular:
+    type: rate_dependent          # none | constant: dw_b += sigma dW | rate_dependent: dw_b += sigma (1+gain |w_b|) dW | ou
+    sigma: 0.1                    # constant, rate_dependent (rad s^-1.5); ou: angular-acceleration std (rad s^-2)
+    gain: 1.0                     # rate_dependent only
+    time_constant_seconds: 1.0    # ou only
+
+# Observation noise, added after the flights to train and test only (eval stays clean). One extra pickle per setting.
+observation_noise:
+  absolute_levels: [0.01, 0.02, 0.05, 0.1]  # one pickle per level: Gaussian noise std on p, v_b, w_b; rotation noise in rad
+  train_noise_seed: 0
+  test_noise_seed: 1999
+  sensor:                         # one extra pickle imitating the Marinarium motion capture + gyro (levels measured on the real data)
+    enabled: true
+    position_sigma: 0.001         # m (real: pose vs twist 0.5-1.2 mm over 100 ms)
+    attitude_sigma_deg: 0.2
+    velocity_from: central_difference   # central_difference | savitzky_golay (of noisy positions)
+    savitzky_golay_window: 7      # savitzky_golay only
+    gyro_white_sigma: 0.01        # rad/s (real: residual MAD 0.01)
+    gyro_bias_random_walk: 0.0001
+
+# Thrusters (8, PX4 order, published geometry). u recorded per row = mean over the sample interval.
+actuator:
+  input: thrusters                # thrusters: 8 forces (N), G = E | wrench: E @ thrust (6), G = I | commands: 8 PX4 commands (T200 map, nonlinear)
+  voltage: 16.0                   # battery voltage (V) for the T200 thrust limits and the command map
+  thrust_fraction: 0.8            # usable share of the T200 thrust range (headroom)
+  motor_lag_seconds: 0.0          # first-order thruster lag; 0 = none
+
+# How the vehicle is moved.
+excitation:
+  type: library                   # library: PD controller tracks manoeuvre segments | random_thrusters: random held thrust + weak PD
+  random_thrusters:
+    hold_seconds: 0.5             # a new random thrust per motor every hold_seconds
+    scale: 0.4                    # share of the thrust range
+    pd_scale: 0.3                 # weak PD pulling to the tank centre (keeps the vehicle in the tank)
+
+controller:                       # pose tracking at sample_hz: PD on pose error and on (v_ref - v), times the diagonal inertia,
+                                  # plus feedforward of the drag at v_ref and of the hydrostatics
+  drag_feedforward: true          # add -D(v_ref) v_ref; false = pure PD (slower, the vehicle lags the targets)
+  kp_position: [1.0, 1.0, 1.0]    # 1/s^2
+  kd_velocity: [2.0, 2.0, 2.0]    # 1/s
+  kp_attitude: [6.0, 6.0, 4.0]    # 1/s^2 (roll, pitch, yaw)
+  kd_rate: [4.0, 4.0, 3.0]        # 1/s
+
+seeds:
+  train: [300, 301, 302, 303, 304]  # one seed per group of flights_per_seed flights
+  test: [399]
+  eval: [498, 499]
+  flights_per_seed: 10
+  flight_seed_base: 7000000       # flight seed = base + 1000*seed + index + 100000*attempt
+
+plant:
+  physics_hz: 500                 # simulation rate (Lie-group Heun)
+  sample_hz: 50                   # recording and controller rate (the Marinarium data is 50 Hz); must divide physics_hz
+  parameters: {}                  # overrides of the published values, e.g. {mass: 13.5, center_of_buoyancy: [0, 0, -0.02]}
+flight:
+  duration_seconds: 10.0
+initial_state:                    # random start of each flight
+  position_box:
+    x: [2.5, 5.5]
+    y: [-0.8, 0.8]
+    z: [1.0, 2.0]                 # depth (m)
+  max_tilt_deg: 25
+  max_speed: 0.4
+  max_angular_rate: 0.5
+envelope:                         # Marinarium tank 9 x 5 x 3 m, area used in the recordings; targets are clipped to it
+  position_box:
+    x: [1.5, 7.0]
+    y: [-1.8, 1.8]
+    z: [0.6, 2.5]
+gates:                            # a flight breaking any gate is redrawn (next attempt)
+  max_tilt_deg: 90
+  min_depth: 0.1                  # m below the surface
+  max_depth: 2.9                  # m (tank floor at 3 m)
+  envelope_margin: 0.5            # max distance outside the envelope box (m)
+  max_saturation_fraction: 0.3    # max share of controller updates with a thruster at its limit
+  max_attempts: 20
+
+# Manoeuvre segments. Each flight chains random segments (chosen by weight) until the flight is full.
+# Every segment: duration (s), weight (relative chance). The two libraries must not share a name.
+#   station_keep  hold the start pose            waypoint_hop  go to a random point (max_distance m)
+#   surge_run     forward at speed (m/s)         yaw_turn      turn at rate (rad/s)        depth_step  change depth by height (m)
+#   circle        radius (m), speed (m/s)        coast         every motor off: free decay (damping + restoring)
+#   pulse         hold pose + an open-loop wrench pulse on one random axis (fraction of the largest wrench, pulse_seconds)
+#   lawnmower     back-and-forth legs (leg_seconds, spacing m)   helix  climbing circle (climb_rate m/s)
+#   figure_eight  radius, speed                  yaw_sweep     yaw oscillation (rate, period)
+#   depth_bob     depth square wave (height, period)              diagonal_dash  straight run in a random world direction
+#   attitude_hold hold position tilted by tilt_deg about a random horizontal axis (the real pilot flies tilted)
+#   tilt_sweep    roll/pitch oscillation of amplitude tilt_deg (period s)
+libraries:
+  hard:
+    station_keep: {duration: [1.0, 2.0], weight: 0.3}
+    waypoint_hop: {duration: [2.0, 3.0], max_distance: 2.5, weight: 1.3}
+    surge_run: {duration: [2.0, 3.0], speed: [0.3, 0.8], weight: 1.2}
+    yaw_turn: {duration: [1.5, 2.5], rate: [0.5, 1.5], weight: 0.7}
+    depth_step: {duration: [1.5, 2.5], height: [0.3, 0.6], weight: 0.6}
+    circle: {duration: [3.0, 4.0], radius: [0.5, 1.2], speed: [0.3, 0.7], weight: 1.3}
+    coast: {duration: [1.0, 2.0], weight: 1.0}
+    pulse: {duration: [1.5, 2.5], pulse_seconds: [0.2, 0.5], fraction: [0.3, 0.7], weight: 1.0}
+    attitude_hold: {duration: [1.5, 2.5], tilt_deg: [10, 35], weight: 0.6}
+  eval:
+    lawnmower: {duration: [3.0, 4.0], speed: [0.3, 0.7], leg_seconds: [1.0, 1.5], spacing: [0.3, 0.5], weight: 1.0}
+    helix: {duration: [3.0, 4.0], radius: [0.5, 1.2], speed: [0.3, 0.7], climb_rate: [0.05, 0.15], weight: 1.0}
+    figure_eight: {duration: [3.0, 4.0], radius: [0.5, 1.2], speed: [0.3, 0.7], weight: 1.0}
+    yaw_sweep: {duration: [2.0, 3.0], rate: [0.5, 1.5], period: [1.5, 3.0], weight: 1.0}
+    depth_bob: {duration: [2.0, 3.0], height: [0.2, 0.4], period: [1.0, 2.0], weight: 1.0}
+    diagonal_dash: {duration: [2.0, 3.0], speed: [0.3, 0.8], weight: 1.0}
+    tilt_sweep: {duration: [2.0, 3.0], tilt_deg: [10, 35], period: [1.5, 3.0], weight: 1.0}
+
+audits:
+  horizons_seconds: [0.1, 0.25, 0.5, 1.0, 2.0]   # horizons for the "signal vs noise" audit
+output:
+  window_points: 6                # stored windows (x, test_x): points per window
+  window_stride: 5                # and the step between window starts
+  write_pdf: true                 # write the dataset_analysis.pdf
+  pdf_example_flights: 4          # example flights plotted in the PDF
