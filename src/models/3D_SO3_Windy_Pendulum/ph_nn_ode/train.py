@@ -24,7 +24,7 @@ from torchdiffeq import odeint
 
 from ode_utils import to_pickle
 from subnet_diagnostics import subnet_physics_mse
-from windy_pendulum_3d_datagen import get_dataset, arrange_data
+from windy_pendulum_3d_datagen import get_dataset, arrange_data, from_pickle
 from network import DissipativeSO3HamNODE
 from loss_utils import (
     rotmat_L2_geodesic_loss_safe as rotmat_L2_geodesic_loss,
@@ -81,6 +81,8 @@ def get_args():
     parser.add_argument('--seed', default=0, type=int)
     parser.add_argument('--save_dir', default=DEFAULT_SAVE_DIR, type=str)
     parser.add_argument('--data_dir', default=DEFAULT_DATA_DIR, type=str)
+    parser.add_argument('--dataset_path', default=None, type=str,
+        help='load this pickle directly, e.g. datasets/PENDULUM-DATASET-<name>/<name>_obs-noise0p05.pkl (made by envs/pendulum_so3/datagen/generate_dataset.py); default None = build/load via get_dataset')
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--num_points', type=int, default=5)
     parser.add_argument('--solver', default='rk4', type=str)
@@ -238,7 +240,7 @@ def train(args):
         (2.0, 2.0, 2.0),
     )
 
-    data, _ = get_dataset(
+    data, _ = (from_pickle(args.dataset_path), args.dataset_path) if args.dataset_path is not None else get_dataset(
         seed=args.seed,
         samples=args.samples,
         timesteps=args.timesteps,

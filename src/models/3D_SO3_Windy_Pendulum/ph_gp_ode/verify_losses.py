@@ -45,7 +45,7 @@ for p in (PROJECT_ROOT,
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from windy_pendulum_3d_datagen import get_dataset, arrange_data
+from windy_pendulum_3d_datagen import get_dataset, arrange_data, from_pickle
 
 
 # Pendulum constants
@@ -167,6 +167,8 @@ def main():
     ap.add_argument('--data_dir', type=str,
                     default=os.path.join(PROJECT_ROOT,
                                          'datasets/windy_pendulum_3d'))
+    ap.add_argument('--dataset_path', default=None, type=str,
+        help='load this pickle directly, e.g. datasets/PENDULUM-DATASET-<name>/<name>_obs-noise0p05.pkl (made by envs/pendulum_so3/datagen/generate_dataset.py); default None = build/load via get_dataset')
     ap.add_argument('--varying_friction', action='store_true')
     ap.add_argument('--random_u', action='store_true')
     ap.add_argument('--sigma_obs', type=float, default=None,
@@ -177,7 +179,7 @@ def main():
     sigma_obs = args.obs_noise_std if args.sigma_obs is None else args.sigma_obs
 
     us = ((0.0,) * 3, (-1.0,) * 3, (1.0,) * 3, (-2.0,) * 3, (2.0,) * 3)
-    data, _ = get_dataset(
+    data, _ = (from_pickle(args.dataset_path), args.dataset_path) if args.dataset_path is not None else get_dataset(
         seed=args.seed, samples=args.samples, timesteps=args.timesteps,
         save_dir=args.data_dir, us=us, ori_rep="rotmat",
         friction_coeff=args.friction_coeff,

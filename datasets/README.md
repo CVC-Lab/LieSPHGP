@@ -8,8 +8,9 @@ Commands are run from the project root.
 
 | Folder | Made by | Regenerate |
 |---|---|---|
-| `windy_pendulum_3d/` | `envs/pendulum_so3/datagen/windy_pendulum_3d_datagen.py` (+ `gen_varfric_randu2_5noise.py` for the 5 noise levels) | `python envs/pendulum_so3/datagen/windy_pendulum_3d_datagen.py --help` |
-| `windy_pendulum_3d_v2/` | same generator, older settings (`var_fricTrue`, `uScale2p0`) | — |
+| `PENDULUM-DATASET-<name>/` | `envs/pendulum_so3/datagen/generate_dataset.py` + `config.yaml` (one pickle per noise level) | `python envs/pendulum_so3/datagen/generate_dataset.py --config <config>` |
+| `windy_pendulum_3d/` | the older `get_dataset()` in `envs/pendulum_so3/datagen/windy_pendulum_3d_datagen.py` (Lie-Heun); rebuilt bit-for-bit by `generate_dataset.py` with `integrator: lie_heun` | — |
+| `windy_pendulum_3d_v2/` | same older generator, older settings (`var_fricTrue`, `uScale2p0`) | — |
 | `windy_arm_nlink/` | `envs/arm_nlink_so3/datagen/windy_arm_nlink_datagen.py` | `python envs/arm_nlink_so3/datagen/windy_arm_nlink_datagen.py --help` |
 | `QUADROTOR-DATASET-HARD/` | `envs/quadrotor_se3_pybullet/datagen/generate_dataset.py` (the former HARD-V5; see `_note` in its `config_used.yaml`) | `trajectory_set: hard`, builtin damping, no wind, `kick_torque: last_step` |
 | `QUADROTOR-DATASET-EVALSET/` | same generator | `trajectory_set: eval`, `seeds.eval: [498, 499]` |

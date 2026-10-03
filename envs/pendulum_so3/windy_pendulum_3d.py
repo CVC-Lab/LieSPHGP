@@ -109,10 +109,11 @@ def _random_rotation(rng: np.random.Generator) -> np.ndarray:
 class windy_pendulum_3d(gym.Env):
     """3D spherical pendulum on SO(3) with wind, friction, and stochastic forcing.
     
-    Uses a geometrically exact Lie group integrator:
+    Uses a geometrically exact Lie group integrator (``integrator``, ``substeps`` steps per ``dt``):
       - Rotation updates use the exponential map (Rodrigues), so R stays on SO(3)
         by construction — no SVD projection needed in the integration loop.
-      - Stratonovich SDE is integrated via Heun's method on the Lie algebra.
+      - lie_imex (default): Heun predictor/corrector with the friction treated implicitly
+        (the scheme of the SE(3) Lie-IMEX models); lie_heun: fully explicit Stratonovich Heun.
     """
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
@@ -135,11 +136,17 @@ class windy_pendulum_3d(gym.Env):
         g_diag: Union[float, Tuple[float, float, float]] = 1.0,
         ori_rep: str = "rotmat",
         seed: Optional[int] = None,
+        integrator: str = "lie_imex",
+        substeps: int = 10,
     ):
         super().__init__()
 
         if ori_rep != "rotmat":
             raise ValueError("Only ori_rep='rotmat' is supported for the 3D pendulum env.")
+        if integrator not in ("lie_imex", "lie_heun"):
+            raise ValueError(f"integrator must be 'lie_imex' or 'lie_heun', got {integrator!r}")
+        self.integrator = str(integrator)
+        self.substeps = int(substeps)
 
         self.render_mode = render_mode
         self.g = float(g)
@@ -345,6 +352,41 @@ class windy_pendulum_3d(gym.Env):
 
         return R_new, omega_new
 
+    # ── Lie group IMEX integrator (friction implicit) ─────────────────────
+
+    def _friction_matrix(self, R: np.ndarray, omega: np.ndarray) -> np.ndarray:
+        """D with omega_dot_friction = -D omega:  D = I^-1 diag(f(R, omega))."""
+        return self.I_inv @ np.diag(self._variable_friction(R, omega))
+
+    def _lie_imex_step(
+        self, R: np.ndarray, omega: np.ndarray,
+        w: float, u: np.ndarray, h: float, sigma: float,
+        dW: np.ndarray
+    ):
+        """One substep of Lie-IMEX integration on SO(3) x R^3 (Stratonovich noise, same dW in both stages).
+
+        Friction is implicit, everything else (gravity, wind, control, gyroscopic term, noise) explicit:
+            a_i = omega_dot_det(x_i) + D_i omega_i          (all terms except friction)
+          predictor:  (I + h D_1) omega_p = omega_n + h a_1 + s_1,            R_p = R_n exp(h omega_n)
+          corrector:  (I + h/2 D_2) omega_{n+1} = omega_n + h/2 (a_1 + a_2 - D_1 omega_n) + (s_1 + s_2)/2
+                      R_{n+1} = R_n exp(h/2 (omega_n + omega_p))
+        with D_i = I^-1 diag(f(R_i, omega_i)) evaluated at the stage state.
+        """
+        eye = np.eye(3)
+        omega_dot_1, dOmega_stoch_1 = self._compute_omega_rates(R, omega, w, u, dW, sigma)
+        D_1 = self._friction_matrix(R, omega)
+        a_1 = omega_dot_1 + D_1 @ omega
+        omega_pred = np.linalg.solve(eye + h * D_1, omega + h * a_1 + dOmega_stoch_1)
+        R_pred = R @ _exp_so3(omega * h)
+
+        omega_dot_2, dOmega_stoch_2 = self._compute_omega_rates(R_pred, omega_pred, w, u, dW, sigma)
+        D_2 = self._friction_matrix(R_pred, omega_pred)
+        a_2 = omega_dot_2 + D_2 @ omega_pred
+        rhs = omega + 0.5 * h * (a_1 + a_2 - D_1 @ omega) + 0.5 * (dOmega_stoch_1 + dOmega_stoch_2)
+        omega_new = np.linalg.solve(eye + 0.5 * h * D_2, rhs)
+        R_new = R @ _exp_so3(0.5 * h * (omega + omega_pred))
+        return R_new, omega_new
+
     # ── Step ──────────────────────────────────────────────────────────────
 
     def step(self, u):
@@ -359,8 +401,9 @@ class windy_pendulum_3d(gym.Env):
         self.last_w = float(w)
 
         # Substep settings
-        n_substeps = 10
+        n_substeps = self.substeps
         dt_sub = self.dt / n_substeps
+        integrate = self._lie_imex_step if self.integrator == "lie_imex" else self._lie_heun_step
         sigma = self.wind_force_std
 
         for _ in range(n_substeps):
@@ -370,10 +413,7 @@ class windy_pendulum_3d(gym.Env):
             else:
                 dW = np.zeros(3)
 
-            # Lie group Heun step
-            self.R, self.omega = self._lie_heun_step(
-                self.R, self.omega, w, u, dt_sub, sigma, dW
-            )
+            self.R, self.omega = integrate(self.R, self.omega, w, u, dt_sub, sigma, dW)
 
         # NOTE: angular velocity clipping by self.max_speed disabled —
         # keeping the parameter available but no longer constraining omega.

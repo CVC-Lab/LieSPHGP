@@ -1,3 +1,8 @@
+"""Sampling, observation noise and the legacy get_dataset() for the SO(3) windy pendulum.
+
+For NEW datasets use generate_dataset.py + config.yaml (same sampling code, one pickle per noise level).
+This module stays because the pendulum trainers import get_dataset() and arrange_data() from it.
+"""
 import numpy as np
 import pickle
 import os

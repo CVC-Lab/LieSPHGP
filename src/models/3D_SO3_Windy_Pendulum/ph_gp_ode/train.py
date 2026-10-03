@@ -41,7 +41,7 @@ import jax.numpy as jnp
 import equinox as eqx
 import optax
 
-from windy_pendulum_3d_datagen import get_dataset, arrange_data    # noqa: E402
+from windy_pendulum_3d_datagen import get_dataset, arrange_data, from_pickle    # noqa: E402
 
 from network import DissipativeSO3HamODE                           # noqa: E402
 from src.utils.JAX.lie_integrator import lie_heun_ode_rollout      # noqa: E402
@@ -111,6 +111,8 @@ def get_args():
     p.add_argument('--seed', default=0, type=int)
     p.add_argument('--save_dir', default=DEFAULT_SAVE_DIR, type=str)
     p.add_argument('--data_dir', default=DEFAULT_DATA_DIR, type=str)
+    p.add_argument('--dataset_path', default=None, type=str,
+        help='load this pickle directly, e.g. datasets/PENDULUM-DATASET-<name>/<name>_obs-noise0p05.pkl (made by envs/pendulum_so3/datagen/generate_dataset.py); default None = build/load via get_dataset')
     p.add_argument('--gpu', type=int, default=0)
     p.add_argument('--num_points', type=int, default=5)
     p.add_argument('--init_gain', default=0.5, type=float)
@@ -360,7 +362,7 @@ def train(args):
 
     us = ((0.0, 0.0, 0.0), (-1.0, -1.0, -1.0), (1.0, 1.0, 1.0),
           (-2.0, -2.0, -2.0), (2.0, 2.0, 2.0))
-    data, _ = get_dataset(
+    data, _ = (from_pickle(args.dataset_path), args.dataset_path) if args.dataset_path is not None else get_dataset(
         seed=args.seed, samples=args.samples, timesteps=args.timesteps,
         save_dir=args.data_dir, us=us, ori_rep="rotmat",
         friction_coeff=args.friction_coeff,

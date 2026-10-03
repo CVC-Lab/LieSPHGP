@@ -153,6 +153,8 @@ def run_test(varying_friction=True, friction_coeff=0.5,
         external_force_std=0.0,
         wind_force_std=0.0,
         seed=seed,
+        integrator="lie_heun",      # this test checks the Lie-Heun model math step for step
+        substeps=n_substeps,
     )
     env.reset(seed=seed)
     R0 = env.R.copy()

@@ -1,0 +1,54 @@
+# Config for generate_dataset.py (SO(3) windy pendulum datasets).
+# Run:    python envs/pendulum_so3/datagen/generate_dataset.py --config envs/pendulum_so3/datagen/config.yaml
+# Output: datasets/PENDULUM-DATASET-<name>/<name>_<variant>.pkl   (refuses to overwrite; add --force)
+# Notation: R = rotation, w = body angular velocity, J = m l^2 I, u = control torque.
+
+name: CUSTOM                      # any text -> folder and file names
+
+integrator: lie_imex              # lie_imex: friction implicit (default) | lie_heun: fully explicit (all older datasets)
+dt: 0.05                          # time between recorded samples (s)
+substeps: 10                      # integrator steps per sample
+timesteps: 20                     # recorded samples per trajectory
+samples: 64                       # trajectories per control batch, split into train / test
+test_split: 0.5                   # share kept for test; >= 0.5 gives a 50 / 50 split
+seed: 0                           # batch i uses seed + 10000 i
+
+plant:
+  m: 1.0                          # bob mass (kg)
+  l: 1.0                          # rod length (m)
+  g: 9.81                         # gravity (m/s^2)
+
+# Damping (friction torque).
+dissipation:
+  type: constant                  # none | constant: -c w | varying: -c (1 + 0.5 height + 0.5 tanh|w|) w
+  c: 0.5                          # coefficient; a number or [cx, cy, cz]
+
+# Wind = the SDE noise term: a world-frame force sigma dW on the bob (Stratonovich).
+diffusion:
+  type: none                      # none | constant
+  sigma: 0.5                      # constant only
+
+# Observation noise, added after simulation to the train input x and to test_x_noisy (test_x stays clean).
+# One pickle per level, plus the clean pickle. Noise on R: R Exp(eps), on w: + eps, eps ~ N(0, level^2); u untouched.
+observation_noise:
+  levels: [0.01, 0.05, 0.1, 0.25]
+
+# Deterministic force on the bob (separate from the wind noise above).
+external_force:
+  type: sine                      # sine (0.5 Hz) | square (0.5 Hz) | random (new draw every sample) | constant
+  std: 0.0                        # amplitude (N); 0 = off
+  direction: [1.0, 0.0, 0.0]      # world-frame direction
+
+control:
+  batches:                        # one batch of `samples` trajectories per entry; the entry is u when random_u is false
+    - [0.0, 0.0, 0.0]
+    - [-1.0, -1.0, -1.0]
+    - [1.0, 1.0, 1.0]
+    - [-2.0, -2.0, -2.0]
+    - [2.0, 2.0, 2.0]
+  random_u: true                  # true: u ~ U(-scale, scale) per axis, new draw every sample (batches only change the seed)
+  random_u_scale: 7.0
+  g_diag: [0.5, 0.7, 0.1]         # input gain G = diag(...): torque = G u
+
+validity:
+  max_speed: 8.0                  # a trajectory with any |w_i| >= max_speed is redrawn (new seed)
