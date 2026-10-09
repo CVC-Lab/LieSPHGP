@@ -1,0 +1,199 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  isAchievable,
+  computeCumulativeWork,
+  computeTorqueMagnitude,
+  computeAchievedIndex,
+  computeAchievedIndexAttitude,
+  computeAttitudeErrorDeg,
+  computeSettledIndex,
+  computeTorqueDomain,
+} from "../scenes/ControlMetrics.js";
+import { computeH } from "../scenes/ControlPanel.js";
+import { buildScenario } from "../physics/scenarioRunner.js";
+
+const IDENTITY = [
+  [1, 0, 0],
+  [0, 1, 0],
+  [0, 0, 1],
+];
+
+describe("isAchievable", () => {
+  it("is true only for controlled, wind-off, stable-target scenarios", () => {
+    expect(isAchievable({ mode: "controlled", wind_on: false, target_axis: 0 })).toBe(true);
+    expect(isAchievable({ mode: "controlled", wind_on: false, target_axis: 2 })).toBe(true);
+  });
+
+  it("is false with wind on", () => {
+    expect(isAchievable({ mode: "controlled", wind_on: true, target_axis: 0 })).toBe(false);
+  });
+
+  it("is false targeting the unstable imid axis", () => {
+    expect(isAchievable({ mode: "controlled", wind_on: false, target_axis: 1 })).toBe(false);
+  });
+
+  it("is false for free scenarios", () => {
+    expect(isAchievable({ mode: "free", wind_on: false, target_axis: 0 })).toBe(false);
+  });
+});
+
+describe("computeCumulativeWork", () => {
+  it("integrates torque.omega with the rectangle rule, starting at 0", () => {
+    const t = [0, 1, 2];
+    const I = [1, 1, 1]; // omega == M_body directly, for a simple hand check
+    const M_body = [
+      [0, 0, 0],
+      [1, 0, 0],
+      [1, 0, 0],
+    ];
+    const torque = [
+      [0, 0, 0],
+      [2, 0, 0],
+      [2, 0, 0],
+    ];
+    const work = computeCumulativeWork(torque, M_body, I, t);
+    expect(work[0]).toBe(0);
+    // power = [0, 2, 2]; trapezoidal: work[1] = 0.5*(0+2)*1 = 1
+    expect(work[1]).toBeCloseTo(1, 9);
+    // work[2] = work[1] + 0.5*(2+2)*1 = 1 + 2 = 3
+    expect(work[2]).toBeCloseTo(3, 9);
+  });
+
+  it("matches H(t) - H(0) exactly for a real no-wind controlled run (dH/dt = torque.omega)", () => {
+    const doc = buildScenario({
+      startAxis: "imid",
+      controlOn: true,
+      endAxis: "imax",
+      windOn: false,
+      T: 6.0,
+      N: 600,
+    });
+    const H = computeH(doc.frames.M_body, doc.meta.I);
+    const work = computeCumulativeWork(doc.frames.controller_torque, doc.frames.M_body, doc.meta.I, doc.frames.t);
+
+    const lastIdx = work.length - 1;
+    expect(work[lastIdx]).toBeCloseTo(H[lastIdx] - H[0], 1);
+  });
+});
+
+describe("computeTorqueMagnitude", () => {
+  it("is the Euclidean norm of each torque vector", () => {
+    expect(computeTorqueMagnitude([[3, 4, 0], [0, 0, 0]])).toEqual([5, 0]);
+  });
+});
+
+describe("computeTorqueDomain", () => {
+  it("scales normally off real (nonzero) data, unchanged from before", () => {
+    expect(computeTorqueDomain([0, 0.5, 2.0, 1.0])).toEqual([0, 2.0 * 1.1]);
+  });
+
+  it("falls back to a fixed sane range when the data is genuinely all zero", () => {
+    // Reproduces the real bug: cart-pole's Force panel is exactly 0.0 for
+    // as long as no key is pressed -- a degenerate near-zero max (the old
+    // `Math.max(..., 1e-9)` fallback) drove nice-tick-step computation into
+    // producing dozens of sub-visible-precision ticks that all rendered as
+    // the same repeated label, stacked -- not garbled text anymore (that
+    // part was already fixed in axisTicks.js), but still a broken-looking
+    // wall of identical "0.000000" rows.
+    expect(computeTorqueDomain([0, 0, 0, 0])).toEqual([0, 1.0]);
+  });
+
+  it("does not treat a genuinely tiny but real value as zero", () => {
+    const [, yMax] = computeTorqueDomain([0, 0.001, 0.0005]);
+    expect(yMax).toBeCloseTo(0.001 * 1.1, 9);
+  });
+});
+
+describe("computeAchievedIndex", () => {
+  const baseMeta = { mode: "controlled", wind_on: false, target_axis: 2, desired_L: 1.0 };
+
+  it("returns null when not achievable at all", () => {
+    const t = [0, 1, 2];
+    const M_body = [[0, 0, 1], [0, 0, 1], [0, 0, 1]];
+    expect(computeAchievedIndex(M_body, t, { ...baseMeta, wind_on: true })).toBeNull();
+  });
+
+  it("returns null if it never sustains within tolerance", () => {
+    const t = [0, 1, 2];
+    const M_body = [[1, 0, 0], [0, 1, 0], [1, 0, 0]]; // never near [0,0,1]
+    expect(computeAchievedIndex(M_body, t, baseMeta)).toBeNull();
+  });
+
+  it("ignores a momentary pass-through that doesn't sustain", () => {
+    const t = [0, 1, 2, 3, 4];
+    const M_body = [
+      [1, 0, 0],
+      [0, 0, 1], // momentarily within tolerance...
+      [1, 0, 0], // ...but immediately leaves again
+      [1, 0, 0],
+      [1, 0, 0],
+    ];
+    expect(computeAchievedIndex(M_body, t, baseMeta, 0.05, 1.0)).toBeNull();
+  });
+
+  it("finds the index where sustained convergence begins", () => {
+    const t = [0, 1, 2, 3, 4];
+    const M_body = [
+      [1, 0, 0],
+      [1, 0, 0],
+      [0, 0, 1], // converges here...
+      [0, 0, 1], // ...and stays (>= 1s sustained by t=3)
+      [0, 0, 1],
+    ];
+    expect(computeAchievedIndex(M_body, t, baseMeta, 0.05, 1.0)).toBe(2);
+  });
+});
+
+describe("computeAttitudeErrorDeg", () => {
+  it("is 0 for identical orientations", () => {
+    expect(computeAttitudeErrorDeg(IDENTITY, [1, 0, 0, 0])).toBeCloseTo(0, 9);
+  });
+
+  it("is 90 for a quaternion 90deg off the target", () => {
+    const s = Math.SQRT1_2;
+    const quat90AboutX = [s, s, 0, 0];
+    expect(computeAttitudeErrorDeg(IDENTITY, quat90AboutX)).toBeCloseTo(90, 6);
+  });
+});
+
+describe("computeAchievedIndexAttitude", () => {
+  const t = [0, 1, 2, 3, 4];
+  const identityQuat = [1, 0, 0, 0];
+  const farQuat = [Math.SQRT1_2, Math.SQRT1_2, 0, 0]; // 90deg off IDENTITY
+
+  it("returns null with no target (uncontrolled)", () => {
+    expect(computeAchievedIndexAttitude([identityQuat, identityQuat], null, [0, 1])).toBeNull();
+  });
+
+  it("returns null if it never sustains within tolerance", () => {
+    const quats = [farQuat, farQuat, farQuat, farQuat, farQuat];
+    expect(computeAchievedIndexAttitude(quats, IDENTITY, t)).toBeNull();
+  });
+
+  it("finds the index where sustained convergence begins", () => {
+    const quats = [farQuat, farQuat, identityQuat, identityQuat, identityQuat];
+    expect(computeAchievedIndexAttitude(quats, IDENTITY, t, 0.03, 1.0)).toBe(2);
+  });
+});
+
+describe("computeSettledIndex", () => {
+  const t = [0, 1, 2, 3, 4];
+  const I = [1, 1, 1]; // omega == M_body directly
+
+  it("returns null if angular velocity never sustains near zero", () => {
+    const M_body = [[1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0]];
+    expect(computeSettledIndex(M_body, I, t)).toBeNull();
+  });
+
+  it("finds the index where sustained rest begins, regardless of orientation", () => {
+    const M_body = [
+      [1, 0, 0],
+      [1, 0, 0],
+      [0, 0, 0], // comes to rest here...
+      [0, 0, 0], // ...and stays (>= 1s sustained by t=3)
+      [0, 0, 0],
+    ];
+    expect(computeSettledIndex(M_body, I, t)).toBe(2);
+  });
+});
