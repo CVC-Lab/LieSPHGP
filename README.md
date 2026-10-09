@@ -1,4 +1,4 @@
-# SPHNP v2
+# LieSPHGP
 
 Stochastic Port-Hamiltonian Neural Networks for learning dynamics on Lie groups (SO(3), SE(3)).
 
@@ -30,4 +30,4 @@ Stochastic Port-Hamiltonian Neural Networks for learning dynamics on Lie groups 
 ## Requirements
 
 Python 3.10+, NumPy, JAX, PyTorch, Gymnasium.
-# LieSPHGP
+
