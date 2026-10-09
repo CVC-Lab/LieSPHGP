@@ -1,4 +1,11 @@
-# Environments and dataset generators (envs/). Tested with Python 3.13 and the versions below.
+# Tested with Python 3.13 and the versions below.
+
+# Models (src/models/). For a GPU install JAX with CUDA instead: pip install "jax[cuda12]>=0.8.2".
+jax>=0.8.2
+optax>=0.2.6
+equinox>=0.13.2       # NeuralSDE baseline only
+
+# Environments and dataset generators (envs/).
 numpy>=2.3
 scipy>=1.16
 pyyaml>=6.0

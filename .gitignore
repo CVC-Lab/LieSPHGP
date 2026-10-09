@@ -37,3 +37,6 @@ new_ph_gp_sde_algorithm.md
 
 # local archives / scratch
 tmp/
+
+CLAUDE.md
+.claude/
