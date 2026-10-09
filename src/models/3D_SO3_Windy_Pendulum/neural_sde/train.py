@@ -57,6 +57,9 @@ DEFAULT_DATA_DIR = os.path.join(PROJECT_ROOT, 'datasets/windy_pendulum_3d')
 
 def get_args():
     p = argparse.ArgumentParser(description=None)
+    p.add_argument('--config', default=None, type=str,
+                   help='YAML file of these arguments (keys = argument names without --); '
+                        'arguments given on the command line override it')
     p.add_argument('--learn_rate', default=1e-3, type=float)
     p.add_argument('--total_steps', default=10000, type=int)
     p.add_argument('--eval_every', default=50, type=int)
@@ -91,7 +94,16 @@ def get_args():
                         'clean comparison with ph_gp_sde')
     p.add_argument('--grad_clip', type=float, default=1.0,
                    help='global-norm gradient clip')
-    return p.parse_args()
+    args = p.parse_args()
+    if args.config:
+        import yaml
+        values = yaml.safe_load(open(args.config)) or {}
+        unknown = sorted(set(values) - set(vars(args)))
+        if unknown:
+            raise ValueError(f'unknown keys in {args.config}: {unknown}')
+        p.set_defaults(**values)
+        args = p.parse_args()
+    return args
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -109,7 +121,7 @@ def _batched_rollout(model, x12_init, u, h, dW_batch):
     """vmap model.rollout over the batch axis.
 
     x12_init : (B, 12)
-    u        : (B, u_dim)
+    u        : (B, n_outer, u_dim) per-step controls (see _controls), or (B, u_dim) held constant
     dW_batch : (B, n_outer, n_substeps, 3)
     Returns  : (n_outer + 1, B, 12) — time-major to match the loss helper.
     """
@@ -118,12 +130,15 @@ def _batched_rollout(model, x12_init, u, h, dW_batch):
     return jnp.transpose(traj_b, (1, 0, 2))                        # (T+1, B, 12)
 
 
-def _pad_with_u(traj_12, u_const):
-    """traj_12 : (T, B, 12), u_const : (B, u_dim) → (T, B, 12 + u_dim)."""
-    T, B, _ = traj_12.shape
-    u_b = jnp.broadcast_to(u_const[None, :, :],
-                           (T, B, u_const.shape[-1]))
-    return jnp.concatenate([traj_12, u_b], axis=-1)
+def _controls(batch_x_cat):
+    """(T, B, 15) -> (B, T-1, 3) per-step controls. The datagen stores row k = (x_k, u_{k-1}), so the control
+    applied during k -> k+1 is in row k+1 (verified by replaying the env, 3 Oct 2026)."""
+    return jnp.transpose(batch_x_cat[1:, :, 12:15], (1, 0, 2))
+
+
+def _pad_with_u(traj_12, batch_x_cat):
+    """traj_12 : (T, B, 12) -> (T, B, 15) with each row's recorded u (the dataset layout)."""
+    return jnp.concatenate([traj_12, batch_x_cat[..., 12:15]], axis=-1)
 
 
 def loss_fn(model, batch_x_cat, h, dW_batch):
@@ -131,12 +146,11 @@ def loss_fn(model, batch_x_cat, h, dW_batch):
 
     Returns total loss + (l2, geo) auxiliaries.
     """
-    x0_15    = batch_x_cat[0]                              # (B, 15)
-    x12_init = x0_15[:, :12]                               # (B, 12)
-    u_const  = x0_15[:, 12:15]                             # (B, 3)
+    x12_init = batch_x_cat[0, :, :12]                      # (B, 12)
+    controls = _controls(batch_x_cat)                      # (B, T-1, 3)
 
-    traj_12 = _batched_rollout(model, x12_init, u_const, h, dW_batch)
-    traj_15 = _pad_with_u(traj_12, u_const)
+    traj_12 = _batched_rollout(model, x12_init, controls, h, dW_batch)
+    traj_15 = _pad_with_u(traj_12, batch_x_cat)
 
     target     = batch_x_cat[1:]
     target_hat = traj_15[1:]
@@ -309,10 +323,8 @@ def train(args):
             key_local = jax.random.PRNGKey(base_seed + i)
             dW = _sample_dW(key_local, B, n_outer_full,
                             args.n_substeps, h, x_i.dtype)
-            x_init_15 = x_i[0]
-            u_const   = x_init_15[:, 12:15]
-            traj_12 = _batched_rollout(model, x_init_15[:, :12], u_const, h, dW)
-            traj_15 = _pad_with_u(traj_12, u_const)               # (T, B, 15)
+            traj_12 = _batched_rollout(model, x_i[0, :, :12], _controls(x_i), h, dW)
+            traj_15 = _pad_with_u(traj_12, x_i)                   # (T, B, 15)
             total, l2, geo = traj_rotmat_L2_geodesic_loss_safe(
                 x_i, traj_15, split=(9, 3, 3))
             loss_l.append(total); l2_l.append(l2); geo_l.append(geo)

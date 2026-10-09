@@ -16,13 +16,13 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from scipy.spatial.transform import Rotation
+from scipy.spatial.transform import Rotation, Slerp
 
 THIS_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = THIS_DIR.parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-from envs.rov_se3_port_ham.bluerov2 import BlueROV2, T200  # noqa: E402
+from envs.rov_se3_marinarium.bluerov2 import BlueROV2, T200  # noqa: E402
 
 NPZ = THIS_DIR.parent / "marinarium_raw" / "npz"
 corr = lambda A, B: np.array([np.corrcoef(A[:, i], B[:, i])[0, 1] for i in range(A.shape[1])])
@@ -85,7 +85,7 @@ def main() -> None:
     nu = np.c_[v, w]
     nu_at = lambda s: np.stack([np.interp(s, t, nu[:, j]) for j in range(6)], 1)
     nu_g, nu_dot = nu_at(grid), (nu_at(grid + 0.05) - nu_at(grid - 0.05)) / 0.1
-    Rg = Rotation.from_quat(np.stack([np.interp(grid, t, d["mocap_quaternion_xyzw"][:, j]) for j in range(4)], 1)).as_matrix()
+    Rg = Slerp(t, Rr)(grid).as_matrix()                                  # slerp (q and -q are the same rotation)
     needed = np.array([env.M * a - env.coriolis_force(n) - env.damping_force(n) - env.restoring(r) for a, n, r in zip(nu_dot, nu_g, Rg)])
     cmd = np.stack([np.interp(grid, d["motor_t"], np.nan_to_num(d["motor_command"][:, j])) for j in range(8)], 1)
     applied = t200.thrust_from_command(cmd, np.interp(grid, d["battery_t"], d["battery_voltage"])) @ env.E.T

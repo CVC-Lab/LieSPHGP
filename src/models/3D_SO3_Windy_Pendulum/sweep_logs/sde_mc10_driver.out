@@ -1,5 +1,0 @@
-SDE retrain (mc_samples=10)  stamp=260611-164925
-obs : 0 0.01 0.1 0.05 0.25   GPUs: 0 1   logs: /mnt/data/thribhuvan/Projects/stochastic_port_hamiltonian/Final/SPHNP v2/src/models/3D_SO3_Windy_Pendulum/sweep_logs/sde_mc10_260611-164925
-
-▶ [16:49:25] gpu0  obs=0  mc=10
-▶ [16:49:25] gpu1  obs=0.01  mc=10

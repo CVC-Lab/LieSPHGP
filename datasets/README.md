@@ -1,39 +1,25 @@
 # datasets/
 
-**2 Oct 2026: every dataset that was here was moved to `tmp/old_datasets_2026-10-02/` (same folder names).**
-Run configs, trainer defaults and reports that point at `datasets/...` will not find them until the data is
-regenerated here (or copied back). The table below still says which script made each one; the PyBullet and
-pendulum sets rebuild bit-for-bit from the settings listed in `envs/quadrotor_se3_pybullet/datagen/config.yaml`
-and with `integrator: lie_heun` in `envs/pendulum_so3/datagen/config.yaml`.
-
 Data only. This folder holds `.pkl` files plus the metadata written alongside them
 (`*_config_used.yaml`, `*_generation.log`, `*_audits.json`, `*_dataset_analysis.pdf`).
 It contains no code. Every script that writes these files lives under `envs/<system>/datagen/`.
 Every script that plots them lives under `envs/<system>/plots/`.
 Commands are run from the project root.
 
+The datasets are not distributed with the code: build each one with the command in the last column (the configs
+are in each generator's `datagen/configs/`). The real-flight sets need the third-party raw data described in the
+README of `envs/quadrotor_se3_idsia/` and `envs/rov_se3_marinarium/`.
+
 | Folder | Made by | Regenerate |
 |---|---|---|
 | `PENDULUM-DATASET-<name>/` | `envs/pendulum_so3/datagen/generate_dataset.py` + `config.yaml` (one pickle per noise level) | `python envs/pendulum_so3/datagen/generate_dataset.py --config <config>` |
-| `windy_pendulum_3d/` | the older `get_dataset()` in `envs/pendulum_so3/datagen/windy_pendulum_3d_datagen.py` (Lie-Heun); rebuilt bit-for-bit by `generate_dataset.py` with `integrator: lie_heun` | — |
-| `windy_pendulum_3d_v2/` | same older generator, older settings (`var_fricTrue`, `uScale2p0`) | — |
-| `windy_arm_nlink/` | `envs/arm_nlink_so3/datagen/windy_arm_nlink_datagen.py` | `python envs/arm_nlink_so3/datagen/windy_arm_nlink_datagen.py --help` |
-| `QUADROTOR-DATASET-HARD/` | `envs/quadrotor_se3_pybullet/datagen/generate_dataset.py` (the former HARD-V5; see `_note` in its `config_used.yaml`) | `trajectory_set: hard`, builtin damping, no wind, `kick_torque: last_step` |
-| `QUADROTOR-DATASET-EVALSET/` | same generator | `trajectory_set: eval`, `seeds.eval: [498, 499]` |
-| `QUADROTOR-DATASET-WIND/` | same generator | `trajectory_set: hard+eval`, linear `ou` wind, 0.1 of weight |
-| `QUADROTOR-DATASET-WIND25/` | same generator | as WIND, 0.25 of weight |
-| `QUADROTOR-DATASET-WINDSDE/` | same generator (8 variants, one `*_config_used.yaml` each) | constant damping, white wind (constant or speed/rate dependent) |
-| `QUADROTOR-EVAL-REFERENCE/` | `envs/quadrotor_se3_pybullet/datagen/generate_reference_flights.py` | `... generate_reference_flights.py --duration-seconds 3.0` |
-| `ROV-DATASET-<name>/` | `envs/rov_se3_port_ham/datagen/generate_dataset.py` + `config.yaml` (BlueROV2 Heavy pH simulator; named configs in `datagen/configs/`) | `python envs/rov_se3_port_ham/datagen/generate_dataset.py --config <config>` |
-| `ROV-MARINARIUM-DATASET-<name>/` | real BlueROV2 tank recordings: `envs/rov_se3_marinarium/datagen/bag_to_npz.py` then `generate_dataset.py` + `config.yaml` | `PAPER-MANUAL` (thrust input), `PAPER-MANUAL-WRENCH` (wrench input): the Marinarium paper's split |
-| `QUADROTOR-DATASET-IDSIA/` | real flights, converted by `envs/quadrotor_se3_idsia/datagen/convert_idsia.py` (raw data in `envs/quadrotor_se3_idsia/idsia_raw/`) | `... real/convert_idsia.py --help` |
+| `QUADROTOR-DATASET-<name>/` | `envs/quadrotor_se3_pybullet/datagen/generate_dataset.py` + `config.yaml` (PyBullet Crazyflie; named configs in `datagen/configs/`, the 300-flight training sets and their `-EVAL10s` evaluation companions) | `python envs/quadrotor_se3_pybullet/datagen/generate_dataset.py --config <config>` |
+| `ROV-MARINARIUM-DATASET-<name>/` | real BlueROV2 tank recordings: `envs/rov_se3_marinarium/datagen/bag_to_npz.py` then `generate_dataset.py` + `config.yaml` | `PAPER-MANUAL` (thrust input), `PAPER-MANUAL-WRENCH` (wrench input), `PAPER-MANUAL-COMMANDS` (raw PX4 commands, `datagen/configs/PAPER-MANUAL-COMMANDS.yaml`; the only input built without the published thruster geometry / T200 map, used by the SE3_ROV models): the Marinarium paper's split |
+| `QUADROTOR-DATASET-IDSIA/` | real flights, converted by `envs/quadrotor_se3_idsia/datagen/convert_idsia.py` (raw data in `envs/quadrotor_se3_idsia/idsia_raw/`) | `python envs/quadrotor_se3_idsia/datagen/convert_idsia.py --help` |
 
 Notes
-- Every PyBullet dataset comes from ONE generator and ONE config:
-  `python envs/quadrotor_se3_pybullet/datagen/generate_dataset.py --config envs/quadrotor_se3_pybullet/datagen/config.yaml`.
-  It writes `datasets/QUADROTOR-DATASET-<name>/<name>_<drone>_<T>s_h<h>_<variant>.pkl`. The settings that rebuild each
-  dataset above bit-for-bit are listed at the top of `config.yaml`. Each dataset's own `*_config_used.yaml` is the
-  old-format record of how it was first made.
-- Model-analysis scripts that used to sit in these folders (IDSIA benchmark protocol, ablations, oracles)
-  are now in `src/models/SE3_Quadrotor/comparision/idsia/`.
-- Retired data is in `archive/datasets/` (`windy_pendulum_3d_old`, `windy_quadrotor_se3`).
+- Every PyBullet dataset comes from ONE generator, `envs/quadrotor_se3_pybullet/datagen/generate_dataset.py`;
+  `datagen/config.yaml` is the documented template of all its settings.
+  It writes `datasets/QUADROTOR-DATASET-<name>/<name>_<drone>_<T>s_h<h>_<variant>.pkl`. Each dataset is rebuilt from
+  its named config in `envs/quadrotor_se3_pybullet/datagen/configs/<name>.yaml` (`--config` instead of `config.yaml`);
+  its own `*_config_used.yaml` records the settings it was made with.

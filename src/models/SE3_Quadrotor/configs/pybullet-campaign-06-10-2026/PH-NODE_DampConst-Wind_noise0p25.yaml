@@ -1,0 +1,52 @@
+schema: ph_node/quadrotor/v1
+created_at: '2026-10-06T22:00:00'
+data:
+  dataset_path: datasets/QUADROTOR-DATASET-SDE-DiffusionConstant-0p5-DissipationConstant-0p5-5s-NoisyPID0p01-50Hz-300flights/SDE-DiffusionConstant-0p5-DissipationConstant-0p5-5s-NoisyPID0p01-50Hz-300flights_CF2P_5s_h0p02_train-obs-noise-absolute0p25.pkl
+  window_points: 101
+  window_stride: 75
+  substeps: 1
+  control_scaling: rms
+model:
+  feature_count: 64
+  matern_smoothness: 2.5
+  matern_length_scale: 1.0
+  initial_log_std: -5.0
+  initial_M_inverse: 1.0
+  initial_D: 1.0
+  initial_control_gp_mean_scale: 0.0
+  initial_diffusion: 0.1
+  initial_observation_sigma: 0.1
+  family: nn
+  wind: false
+  integrator: rk4
+  initial_randomness: 1.0
+  nn_hidden: 20
+  nn_layers: 2
+training:
+  seed: 0
+  total_steps: 5000
+  batch_size: 16
+  eval_every: 500
+  eval_windows: null
+  checkpoint_every: 1000
+  kl_beta_max: 1.0
+  kl_anneal_steps: 1000
+  loss: rollout
+optimizer:
+  learning_rate: 0.003
+  final_learning_fraction: 0.1
+  level_learning_rate: 0.25
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  gradient_clip_norm: 1.0
+runtime:
+  gpu: 1
+  enable_x64: false
+experiment:
+  root: experiments/quadrotor/campaign_06-10-2026/runs
+  name_suffix: PH-NODE_DampConst-Wind_noise0p25
+  notes:
+  - 'Quadrotor campaign 6 Oct 2026: PH-NODE config (MLP, RK4, rollout loss,
+    spread 1, 5000 steps, batch 16) on the dataset with vertical excitation, all
+    300 flights, DampConst-Wind, obs noise 0.25.'

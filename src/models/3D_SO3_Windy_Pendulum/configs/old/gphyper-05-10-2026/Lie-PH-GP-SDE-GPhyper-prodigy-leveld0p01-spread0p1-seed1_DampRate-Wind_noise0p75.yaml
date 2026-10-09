@@ -1,0 +1,53 @@
+schema: lie_ph/pendulum/v1
+created_at: '2026-10-05T21:20:00'
+data:
+  dataset_path: datasets/PENDULUM-DATASET-SDE-DiffusionConstant-0p5-DissipationRateDependent-0p5-5s-G0p5-0p7-0p8/SDE-DiffusionConstant-0p5-DissipationRateDependent-0p5-5s-G0p5-0p7-0p8_obs-noise0p75.pkl
+  window_points: 41
+  window_stride: 30
+  substeps: 1
+model:
+  feature_count: 64
+  matern_smoothness: 2.5
+  matern_length_scale: 1.0
+  initial_log_std: -5.0
+  initial_M_inverse: 1.0
+  initial_D: 1.0
+  initial_control_gp_mean_scale: 0.0
+  initial_diffusion: 0.1
+  initial_observation_sigma: 0.1
+  family: gp
+  wind: true
+  integrator: lie_imex
+  initial_randomness: 0.1
+  nn_hidden: 20
+  nn_layers: 2
+  learn_gp_hyperparameters: true
+training:
+  seed: 1
+  total_steps: 5000
+  batch_size: 64
+  eval_every: 500
+  eval_windows: null
+  checkpoint_every: 1000
+  kl_beta_max: 1.0
+  kl_anneal_steps: 1000
+  loss: ekf
+optimizer:
+  learning_rate: 0.003
+  final_learning_fraction: 0.1
+  level_learning_rate: 0.25
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  gradient_clip_norm: 1.0
+  hyper_optimizer: prodigy
+  level_initial_distance: 0.01
+runtime:
+  gpu: 0
+  enable_x64: false
+experiment:
+  root: experiments/pendulum_so3/gphyper_05-10-2026/runs
+  name_suffix: Lie-PH-GP-SDE-GPhyper-prodigy-leveld0p01-spread0p1-seed1_DampRate-Wind_noise0p75
+  notes:
+  - '3-seed check with initial_randomness 0.1 (user decision 5 Oct 2026 21:15): recipe
+    (learned tau, ell on Prodigy, level d0 0.01), seed 1; 5000 steps.'

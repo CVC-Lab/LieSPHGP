@@ -142,7 +142,8 @@ class NeuralSO3SDE(eqx.Module):
         """Roll the SDE forward.  External I/O matches `lie_heun_sde_rollout`.
 
         x0           : (12,) initial state (R.flatten ‖ ω)
-        u            : (u_dim,) control held constant across the window
+        u            : (u_dim,) control held constant across the window, or
+                       (n_outer, u_dim) one control per outer step (held over its substeps)
         h            : substep size
         dW_per_outer : (n_outer, n_substeps, 3) Wiener increments scaled
                        so var(dW) = h.
@@ -151,12 +152,18 @@ class NeuralSO3SDE(eqx.Module):
             traj : (n_outer + 1, 12) — x0 prepended to the n_outer post-step
                    states.
         """
-        def inner_step(x, dW):
-            return self.step(x, u, h, dW), None
+        n_outer = dW_per_outer.shape[0]
+        u = jnp.asarray(u)
+        u_per_outer = jnp.broadcast_to(u[None], (n_outer,) + u.shape) if u.ndim == 1 else u
 
-        def outer_step(x, dW_outer):
+        def outer_step(x, inputs):
+            u_t, dW_outer = inputs
+
+            def inner_step(x_inner, dW):
+                return self.step(x_inner, u_t, h, dW), None
+
             x_new, _ = jax.lax.scan(inner_step, x, dW_outer)
             return x_new, x_new
 
-        _, x_outer = jax.lax.scan(outer_step, x0, dW_per_outer)
+        _, x_outer = jax.lax.scan(outer_step, x0, (u_per_outer, dW_per_outer))
         return jnp.concatenate([x0[None], x_outer], axis=0)

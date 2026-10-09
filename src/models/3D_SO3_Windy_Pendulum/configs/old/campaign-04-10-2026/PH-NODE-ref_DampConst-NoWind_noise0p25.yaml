@@ -1,0 +1,56 @@
+created_at: '2026-10-04T15:00:00'
+data:
+  dataset_path: datasets/PENDULUM-DATASET-ODE-DissipationConstant-0p5-5s-G0p5-0p7-0p8/ODE-DissipationConstant-0p5-5s-G0p5-0p7-0p8_obs-noise0p25.pkl
+  substeps: 1
+  window_points: 5
+  window_stride: 1
+experiment:
+  name_suffix: PH-NODE-ref_DampConst-NoWind_noise0p25
+  notes:
+  - '6 Oct 2026: PH-NODE-ref = Duong & Atanasov''s DissipativeSO3HamNODE (3782
+    params, orthogonal init gain 0.5) trained their way (5-sample chunks, full batch,
+    Adam 1e-3 constant, weight decay 1e-4, no clipping) on DampConst-NoWind, obs noise
+    0.25, 5000 steps, float32, no pretraining.'
+  root: experiments/pendulum_so3/campaign_04-10-2026/runs
+model:
+  family: nn
+  feature_count: 64
+  initial_D: 1.0
+  initial_M_inverse: 1.0
+  initial_control_gp_mean_scale: 0.0
+  initial_diffusion: 0.1
+  initial_log_std: -5.0
+  initial_observation_sigma: 0.1
+  initial_randomness: 1.0
+  integrator: rk4
+  matern_length_scale: 1.0
+  matern_smoothness: 2.5
+  nn_hidden: 20
+  nn_layers: 2
+  wind: false
+  nn_architecture: duong
+  nn_init_gain: 0.5
+optimizer:
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  final_learning_fraction: 0.1
+  gradient_clip_norm: null
+  learning_rate: 0.001
+  level_learning_rate: 0.25
+  schedule: constant
+  weight_decay: 0.0001
+runtime:
+  enable_x64: false
+  gpu: 1
+schema: ph_node/pendulum/v1
+training:
+  batch_size: 1000000
+  checkpoint_every: 1000
+  eval_every: 500
+  eval_windows: null
+  kl_anneal_steps: 1000
+  kl_beta_max: 1.0
+  loss: rollout_reference
+  seed: 0
+  total_steps: 5000

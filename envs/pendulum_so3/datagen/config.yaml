@@ -5,7 +5,7 @@
 
 name: CUSTOM                      # any text -> folder and file names
 
-integrator: lie_imex              # lie_imex: friction implicit (default) | lie_heun: fully explicit (all older datasets)
+integrator: lie_imex              # Lie-IMEX: friction implicit, everything else explicit (the only option)
 dt: 0.05                          # time between recorded samples (s)
 substeps: 10                      # integrator steps per sample
 timesteps: 20                     # recorded samples per trajectory
@@ -21,6 +21,7 @@ plant:
 # Damping (friction torque).
 dissipation:
   type: constant                  # none | constant: -c w | varying: -c (1 + 0.5 height + 0.5 tanh|w|) w
+                                  #   | rate_dependent: -c (1 + |w|) w (the quadrotor's law)
   c: 0.5                          # coefficient; a number or [cx, cy, cz]
 
 # Wind = the SDE noise term: a world-frame force sigma dW on the bob (Stratonovich).
@@ -48,7 +49,7 @@ control:
     - [2.0, 2.0, 2.0]
   random_u: true                  # true: u ~ U(-scale, scale) per axis, new draw every sample (batches only change the seed)
   random_u_scale: 7.0
-  g_diag: [0.5, 0.7, 0.1]         # input gain G = diag(...): torque = G u
+  g_diag: [0.5, 0.7, 0.8]         # input gain G = diag(...): torque = G u
 
 validity:
   max_speed: 8.0                  # a trajectory with any |w_i| >= max_speed is redrawn (new seed)

@@ -1,11 +1,14 @@
-# Config for generate_dataset.py (PyBullet quadrotor datasets).
+# Default config for generate_dataset.py (PyBullet quadrotor datasets). It is identical to
+# configs/SDE-DiffusionConstant-0p5-DissipationConstant-0p5-5s-NoisyPID0p01-50Hz-300flights.yaml: 300 flights of 5 s at 50 Hz,
+# constant damping 0.5, constant wind 0.5, fast manoeuvres and vertical excitation of body z. Copy it to configs/<name>.yaml
+# for a new dataset; every switch is documented below.
 # Run:    python envs/quadrotor_se3_pybullet/datagen/generate_dataset.py --config envs/quadrotor_se3_pybullet/datagen/config.yaml
 # Output: datasets/QUADROTOR-DATASET-<name>/<name>_CF2P_<T>s_h<h>_<variant>.pkl   (refuses to overwrite; add --force)
 # Notation: [a, b] = drawn uniformly from a to b.  v_b, w_b = body linear / angular velocity.
 
-name: CUSTOM                      # any text -> folder and file names
+name: SDE-DiffusionConstant-0p5-DissipationConstant-0p5-5s-NoisyPID0p01-50Hz-300flights  # any text -> folder and file names
 
-trajectory_set: hard              # hard      : train + test splits, hard library (+ noisy copies)
+trajectory_set: hard+eval         # hard      : train + test splits, hard library (+ noisy copies)
                                   # eval      : one clean split, eval library (unseen shapes), key heldout_trajectories
                                   # hard+eval : both of the above
 
@@ -23,24 +26,24 @@ dissipation:
 diffusion:
   hold_seconds: 0.01              # constant / dependent types: new random draw every hold_seconds
   linear:
-    type: none                    # none | constant: dv_b += sigma dW | rate_dependent: dv_b += sigma (1+gain |v_b|) dW | ou
-    sigma: 0.25                   # constant, rate_dependent (m s^-1.5)
+    type: constant                # none | constant: dv_b += sigma dW | rate_dependent: dv_b += sigma (1+gain |v_b|) dW | ou
+    sigma: 0.5                    # constant, rate_dependent (m s^-1.5)
     gain: 0.5                     # rate_dependent only
     sigma_fraction_of_weight: 0.1 # ou only: gust force std / (m g)
     time_constant_seconds: 0.5    # ou only: gust correlation time
   angular:
-    type: none                    # none | constant: dw_b += sigma dW | rate_dependent: dw_b += sigma (1+gain |w_b|) dW | ou
-    sigma: 0.4                    # constant, rate_dependent (rad s^-1.5); ou: angular-acceleration std (rad s^-2)
+    type: constant                # none | constant: dw_b += sigma dW | rate_dependent: dw_b += sigma (1+gain |w_b|) dW | ou
+    sigma: 0.5                    # constant, rate_dependent (rad s^-1.5); ou: angular-acceleration std (rad s^-2)
     gain: 0.25                    # rate_dependent only
     time_constant_seconds: 0.5    # ou only
 
 # Observation noise, added after the flights to train and test only (eval stays clean). One extra pickle per setting.
 observation_noise:
-  absolute_levels: [0.05, 0.1, 0.25, 0.5]   # one pickle per level: Gaussian noise std on x, v_b, w_b; rotation noise in rad
+  absolute_levels: [0.25]   # one pickle per level: Gaussian noise std on x, v_b, w_b; rotation noise in rad
   train_noise_seed: 0
   test_noise_seed: 1999
   sensor:                         # one extra pickle imitating motion capture + gyro
-    enabled: true
+    enabled: false
     position_sigma: 0.005         # m
     attitude_sigma_deg: 1.0
     velocity_from: central_difference   # central_difference | savitzky_golay (of noisy positions)
@@ -54,8 +57,8 @@ recording:
   kick_alignment: sample          # sample: kicks start and end on sample boundaries, u exact | none: old timing
 
 seeds:
-  train: [300, 301, 302, 303, 304]  # one seed per group of flights_per_seed flights
-  test: [399]
+  train: [300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329]  # one seed per group of flights_per_seed flights (300 flights)
+  test: [398, 399]
   eval: [498, 499]
   flights_per_seed: 10
   flight_seed_base: 7000000       # flight seed = base + 1000*seed + index + 100000*attempt
@@ -64,7 +67,7 @@ plant:
   drone_model: CF2P               # CF2P only (the recorded wrench assumes its + frame)
   physics: PYB                    # PYB (tested) | DYN, PYB_GND, PYB_DRAG, PYB_DW, PYB_GND_DRAG_DW (gym-pybullet-drones, untested)
   physics_hz: 1000                # simulation rate
-  sample_hz: 100                  # recording and PID rate; must divide physics_hz
+  sample_hz: 50                   # recording and PID rate; must divide physics_hz
   contact_free: true              # true: no ground plane, zero contact friction
 actuator:
   input_mode: wrench              # wrench | motor: label in settings only; u is always the wrench [T, tau]
@@ -73,15 +76,20 @@ actuator:
 controller:
   type: dsl_pid                   # dsl_pid only (label)
   gain_scale: 0.5                 # multiplies every DSL PID gain
+  measurement_noise:              # what the controllers read
+    enabled: true                # false: the true state | true: a noisy measurement,
+                                  #   drawn once per sample (independent of the 0.25 observation noise below)
+    sigma: 0.01                   # noise level (enabled only): x, v_b, w_b + sigma eps; R Exp(eta). The raw PID flies
+                                  #   with 0.01, barely with 0.03, not with 0.1 or more
 flight:
-  duration_seconds: 10.0
+  duration_seconds: 5.0
 initial_state:                    # random start of each flight
   position_box:
     x: [-2.0, 2.0]
     y: [-2.0, 2.0]
     z: [1.5, 4.0]
   max_tilt_deg: 30
-  max_speed: 2.0
+  max_speed: 4.0
   max_angular_rate: 1.0
 envelope:                         # flight box: targets are clipped to it; the speed/tilt/rate limits only mark the PDF plots
   position_box:
@@ -89,13 +97,13 @@ envelope:                         # flight box: targets are clipped to it; the s
     y: [-3.5, 3.5]
     z: [0.5, 5.0]
   max_tilt_deg: 45
-  max_speed: 3.0
+  max_speed: 6.0
   max_angular_rate: 6.0
 gates:                            # a flight breaking any gate is redrawn (next attempt)
   max_tilt_deg: 90
   min_altitude: 0.3
-  envelope_margin: 0.5            # max distance outside the envelope box (m)
-  max_saturation_fraction: 0.05   # max share of steps with a motor at its limit
+  envelope_margin: 1.5            # max distance outside the envelope box (m)
+  max_saturation_fraction: 0.10   # max share of steps with a motor at its limit
   max_attempts: 20
 
 # Manoeuvre segments. Each flight chains random segments (chosen by weight) until the flight is full.
@@ -113,22 +121,27 @@ libraries:
   hard:
     waypoint_hop:
       duration: [1.5, 2.5]
-      max_distance: 3.5
+      max_distance: 6.0
       weight: 1.0
     figure_eight:
       duration: [3.0, 4.0]
-      radius: [1.0, 2.0]
-      speed: [1.0, 3.0]
+      radius: [1.5, 2.5]
+      speed: [2.5, 5.0]
       weight: 1.0
     circle:
       duration: [3.0, 4.0]
-      radius: [1.0, 2.0]
-      speed: [1.0, 3.0]
+      radius: [1.5, 2.5]
+      speed: [2.5, 5.0]
       weight: 1.0
     vertical_step:
       duration: [1.5, 2.0]
-      height: [1.5, 2.5]
-      weight: 0.8
+      height: [3.0, 4.0]
+      weight: 2.0
+    bounce:
+      duration: [3.0, 4.0]
+      height: [1.0, 2.0]
+      period: [1.0, 1.6]
+      weight: 1.5
     yaw_turn:
       duration: [1.0, 2.0]
       rate: [1.0, 4.0]
@@ -145,7 +158,7 @@ libraries:
       weight: 1.2
     coast:
       duration: [1.5, 2.5]
-      entry_speed: [2.0, 3.0]
+      entry_speed: [3.5, 5.0]
       entry_seconds: 2.0
       entry_radius: 1.5
       kp: 0.0015
@@ -155,7 +168,7 @@ libraries:
       duration: [1.5, 2.5]
       rate: [2.0, 4.0]
       kick_seconds: 0.1
-      entry_speed: [1.5, 2.5]
+      entry_speed: [3.0, 4.5]
       entry_seconds: 1.5
       entry_radius: 1.5
       kp: 0.0015
@@ -197,11 +210,6 @@ libraries:
       f0: 0.2
       f1: 1.5
       weight: 1.0
-    bounce:
-      duration: [3.0, 4.0]
-      height: [0.3, 0.6]
-      period: [1.0, 1.6]
-      weight: 1.0
     tumble:
       duration: [2.0, 3.0]
       rate: [3.0, 5.0]
@@ -217,11 +225,3 @@ output:
   write_pdf: true                 # write the dataset_analysis.pdf
   pdf_example_flights: 4          # example flights plotted in the PDF
 
-# Settings that rebuild the existing datasets exactly (always kick_alignment: none; others as above):
-#   HARD     hard;      damping pybullet_builtin; wind none; kick_torque last_step
-#   EVALSET  eval;      as HARD + seeds.eval [498, 499], gates.max_saturation_fraction 0.08, envelope.max_speed 3.5,
-#                       pdf_example_flights 6
-#   WIND     hard+eval; as HARD + seeds.eval [499], linear wind ou with sigma_fraction_of_weight 0.1 (WIND25: 0.25)
-#   WINDSDE* hard+eval; damping constant; wind constant / rate_dependent; seeds.eval [499]; gates.envelope_margin 1.5;
-#            absolute_levels [0.25], sensor off; kick_torque last_step for HI, LO, C05, C05A005, else interval_mean;
-#            sigma, gain and physics_hz per variant: datasets/QUADROTOR-DATASET-WINDSDE/*_config_used.yaml

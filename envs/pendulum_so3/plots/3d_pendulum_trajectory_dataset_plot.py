@@ -3,12 +3,12 @@
 
 Generates TWO output figures per dataset:
 
-  Figure 1 — Original Euler-angle phase space
+  Figure 1 — Euler-angle phase space
      6 rows × num_us cols
      Per-axis (Euler angle, body angular velocity) projections.
      Suffers from gimbal lock at pitch=±π/2; useful for quick EDA.
 
-  Figure 2 — SO(3)-aware phase space (new)
+  Figure 2 — SO(3)-aware phase space
      8 rows × num_us cols
      For each of {Train, Test}:
        - Bob trajectory on S² (3D, no parameterization artifacts)
@@ -86,12 +86,11 @@ def _resolve_dataset_path(save_dir, filename):
     return filename, file_path
 
 
-# ─────────────────── Original: Euler-angle phase space ───────────────────
+# ─────────────────── Euler-angle phase space ───────────────────
 
 def plot_3d_phase_space(save_dir, num_trajs_to_plot=15, filename=None):
     """Per-axis (Euler angle, body ω_i) phase portrait.
-    Mirrors the original plot but with vectorized Euler conversion and a
-    sequential colormap (viridis) since ||u|| is non-negative.
+    Lines are coloured by ||u|| with a sequential colormap (viridis).
     """
     filename, file_path = _resolve_dataset_path(save_dir, filename)
     if file_path is None:
@@ -182,7 +181,7 @@ def plot_3d_phase_space(save_dir, num_trajs_to_plot=15, filename=None):
     plt.close(fig)
 
 
-# ─────────────────── New: SO(3)-aware phase space ───────────────────
+# ─────────────────── SO(3)-aware phase space ───────────────────
 
 def plot_so3_phase_space(save_dir, num_trajs_to_plot=15, filename=None,
                          m=1.0, l=1.0):

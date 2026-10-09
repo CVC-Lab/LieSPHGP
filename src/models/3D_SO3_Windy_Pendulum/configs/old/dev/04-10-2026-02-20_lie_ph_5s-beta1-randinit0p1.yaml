@@ -1,0 +1,45 @@
+schema: lie_ph/pendulum/v1
+created_at: '2026-10-04T02:20:00'
+data:
+  # 5 s trajectories; obs noise 0.25; wind 0.5 (constant diffusion); damping 0.5
+  dataset_path: datasets/PENDULUM-DATASET-SDE-DiffusionConstant-0p5-DissipationConstant-0p5-5s-G0p5-0p7-0p8/SDE-DiffusionConstant-0p5-DissipationConstant-0p5-5s-G0p5-0p7-0p8_obs-noise0p25.pkl
+  window_points: 41                # 2 s training windows cut inside each 5 s trajectory
+  window_stride: 30                # 1.5 s between window starts -> 0.5 s (25 %) overlap, 3 windows per trajectory
+  substeps: 1                       # one Lie-IMEX step per sample (dt = 0.05 s)
+model:
+  feature_count: 64                 # smooth Matern random features per GP (features.py)
+  matern_smoothness: 2.5
+  matern_length_scale: 1.0
+  initial_log_std: -5.0             # GP weight posterior log-std at start
+  initial_M_inverse: 1.0            # neutral start M^-1 = 1 * I (gauge choice, not a physical value)
+  initial_D: 1.0                    # neutral start D = 1 * I
+  initial_control_gp_mean_scale: 0.0  # g starts exactly at its level (zero)
+  initial_diffusion: 0.1            # Sigma per axis at start
+  initial_observation_sigma: 0.1    # sigma_obs per block at start (learned)
+  initial_randomness: 0.1           # every level and noise scale starts at its neutral value + this * N(0, 1) (seed-dependent)
+training:
+  seed: 0
+  total_steps: 5000                 # fixed budget, identical in every experiment; the step-5000 model is the result
+  batch_size: 64                    # windows per step (~3000 predicted observations per step)
+  eval_every: 500                   # noisy-test EKF NLL, logged as a monitor only
+  eval_windows: null                # null = all noisy test windows
+  checkpoint_every: 1000
+  kl_beta_max: 1.0                  # weight of KL / (N_obs d); 1.0 = the ELBO
+  kl_anneal_steps: 1000
+optimizer:
+  learning_rate: 0.003              # Adam on GP weights and noise scales
+  final_learning_fraction: 0.1      # cosine decay of BOTH optimisers to this fraction at total_steps
+  level_learning_rate: 0.25         # Prodigy on the level scalars, one instance per subnetwork
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  gradient_clip_norm: 1.0
+runtime:
+  gpu: 0
+  enable_x64: false
+experiment:
+  root: experiments/pendulum_so3/train_runs
+  name_suffix: EKF-5s-W2s-ov25-B64-5k-beta1-randinit0p1
+  notes:
+  - 'Protocol agreed with the user on 3 Oct 2026: 5 s trajectories, 2 s windows with 25 % overlap, 1 Lie-IMEX step per sample, 5000 steps, final model reported (no best-checkpoint selection), cosine decay on Adam and Prodigy.'
+  - 'Random-start test (4 Oct 2026): initial_randomness = 0.1; otherwise identical to pilot run B (beta 1, seed 0).'

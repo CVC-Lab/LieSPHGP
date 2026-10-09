@@ -32,7 +32,7 @@ PROJECT_ROOT = THIS_DIR.parents[2]  # envs/rov_se3_marinarium/datagen -> project
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from envs.rov_se3_port_ham.bluerov2 import PUBLISHED, THRUSTERS, T200, allocation_matrix  # noqa: E402
+from envs.rov_se3_marinarium.bluerov2 import PUBLISHED, THRUSTERS, T200, allocation_matrix  # noqa: E402
 
 INPUTS = ("commands", "thrust", "wrench")
 CONTROL_LAYOUT = {
@@ -128,12 +128,20 @@ class Recording:
         lin = lambda arr: np.stack([np.interp(times, self.t, arr[:, j]) for j in range(arr.shape[1])], 1)
         omega = (lin(self.omega_body) if self.cfg["angular_rate"] == "mocap"
                  else np.stack([np.interp(times, self.imu_t, self.gyro[:, j]) for j in range(3)], 1))
-        # mean of the per-message input over (t_k - h, t_k]
+        # mean of the per-message input over (t_k - h, t_k]; an interval without any motor message (the ~100 Hz stream
+        # has gaps up to ~40 ms) gives u = 0. Kept for reproducibility of the stored datasets; counted per piece in the
+        # audits as `input_intervals_without_motor_message` (see empty_input_intervals).
         csum = np.vstack([np.zeros(self._controls.shape[1]), np.cumsum(self._controls, 0)])
         hi = np.searchsorted(self.motor_t, times, side="right"); lo = np.searchsorted(self.motor_t, times - h, side="right")
         count = np.maximum(hi - lo, 1)[:, None]
         u = (csum[hi] - csum[lo]) / count
         return np.hstack([lin(self.position), rot.reshape(len(times), 9), lin(self.v_body), omega, u])
+
+    def empty_input_intervals(self, times: np.ndarray) -> int:
+        """Number of sample intervals (t_k - h, t_k] that contain no motor message (their u is 0 in `rows`)."""
+        h = 1.0 / float(self.cfg["sample_hz"])
+        hi = np.searchsorted(self.motor_t, times, side="right"); lo = np.searchsorted(self.motor_t, times - h, side="right")
+        return int(np.sum(hi == lo))
 
     def disarmed_fraction(self, times: np.ndarray) -> np.ndarray:
         h = 1.0 / float(self.cfg["sample_hz"])
@@ -145,7 +153,7 @@ class Recording:
         h, cfg = 1.0 / float(self.cfg["sample_hz"]), self.cfg
         length = int(round(cfg["trajectory_seconds"] * cfg["sample_hz"])) + 1
         stride = int(round(cfg["trajectory_stride_seconds"] * cfg["sample_hz"]))
-        out, used, dropped_disarmed = [], 0.0, 0
+        out, used, dropped_disarmed, empty_input = [], 0.0, 0, 0
         for a, b in self.segments(t_lo, t_hi):
             times = np.arange(a + h, b + 1e-9, h)                    # first row needs one full input interval
             for s in range(0, len(times) - length + 1, stride):
@@ -153,11 +161,13 @@ class Recording:
                 if cfg["disarmed"] == "drop" and np.any(self.disarmed_fraction(chunk[1:]) > 0):
                     dropped_disarmed += 1; continue
                 out.append(self.rows(chunk)); used += chunk[-1] - chunk[0]
+                empty_input += self.empty_input_intervals(chunk[1:])   # row 0's input is never used
         span = t_hi - t_lo
         return out, {"recording": self.name, "seconds": span, "seconds_in_trajectories": used,
                      "excluded_intervals": int(np.sum((self.gap_start > t_lo) & (self.gap_start < t_hi))),
                      "pose_glitches_in_recording": self.glitches,
-                     "trajectories": len(out), "dropped_for_disarmed_motors": dropped_disarmed}
+                     "trajectories": len(out), "dropped_for_disarmed_motors": dropped_disarmed,
+                     "input_intervals_without_motor_message": empty_input}
 
     def stream(self, t_lo: float, t_hi: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         h = 1.0 / float(self.cfg["sample_hz"])
@@ -276,6 +286,10 @@ def main() -> None:
         print(f"  {part:5s} {arr.shape}  from {[p['recording'] for p in pieces]}  "
               f"{sum(p['seconds_in_trajectories'] for p in pieces):.0f} of {sum(p['seconds'] for p in pieces):.0f} s used, "
               f"{sum(p['excluded_intervals'] for p in pieces)} dropout / glitch intervals avoided")
+        empty = sum(p["input_intervals_without_motor_message"] for p in pieces)
+        if empty:
+            print(f"        WARNING: {empty} input intervals without a motor message (u = 0 there), "
+                  f"{empty / max(arr.shape[0] * (arr.shape[1] - 1), 1):.3%} of the input rows")
         if f"{part}_stream" in payload:
             print(f"        stream {payload[f'{part}_stream'].shape}, {payload[f'{part}_stream_valid'].mean():.1%} valid")
 

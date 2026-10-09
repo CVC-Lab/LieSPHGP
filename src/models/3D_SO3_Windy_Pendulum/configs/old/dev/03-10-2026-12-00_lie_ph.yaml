@@ -1,0 +1,43 @@
+schema: lie_ph/pendulum/v1
+created_at: '2026-10-03T12:00:00'
+data:
+  # obs noise 0.25 (R Exp(eps) on attitude, + eps on omega); wind 0.5 (constant diffusion); damping 0.5
+  dataset_path: datasets/PENDULUM-DATASET-SDE-DiffusionConstant-0p5-DissipationConstant-0p5/SDE-DiffusionConstant-0p5-DissipationConstant-0p5_obs-noise0p25.pkl
+  window_points: 20                 # the whole 20-sample trajectory is one window
+  window_stride: 20
+  substeps: 10                      # model Lie-IMEX steps per observation interval (dt = 0.05 s -> h = 5 ms)
+model:
+  feature_count: 64                 # smooth Matern random features per GP (features.py), inputs vec(R) or omega
+  matern_smoothness: 2.5
+  matern_length_scale: 1.0
+  initial_log_std: -5.0             # GP weight posterior log-std at start
+  initial_M_inverse: 1.0            # neutral start M^-1 = 1 * I (gauge choice, not a physical value)
+  initial_D: 1.0                    # neutral start D = 1 * I
+  initial_control_gp_mean_scale: 0.0  # g starts exactly at its level (zero)
+  initial_diffusion: 0.1            # Sigma per axis at start
+  initial_observation_sigma: 0.1    # sigma_obs per block at start (learned)
+training:
+  seed: 0
+  total_steps: 10000
+  batch_size: 128                   # windows per step (one window = one 20-point trajectory, 0.95 s)
+  eval_every: 250
+  eval_windows: null                # null = the whole noisy test split
+  checkpoint_every: 1000
+  kl_beta_max: 0.1
+  kl_anneal_steps: 1000
+optimizer:
+  learning_rate: 0.003              # Adam on GP weights and noise scales, cosine decay to final_learning_fraction
+  final_learning_fraction: 0.1
+  level_learning_rate: 0.25         # Prodigy on the level scalars, one instance per subnetwork
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  gradient_clip_norm: 1.0
+runtime:
+  gpu: 0
+  enable_x64: false
+experiment:
+  root: experiments/pendulum_so3/train_runs
+  name_suffix: EKF-LieIMEX-obs0p25-wind0p5-diss0p5-B128-10k
+  notes:
+  - 'User request (3 Oct 2026): same algorithm as the quadrotor (Lie-IMEX SDE + EKF marginal likelihood), no physical priors.'

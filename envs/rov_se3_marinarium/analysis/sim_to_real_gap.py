@@ -9,7 +9,7 @@ Writes experiments/rov_se3/analysis/sim_to_real_gap/{report.pdf, results.json, r
    open loop from every test row with the recorded inputs; endpoint RMSE_H = sqrt(sum ||x_{k+H} - xhat_{k+H|k}||^2 / ((N-H) n))
    for H = 1, 10, 100 (0.02, 0.2, 2 s).
      - their Fossen baseline, their code (fossen/BlueROV2.py: own thrust polynomial + 3rd-order motor lag, explicit Euler)
-     - our simulator (envs/rov_se3_port_ham/bluerov2.py): same published parameters, T200 thrust at the measured battery
+     - the published model (envs/rov_se3_marinarium/bluerov2.py): same published parameters, T200 thrust at the measured battery
        voltage, PX4 thruster geometry, Lie-group Heun (10 substeps per sample)
      - persistence (x_{k+H} = x_k): the floor any model must beat
 2  Clean protocol: the dropout- and glitch-free test trajectories of datasets/ROV-MARINARIUM-DATASET-PAPER-MANUAL,
@@ -36,7 +36,7 @@ PROJECT_ROOT = THIS_DIR.parents[2]
 RAW = ENV_DIR / "marinarium_raw"
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-from envs.rov_se3_port_ham.bluerov2 import BlueROV2, T200  # noqa: E402
+from envs.rov_se3_marinarium.bluerov2 import BlueROV2, T200  # noqa: E402
 
 CSV = RAW / "rosbags/rosbag2_2025_11_06/rosbag2_2025_11_06-manual/koopman_dataset_50Hz.csv"
 NPZ = RAW / "npz/manual.npz"
@@ -86,6 +86,21 @@ def euler_continuous(R: np.ndarray, reference: np.ndarray) -> np.ndarray:
     """ZYX Euler (phi, theta, psi) of R on the 2 pi branch closest to `reference` (the unwrapped Euler of the CSV)."""
     zyx = Rotation.from_matrix(R).as_euler("ZYX")[:, ::-1]
     return reference + (zyx - reference + np.pi) % (2 * np.pi) - np.pi
+
+
+def load_dataset() -> dict:
+    """The clean Marinarium dataset; its u columns must be thruster forces (input: thrust) or the body wrench."""
+    data = pickle.load(DATASET.open("rb"))
+    mode = data["settings"].get("input_mode")
+    if mode not in ("thrust", "wrench"):
+        raise ValueError(f"{DATASET.name}: input_mode {mode!r}; this analysis needs input: thrust (or wrench). "
+                         "Regenerate it with envs/rov_se3_marinarium/datagen/config.yaml.")
+    return data
+
+
+def body_wrench(env: BlueROV2, data: dict, u: np.ndarray) -> np.ndarray:
+    """Generalized force of one recorded input row: E @ thrust (input: thrust) or the wrench itself."""
+    return env.E @ u if data["settings"]["input_mode"] == "thrust" else u
 
 
 # --------------------------------------------------------------------------- 1 paper protocol
@@ -140,7 +155,7 @@ def paper_protocol(run_their_fossen: bool) -> dict:
 
 # --------------------------------------------------------------------------- 2 clean protocol
 def clean_protocol() -> dict:
-    data = pickle.load(DATASET.open("rb"))
+    data = load_dataset()
     F, h = data["test_trajectories"], float(data["settings"]["sample_dt"])
     env = BlueROV2()
     horizons_s = (0.1, 0.5, 1.0, 2.0, 5.0)
@@ -150,7 +165,7 @@ def clean_protocol() -> dict:
         k = int(round(H / h)); sel = [(i, s) for i, s in starts if s + k < F.shape[1]]
         if not sel: continue
         x0 = np.stack([F[i, s] for i, s in sel]); target = np.stack([F[i, s + k] for i, s in sel])
-        tau = np.stack([np.stack([env.E @ F[i, s + j + 1, 18:] for i, s in sel]) for j in range(k)])
+        tau = np.stack([np.stack([body_wrench(env, data, F[i, s + j + 1, 18:]) for i, s in sel]) for j in range(k)])
         p, R, nu = rollout_ours(env, x0[:, :3], x0[:, 3:12].reshape(-1, 3, 3), x0[:, 12:18], tau, h)[-1]
         R_t = target[:, 3:12].reshape(-1, 3, 3)
         att = np.degrees(Rotation.from_matrix(np.einsum("kji,kjl->kil", R, R_t)).magnitude())
@@ -165,14 +180,14 @@ def clean_protocol() -> dict:
 
 # --------------------------------------------------------------------------- 3 per-axis gap
 def axis_gap() -> dict:
-    data = pickle.load(DATASET.open("rb"))
+    data = load_dataset()
     env, h = BlueROV2(), float(data["settings"]["sample_dt"])
     meas, thr, drag, rest = [], [], [], []
     for f in np.concatenate([data["train_trajectories"], data["test_trajectories"]]):
         for k in range(5, f.shape[0] - 5, 2):
             J = range(k - 5, k + 5)
             meas.append((f[k + 5, 12:18] - f[k - 5, 12:18]) / (10 * h))
-            thr.append(np.mean([env.E @ f[j + 1, 18:] / env.M for j in J], 0))
+            thr.append(np.mean([body_wrench(env, data, f[j + 1, 18:]) / env.M for j in J], 0))
             drag.append(np.mean([-env.damping_force(f[j, 12:18]) / env.M for j in J], 0))
             rest.append(np.mean([(env.coriolis_force(f[j, 12:18]) + env.restoring(f[j, 3:12].reshape(3, 3))) / env.M for j in J], 0))
     m, T, D, C = map(np.array, (meas, thr, drag, rest))
@@ -189,12 +204,12 @@ def axis_gap() -> dict:
 
 # --------------------------------------------------------------------------- figures
 def example_rollouts(pdf, plt) -> None:
-    data = pickle.load(DATASET.open("rb"))
+    data = load_dataset()
     F, h, env = data["test_trajectories"], float(data["settings"]["sample_dt"]), BlueROV2()
     picks = [0, F.shape[0] // 2, F.shape[0] - 1]
     fig, axes = plt.subplots(2, 3, figsize=(11, 7))
     for col, i in enumerate(picks):
-        f = F[i]; tau = np.stack([[env.E @ f[k + 1, 18:]] for k in range(f.shape[0] - 1)])
+        f = F[i]; tau = np.stack([[body_wrench(env, data, f[k + 1, 18:])] for k in range(f.shape[0] - 1)])
         traj = rollout_ours(env, f[:1, :3], f[:1, 3:12].reshape(1, 3, 3), f[:1, 12:18], tau, h)
         p = np.vstack([f[:1, :3], np.stack([s[0][0] for s in traj])]); t = np.arange(len(p)) * h
         ax = axes[0, col]; ax.plot(f[:, 1], f[:, 0], "k", lw=1.5, label="real"); ax.plot(p[:, 1], p[:, 0], "C3--", lw=1.2, label="published physics")

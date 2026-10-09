@@ -1,0 +1,51 @@
+schema: lie_ph/pendulum/v1
+created_at: '2026-10-08T14:00:00'
+data:
+  dataset_path: datasets/PENDULUM-DATASET-SDE-DiffusionConstant-0p5-DissipationVarying-0p5-5s-G0p5-0p7-0p8/SDE-DiffusionConstant-0p5-DissipationVarying-0p5-5s-G0p5-0p7-0p8_obs-noise0p25.pkl
+  window_points: 41
+  window_stride: 30
+  substeps: 1
+model:
+  feature_count: 64
+  matern_smoothness: 2.5
+  matern_length_scale: 1.0
+  initial_log_std: -5.0
+  initial_M_inverse: 1.0
+  initial_D: 1.0
+  initial_control_gp_mean_scale: 0.0
+  initial_diffusion: 0.1
+  initial_observation_sigma: 0.1
+  family: nn
+  wind: false
+  integrator: lie_imex
+  initial_randomness: 1.0
+  nn_hidden: 20
+  nn_layers: 2
+training:
+  seed: 0
+  total_steps: 5000
+  batch_size: 64
+  eval_every: 500
+  eval_windows: null
+  checkpoint_every: 1000
+  kl_beta_max: 1.0
+  kl_anneal_steps: 1000
+  loss: rollout
+optimizer:
+  learning_rate: 0.003
+  final_learning_fraction: 0.1
+  level_learning_rate: 0.25
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  gradient_clip_norm: 1.0
+runtime:
+  gpu: 0
+  enable_x64: false
+experiment:
+  root: experiments/pendulum_so3/varying_08-10-2026/runs
+  name_suffix: Lie-PH-NN-ODE_DampVarying-Wind_noise0p25
+  notes:
+  - Lie-PH-NN-ODE on the varying-damping wind dataset (tau_D = -c (1 + 0.5 h + 0.5
+    tanh|omega|) omega, c = 0.5, wind 0.5, G = diag(0.5, 0.7, 0.8)), observation noise
+    0.25; otherwise the campaign's Lie-PH-NN-ODE settings.

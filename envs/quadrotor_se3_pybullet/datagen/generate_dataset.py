@@ -3,12 +3,11 @@
     python envs/quadrotor_se3_pybullet/datagen/generate_dataset.py --config envs/quadrotor_se3_pybullet/datagen/config.yaml
 
 Writes datasets/QUADROTOR-DATASET-<name>/<name>_<drone>_<T>s_h<h>_<variant>.pkl (+ audits.json, config_used.yaml,
-generation.log, dataset_analysis.pdf). It replaces the five copied generators (HARD, EVALSET, WIND, WIND25, WINDSDE); every
-one of those datasets is rebuilt bit-for-bit by setting the config switches below (see the table at the top of config.yaml).
+generation.log, dataset_analysis.pdf). The named configs in datagen/configs/ rebuild each dataset of datasets/.
 
 Plant (gym-pybullet-drones CtrlAviary, one stepSimulation per physics step dt = 1/physics_hz):
-    m dv_b = (-m w_b x v_b - m g R^T e3 + T e3 + F_diss + F_kick) dt + F_wind dt
-    J dw_b = (-w_b x J w_b + tau + tau_kick + tau_diss) dt + tau_wind dt
+    m dv_b = (-m w_b x v_b - m g R^T e3 + T e3 + F_diss) dt + F_wind dt
+    J dw_b = (-w_b x J w_b + tau + tau_kick + tau_diss) dt + tau_wind dt          (kicks are torques only)
 driven by the DSL PID (gain_scale) tracking random manoeuvre sequences, recorded at sample_hz.
 
 Switches
@@ -28,9 +27,19 @@ Switches
                                      (linear: s = sigma_fraction_of_weight * g, angular: s = sigma in rad/s^2)
   recording.kick_torque
                    interval_mean     recorded torque = motors + kick averaged over the sample interval (correct)
-                   last_step         recorded torque = motors + kick of the last physics step (HARD / EVALSET / WIND legacy)
+                   last_step         recorded torque = motors + kick of the last physics step
+  controller.measurement_noise  (optional; absent or enabled: false = the controllers read the TRUE state)
+                   enabled: true     every controller (PID, coast PD, segment anchors) reads a noisy measurement of the
+                                     state, drawn once per sample with the observation-noise model at level `sigma`
+                                     (x, v_b, w_b + sigma eps; R Exp(eta)). If `sigma` is one of
+                                     observation_noise.absolute_levels, the train/test variant of that level IS this
+                                     measurement (the control is then a function of the recorded observations only);
+                                     every other level gets independent noise as usual. The raw DSL PID flies with
+                                     sigma 0.01, barely with 0.03 and not with 0.1 or more (it differentiates the angles).
+                                     With the true state, the control carries a noise-free trace of the last wind gust and
+                                     a model trained on noisy observations learns a spurious torque -> force map.
   recording.kick_alignment
-                   none              a kick starts at its segment's start time, usually mid-sample (all existing datasets)
+                   none              a kick starts at its segment's start time, usually mid-sample
                    sample            a kick starts on the next sample boundary and lasts whole samples, so it is constant inside
                                      every recorded interval and the stored u is exact (both kick_torque rules then agree)
 """
@@ -62,9 +71,7 @@ from gym_pybullet_drones.envs.CtrlAviary import CtrlAviary  # noqa: E402
 from gym_pybullet_drones.utils.enums import DroneModel, Physics  # noqa: E402
 from scipy.spatial.transform import Rotation  # noqa: E402
 
-from src.models.SE3_Quadrotor.comparision.report_controller import (  # noqa: E402
-    configure_contact_free_dynamics, motor_mixer, remove_ground_plane,
-)
+from envs.quadrotor_se3_pybullet.plant import configure_contact_free_dynamics, motor_mixer, remove_ground_plane  # noqa: E402
 
 STATE_DIM, CONTROL_DIM = 18, 4          # x(3) vec(R)(9) v_b(3) omega_b(3) | wrench(4)
 EUCLIDEAN = np.asarray([0, 1, 2, 12, 13, 14, 15, 16, 17])
@@ -74,8 +81,8 @@ DIFFUSION_TYPES = ("none", "constant", "rate_dependent", "ou")
 KICK_SEGMENTS = ("aggressive_recovery", "yaw_kick", "coast_yaw")
 LOG_LINES: list[str] = []
 
-# Split label -> key prefix in the pickle. "test" keeps the legacy test_* keys, the eval split the heldout_* keys,
-# so every model loader and report selector (@test, @heldout) works unchanged.
+# Split label -> key prefix in the pickle: train x, test test_*, eval heldout_* (read by the model loaders and the
+# report selectors @test, @heldout).
 SPLIT_PREFIX = {"train": "", "test": "test_", "eval": "heldout_"}
 SPLIT_TRAJECTORY_KEY = {"train": "train_trajectories", "test": "test_trajectories", "eval": "heldout_trajectories"}
 SPLIT_WINDOW_KEY = {"train": "x", "test": "test_x", "eval": "heldout_x"}
@@ -101,9 +108,7 @@ def validate(cfg: dict) -> None:
     for channel in ("linear", "angular"):
         for block in ("dissipation", "diffusion"):
             if "type" not in cfg[block][channel]:
-                raise ValueError(f"{block}.{channel} needs a `type:` key (it was called `law:` before 2 Oct 2026)")
-            if cfg[block][channel]["type"] == "speed_dependent":
-                raise ValueError(f"{block}.{channel}.type: speed_dependent is now called rate_dependent")
+                raise ValueError(f"{block}.{channel} needs a `type:` key")
         if cfg["dissipation"][channel]["type"] not in DISSIPATION_TYPES:
             raise ValueError(f"dissipation.{channel}.type must be one of {DISSIPATION_TYPES}")
         if cfg["diffusion"][channel]["type"] not in DIFFUSION_TYPES:
@@ -112,9 +117,21 @@ def validate(cfg: dict) -> None:
         raise ValueError("recording.kick_torque must be interval_mean or last_step")
     if cfg["recording"].get("kick_alignment", "none") not in ("none", "sample"):
         raise ValueError("recording.kick_alignment must be none or sample")
+    if int(cfg["plant"]["physics_hz"]) % int(cfg["plant"]["sample_hz"]) != 0:
+        raise ValueError("plant.physics_hz must be a whole multiple of plant.sample_hz")
+    meas = measurement_noise(cfg)
+    if meas["enabled"]:
+        if meas["sigma"] <= 0:
+            raise ValueError("controller.measurement_noise.sigma must be positive when enabled")
     shared = sorted(set(cfg["libraries"]["hard"]) & set(cfg["libraries"]["eval"]))
     if shared:
         raise ValueError(f"the eval library must share no segment with the hard library; shared: {shared}")
+
+
+def measurement_noise(cfg: dict) -> dict:
+    """controller.measurement_noise as {enabled, sigma}; absent = disabled."""
+    block = cfg["controller"].get("measurement_noise") or {}
+    return {"enabled": bool(block.get("enabled", False)), "sigma": float(block.get("sigma", 0.0))}
 
 
 def split_plan(cfg: dict) -> list[tuple[str, list[int], str]]:
@@ -145,6 +162,9 @@ def configure_plant(env: CtrlAviary, cfg: dict) -> dict[str, Any]:
     if cfg["plant"]["contact_free"]:
         audit["no_ground"] = remove_ground_plane(env)
         audit["dynamics"] = configure_contact_free_dynamics(env)
+        for key in ("damping_law", "linear_damping_coefficient", "angular_damping_coefficient",    # overridden just below;
+                    "pybullet_builtin_damping", "custom_external_linear_damping"):               # the applied damping is
+            audit["dynamics"].pop(key)                                                           # builtin_damping + types
     builtin = {ch: float(cfg["dissipation"][ch]["c"]) if channel_type(cfg, "dissipation", ch) == "pybullet_builtin" else 0.0 for ch in ("linear", "angular")}
     pb.changeDynamics(int(env.DRONE_IDS[0]), -1, linearDamping=builtin["linear"], angularDamping=builtin["angular"], physicsClientId=int(env.CLIENT))
     audit["builtin_damping"] = builtin
@@ -172,6 +192,24 @@ def apply_external_dissipation(env: CtrlAviary, state: np.ndarray, cfg: dict, ma
 def pack_sample(state: np.ndarray, wrench: np.ndarray) -> np.ndarray:
     rotation = np.asarray(pb.getMatrixFromQuaternion(state[3:7]), dtype=np.float64).reshape(3, 3)
     return np.concatenate((state[:3], rotation.reshape(9), rotation.T @ state[10:13], rotation.T @ state[13:16], wrench))
+
+
+def measure(state: np.ndarray, sigma: float, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
+    """A noisy measurement of the PyBullet state with the dataset's observation-noise model.
+
+    Returns (the 18 recorded numbers [x, vec(R), v_b, w_b], the PyBullet-style state vector the controllers read).
+    x, v_b, w_b get + sigma eps; R becomes R Exp(eta); the world-frame velocities seen by the controllers are rebuilt
+    from the measured attitude and the measured body velocities."""
+    rotation = np.asarray(pb.getMatrixFromQuaternion(state[3:7]), dtype=np.float64).reshape(3, 3)
+    position = np.asarray(state[:3], dtype=np.float64) + sigma * rng.normal(size=3)
+    rotation_measured = rotation @ exp_so3(sigma * rng.normal(size=3))
+    v_body = rotation.T @ np.asarray(state[10:13], dtype=np.float64) + sigma * rng.normal(size=3)
+    w_body = rotation.T @ np.asarray(state[13:16], dtype=np.float64) + sigma * rng.normal(size=3)
+    quaternion = Rotation.from_matrix(rotation_measured).as_quat()                    # (x, y, z, w), PyBullet's order
+    seen = np.array(state, dtype=np.float64, copy=True)
+    seen[:3], seen[3:7], seen[7:10] = position, quaternion, pb.getEulerFromQuaternion(quaternion.tolist())
+    seen[10:13], seen[13:16] = rotation_measured @ v_body, rotation_measured @ w_body
+    return np.concatenate((position, rotation_measured.reshape(9), v_body, w_body)), seen
 
 
 def tilt_deg(state: np.ndarray) -> float:
@@ -411,6 +449,8 @@ def generate_flight(cfg: dict, seed: int, index: int, attempt: int, library: dic
     n_samples = int(round(cfg["flight"]["duration_seconds"] * sample_hz)) + 1
     last_step_kick = cfg["recording"]["kick_torque"] == "last_step"
     aligned_kicks = cfg["recording"].get("kick_alignment", "none") == "sample"
+    meas = measurement_noise(cfg)                                                     # controllers read noisy measurements?
+    meas_rng = np.random.default_rng([int(cfg["seeds"]["flight_seed_base"]) + 1000 * seed + index + 100_000 * attempt, 271828])
     env = make_env(cfg, init["xyz"], init["rpy"])
     try:
         observation, _ = env.reset(seed=int(rng.integers(1 << 31)))
@@ -431,33 +471,44 @@ def generate_flight(cfg: dict, seed: int, index: int, attempt: int, library: dic
 
         trajectory = np.empty((n_samples, STATE_DIM + CONTROL_DIM)); commands = np.empty((n_samples, 4)); commanded = np.empty((n_samples, 4))
         gusts, gust_torques = np.zeros((n_samples, 3)), np.zeros((n_samples, 3))
+        # interval means of the wind: the gust force / torque averaged over the physics steps of each sample interval
+        # (row k = interval k-1 -> k); with hold_seconds < 1 / sample_hz the end-of-interval value above misses draws.
+        gust_means, gust_torque_means = np.zeros((n_samples, 3)), np.zeros((n_samples, 3))
+        gust_sum, gust_torque_sum = np.zeros(3), np.zeros(3)
         trajectory[0], commands[0], commanded[0] = pack_sample(state, np.zeros(4)), 0.0, 0.0
+        # `seen` is what the controllers read: the true state, or the latest noisy measurement (one per sample).
+        measured = np.empty((n_samples, STATE_DIM)); seen = state
+        measured[0] = trajectory[0, :STATE_DIM]
+        if meas["enabled"]:
+            measured[0], seen = measure(state, meas["sigma"], meas_rng)
         rpm_applied, rpm_cmd = np.full(4, float(env.HOVER_RPM)), np.full(4, float(env.HOVER_RPM))
         seg_i, saturated, kicks = 0, 0, []
         kick_torque, kick_sum = np.zeros(3), np.zeros(3)                                    # kick in this step / summed over the sample
-        anchor_xyz, anchor_yaw = state[:3].copy(), float(state[9])
+        anchor_xyz, anchor_yaw = seen[:3].copy(), float(seen[9])
         min_alt, max_tilt = float(state[2]), tilt_deg(state)
 
         for step in range(1, (n_samples - 1) * sub + 1):
             t = step * dt
             seg = segments[seg_i]
             if t >= seg["start"] + seg["duration"] and seg_i + 1 < len(segments):
-                seg_i += 1; seg = segments[seg_i]; anchor_xyz, anchor_yaw = state[:3].copy(), float(state[9])
+                reference = seen if meas["enabled"] else state
+                seg_i += 1; seg = segments[seg_i]; anchor_xyz, anchor_yaw = reference[:3].copy(), float(reference[9])
             if (step - 1) % sub == 0:                                                     # PID at sample_hz
                 target_xyz, target_rpy = segment_target(seg, t - seg["start"], anchor_xyz, anchor_yaw, box)
                 if seg["name"] in ("coast", "coast_yaw"):
-                    rpm_cmd = coast_rpm(state, seg["pd_gains"], mass * grav, mixer_inverse, kf)
+                    rpm_cmd = coast_rpm(seen, seg["pd_gains"], mass * grav, mixer_inverse, kf)
                 elif seg["name"] == "thrust_pulse" and t - seg["start"] < 2 * seg["cut_seconds"] and anchor_xyz[2] >= seg["min_altitude"]:
                     # Cut, then the compensating boost, with the coast PD holding attitude level; the PID resumes after.
                     fraction = seg["thrust_fraction"] if t - seg["start"] < seg["cut_seconds"] else 2.0 - seg["thrust_fraction"]
-                    rpm_cmd = coast_rpm(state, seg["pd_gains"], fraction * mass * grav, mixer_inverse, kf)
+                    rpm_cmd = coast_rpm(seen, seg["pd_gains"], fraction * mass * grav, mixer_inverse, kf)
                 else:
-                    rpm_cmd, _, _ = controller.computeControlFromState(control_timestep=1.0 / sample_hz, state=state, target_pos=target_xyz, target_rpy=target_rpy)
+                    rpm_cmd, _, _ = controller.computeControlFromState(control_timestep=1.0 / sample_hz, state=seen, target_pos=target_xyz, target_rpy=target_rpy)
                 rpm_cmd = np.clip(np.asarray(rpm_cmd, dtype=np.float64), 0.0, rpm_max)
             tau_m = float(act["motor_lag_seconds"])                                       # motor lag
             rpm_applied = rpm_cmd if tau_m <= 0 else rpm_applied + (dt / tau_m) * (rpm_cmd - rpm_applied)
             wind.step(rng, step, state, seg.get("gust_multiplier", 1.0))                   # Step 4: wind (diffusion)
             wind.apply(env)
+            gust_sum, gust_torque_sum = gust_sum + wind.force, gust_torque_sum + wind.torque
             kick_torque = np.zeros(3)
             kick_axis, local = None, t - seg["start"]
             if aligned_kicks:                                                               # kicks on whole samples only
@@ -484,12 +535,14 @@ def generate_flight(cfg: dict, seed: int, index: int, attempt: int, library: dic
                 k = step // sub
                 wrench = mixer @ (kf * gain * rpm_applied**2)
                 # recorded torque = motors + external kick. interval_mean averages the kick over the sample interval: a
-                # 0.1 s kick can switch on/off mid-interval, and the end-of-interval value (last_step, the legacy record)
-                # left those samples' torque wrong (0.28 % of samples; 25 Sep 2026).
+                # 0.1 s kick can switch on/off mid-interval, where the end-of-interval value (last_step) is wrong.
                 wrench[1:] += kick_torque if last_step_kick else kick_sum / sub
                 kick_sum = np.zeros(3)
                 trajectory[k], commands[k], commanded[k] = pack_sample(state, wrench), (rpm_applied / rpm_max) ** 2, (rpm_cmd / rpm_max) ** 2
                 gusts[k], gust_torques[k] = wind.force, wind.torque
+                gust_means[k], gust_torque_means[k] = gust_sum / sub, gust_torque_sum / sub
+                gust_sum, gust_torque_sum = np.zeros(3), np.zeros(3)
+                measured[k], seen = measure(state, meas["sigma"], meas_rng) if meas["enabled"] else (trajectory[k, :STATE_DIM], state)
     finally:
         env.close()
     saturation = saturated / ((n_samples - 1) * sub)
@@ -505,11 +558,13 @@ def generate_flight(cfg: dict, seed: int, index: int, attempt: int, library: dic
              "max_envelope_excursion": outside, "motor_gain": gain.tolist(), "violation": violation, "rpm_cap": rpm_cap,
              "plant": {"mass": mass, "inertia_diagonal": np.diag(inertia).tolist(), "kf": kf, "km": float(env.KM), "arm": float(env.L),
                        "gravity_acceleration": grav, "hover_rpm": float(env.HOVER_RPM), "maximum_rpm": rpm_max, **plant}}
-    return trajectory, {"commands": commands, "commanded": commanded, "gusts": gusts, "gust_torques": gust_torques}, audit
+    return trajectory, {"commands": commands, "commanded": commanded, "gusts": gusts, "gust_torques": gust_torques,
+                        "gust_means": gust_means, "gust_torque_means": gust_torque_means, "measured": measured}, audit
 
 
 def generate_split(cfg: dict, seeds: list[int], label: str, library: dict) -> tuple[np.ndarray, dict[str, np.ndarray], list[dict]]:
-    flights, extras, audits_ = [], {"commands": [], "commanded": [], "gusts": [], "gust_torques": []}, []
+    flights, extras, audits_ = [], {"commands": [], "commanded": [], "gusts": [], "gust_torques": [], "gust_means": [],
+                                    "gust_torque_means": [], "measured": []}, []
     for seed in seeds:
         for index in range(int(cfg["seeds"]["flights_per_seed"])):
             for attempt in range(int(cfg["gates"]["max_attempts"])):
@@ -636,7 +691,7 @@ def dissipation_record(cfg: dict) -> dict[str, Any]:
 
 
 def diffusion_record(cfg: dict) -> dict[str, Any]:
-    """Ground-truth wind. When both channels are white (none/constant/rate_dependent) the legacy white_state_dependent
+    """Ground-truth wind. When both channels are white (none/constant/rate_dependent) the white_state_dependent
     block is filled, which evaluate_windsde_ground_truth.py reads; M^-1 Sigma(x) = diag(sigma_a(x) I3, sigma_alpha(x) I3)."""
     d = cfg["diffusion"]
     types = {ch: channel_type(cfg, "diffusion", ch) for ch in ("linear", "angular")}
@@ -683,6 +738,7 @@ def build(cfg: dict) -> dict[str, dict]:
         "custom_external_linear_damping": any(diss[ch]["type"] in ("constant", "rate_dependent") for ch in diss),
         "diffusion_ground_truth": diffusion_record(cfg), "kick_torque_recording": cfg["recording"]["kick_torque"],
         "kick_alignment": cfg["recording"].get("kick_alignment", "none"),
+        "controller_measurement_noise": measurement_noise(cfg),
         "state_layout": "x_w(3), vec(R)(9), v_b(3), omega_b(3), wrench(4)",
         "control_layout": "wrench [T, tau_x, tau_y, tau_z]: motor wrench after rpm clipping plus the external kick torque of recovery segments",
         "input_mode": cfg["actuator"]["input_mode"], "true_control_map": "selection matrix S" if cfg["actuator"]["input_mode"] == "wrench" else "S @ M_mix @ kf @ rpm_max^2",
@@ -704,11 +760,20 @@ def build(cfg: dict) -> dict[str, dict]:
         clean[SPLIT_WINDOW_KEY[label]] = sliding_windows(s["flights"], out["window_points"], out["window_stride"])
         clean[f"{p}motor_commands"], clean[f"{p}motor_commands_commanded"] = s["extra"]["commands"], s["extra"]["commanded"]
         clean[f"{p}gust_force"], clean[f"{p}gust_torque"] = s["extra"]["gusts"], s["extra"]["gust_torques"]
+        # interval-mean wind (body frame, N / N m), row k = interval k-1 -> k: replays the data's own wind exactly
+        clean[f"{p}gust_force_mean"], clean[f"{p}gust_torque_mean"] = s["extra"]["gust_means"], s["extra"]["gust_torque_means"]
     clean["settings"] = settings
     variants = {"clean": clean}
     if "train" in splits:                                    # observation noise only on train/test; eval stays clean
         n, train, test = cfg["observation_noise"], splits["train"]["flights"], splits["test"]["flights"]
-        for level in n["absolute_levels"]:
+        meas = measurement_noise(cfg)
+        own = meas["enabled"] and any(float(v) == meas["sigma"] for v in n["absolute_levels"])
+        if own:                                              # at this level the observations ARE what the controllers measured
+            seen = {label: np.concatenate((splits[label]["extra"]["measured"], splits[label]["flights"][..., STATE_DIM:]), axis=-1) for label in ("train", "test")}
+            variants[f"train-obs-noise-absolute{meas['sigma']:g}".replace(".", "p")] = _noisy_variant(clean, seen["train"], seen["test"],
+                {"scheme": "absolute", "level": meas["sigma"], "source": "controller_measurement",
+                 "equation": "y~=y+sigma*eps on x,v_b,omega_b; R~=R*Exp(eta), eta~N(0,sigma^2 I); the controllers read these same samples"}, cfg)
+        for level in [v for v in n["absolute_levels"] if not (own and float(v) == meas["sigma"])]:
             variants[f"train-obs-noise-absolute{level:g}".replace(".", "p")] = _noisy_variant(clean, absolute_noise(train, level, n["train_noise_seed"]), absolute_noise(test, level, n["test_noise_seed"]),
                 {"scheme": "absolute", "level": level, "equation": "y~=y+sigma*eps on x,v_b,omega_b; R~=R*Exp(eta), eta~N(0,sigma^2 I)"}, cfg)
         if n["sensor"]["enabled"]:

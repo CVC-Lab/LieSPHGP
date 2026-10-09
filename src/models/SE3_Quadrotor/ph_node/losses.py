@@ -1,43 +1,34 @@
-"""JAX equivalent of the comparison's SE(3) pose/geodesic training loss."""
+"""PH-NODE trajectory loss (the prior work's): roll the deterministic model out with RK4 from the first (noisy) sample of
+each window with the recorded controls and compare every later sample,
+
+    L = mean_{t>=1, windows} ( |x_hat - x|^2 + theta(R_hat, R)^2 + |v_hat - v|^2 + |omega_hat - omega|^2 ),
+
+theta the geodesic angle. Windows whose rollout became non-finite are left out of the mean.
+"""
 
 from __future__ import annotations
 
 import jax
 import jax.numpy as jnp
 
+from lie_ph.integrator import log_so3
+
+from .integrator import rollout
 
 Array = jax.Array
-ACOS_EPS = 1.0e-6
+NOISE_DIMENSION = 6
 
 
-def _normalize(vector: Array) -> Array:
-    magnitude = jnp.maximum(jnp.linalg.norm(vector, axis=-1, keepdims=True), 1.0e-8)
-    return vector / magnitude
-
-
-def project_rotation(rotation_flat: Array) -> Array:
-    x_raw = rotation_flat[..., :3]
-    y_raw = rotation_flat[..., 3:6]
-    x_axis = _normalize(x_raw)
-    z_axis = _normalize(jnp.cross(x_axis, y_raw, axis=-1))
-    y_axis = jnp.cross(z_axis, x_axis, axis=-1)
-    return jnp.stack([x_axis, y_axis, z_axis], axis=-2)
-
-
-def pose_loss_components(reference: Array, prediction: Array) -> Array:
-    """Return ``[total, x, v, omega, geodesic]`` for time-major arrays."""
-    position_loss = jnp.mean(jnp.square(reference[..., :3] - prediction[..., :3]))
-    velocity_loss = jnp.mean(jnp.square(reference[..., 12:15] - prediction[..., 12:15]))
-    omega_loss = jnp.mean(jnp.square(reference[..., 15:18] - prediction[..., 15:18]))
-
-    reference_rotation = project_rotation(reference[..., 3:12])
-    predicted_rotation = project_rotation(prediction[..., 3:12])
-    relative = reference_rotation @ jnp.swapaxes(predicted_rotation, -1, -2)
-    cosine = 0.5 * (jnp.trace(relative, axis1=-2, axis2=-1) - 1.0)
-    cosine = jnp.clip(cosine, -1.0 + ACOS_EPS, 1.0 - ACOS_EPS)
-    geodesic_loss = jnp.mean(jnp.square(jnp.arccos(cosine)))
-    total = position_loss + velocity_loss + omega_loss + geodesic_loss
-    return jnp.stack(
-        [total, position_loss, velocity_loss, omega_loss, geodesic_loss]
-    )
-
+def rollout_loss(model, windows: Array, interval: float, substeps: int) -> Array:
+    controls = jnp.swapaxes(windows[1:, :, 18:22], 0, 1)                                      # (B, T-1, 4)
+    noise = jnp.zeros((windows.shape[0] - 1, substeps, NOISE_DIMENSION), windows.dtype)
+    predicted = jax.vmap(lambda x0, u: rollout(model, x0, u, interval, noise))(windows[0], controls)   # (B, T, 22)
+    observed = jnp.swapaxes(windows, 0, 1)
+    angle = jax.vmap(jax.vmap(lambda a, b: log_so3(b[3:12].reshape(3, 3).T @ a[3:12].reshape(3, 3))))(
+        predicted[:, 1:], observed[:, 1:])
+    error = (jnp.sum(jnp.square(predicted[:, 1:, :3] - observed[:, 1:, :3]), axis=-1) + jnp.sum(angle * angle, axis=-1)
+             + jnp.sum(jnp.square(predicted[:, 1:, 12:18] - observed[:, 1:, 12:18]), axis=-1))
+    per_window = jnp.mean(error, axis=1)
+    healthy = jax.lax.stop_gradient(jnp.isfinite(per_window))
+    safe = jnp.where(healthy, per_window, 0.0)
+    return jnp.sum(safe) / jnp.maximum(jnp.sum(healthy), 1.0)

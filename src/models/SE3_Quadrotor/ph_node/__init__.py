@@ -1,5 +1,2 @@
-"""Pure-JAX PH-NODE quadrotor model using coordinate RK4."""
-
-MODEL_NAME = "ph_node"
-SOLVER = "rk4"
-
+"""PH-NODE baseline on SE(3) x R^6 (quadrotor): the prior work's port-Hamiltonian neural ODE, RK4 + trajectory loss, with
+lie_ph's MLP model class and training loop."""

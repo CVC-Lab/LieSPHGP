@@ -1,0 +1,12 @@
+# Environments and dataset generators (envs/). Tested with Python 3.13 and the versions below.
+numpy>=2.3
+scipy>=1.16
+pyyaml>=6.0
+matplotlib>=3.10
+gymnasium>=1.2
+pandas>=2.3            # IDSIA conversion, Marinarium sim-to-real analysis
+pybullet>=3.2.7        # quadrotor generator; also clone envs/quadrotor_se3_pybullet/gym-pybullet-drones (see its README)
+pillow>=10            # needed by gym-pybullet-drones
+setuptools            # pkg_resources, needed by gym-pybullet-drones
+rosbags>=0.11.5        # Marinarium bag conversion only (no ROS installation needed)
+# ffmpeg (system binary) is needed only for the pendulum video scripts.

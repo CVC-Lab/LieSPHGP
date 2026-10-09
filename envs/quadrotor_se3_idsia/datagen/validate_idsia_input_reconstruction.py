@@ -1,8 +1,7 @@
-"""Is the IDSIA wrench right?  The same four checks that condemned the NanoBench torque channel.
+"""Is the IDSIA wrench right?  Four consistency checks of the converted input against the measured motion.
 
-Here the input comes from MEASURED rotor speeds rather than a commanded PWM, so there is no thrust map to
-calibrate and no command-to-delivery gap.  The tests are the ones that rejected the (since removed) NanoBench
-conversion; its numbers are quoted in the printout for comparison.
+The input comes from MEASURED rotor speeds rather than a commanded PWM, so there is no thrust map to calibrate and
+no command-to-delivery gap.  Needs the wrench-input dataset (convert_idsia.py default, input_mode "wrench").
 
   A  independent sensor: reconstructed T against m * a_z,body from the onboard accelerometer.
   B  parameter-free translational fit  dv_w/dt + g e_3 = (1/m) T R e_3, which returns 1/m.
@@ -10,7 +9,7 @@ conversion; its numbers are quoted in the printout for comparison.
   C  forward integration of the analytic rigid body from x0 driven by u alone, against a constant-velocity
      reference from the same x0.
 
-Usage: python validate_input_reconstruction.py [--split test] [--raw envs/quadrotor_se3_idsia/idsia_raw/data]
+Usage: python validate_idsia_input_reconstruction.py [--split test] [--raw envs/quadrotor_se3_idsia/idsia_raw/data]
 """
 from __future__ import annotations
 
@@ -43,7 +42,7 @@ def test_a(raw_dir: Path) -> None:
         ratios.append(thrust.mean() / specific.mean())
     ratios = np.asarray(ratios)
     print(f"A  reconstructed T versus m * a_z,body, {len(ratios)} flights")
-    print(f"     mean ratio {ratios.mean():.4f} +- {ratios.std():.4f}   (NanoBench: 0.978 +- 0.023)\n")
+    print(f"     mean ratio {ratios.mean():.4f} +- {ratios.std():.4f}\n")
 
 
 def test_b(flights: np.ndarray, step: float) -> None:
@@ -58,8 +57,7 @@ def test_b(flights: np.ndarray, step: float) -> None:
     r_squared = 1.0 - (residual ** 2).sum() / ((left - left.mean(0)) ** 2).sum()
     print("B  parameter-free translational fit   dv_w/dt + g e_3 = (1/m) T R e_3")
     print(f"     implied mass {1 / gain * 1000:.2f} g   (published {MASS * 1000:.1f} g, "
-          f"error {100 * (1 / gain - MASS) / MASS:+.1f} %)   R^2 {r_squared:.3f}")
-    print("     (NanoBench: 39.96 g against 40.85, -2.2 %, R^2 0.708)\n")
+          f"error {100 * (1 / gain - MASS) / MASS:+.1f} %)   R^2 {r_squared:.3f}\n")
 
 
 def test_d(flights: np.ndarray, step: float, window: int = 10, lags=(0, 1, 2, 3, 5, 8)) -> None:
@@ -90,16 +88,71 @@ def test_d(flights: np.ndarray, step: float, window: int = 10, lags=(0, 1, 2, 3,
               f"{inertia[0]:>11.2e}{inertia[1]:>11.2e}{inertia[2]:>11.2e}")
     print(f"     published inertia {np.array2string(PUBLISHED_INERTIA, formatter={'float_kind': lambda v: f'{v:.2e}'})}")
     print(f"     fitted trim torque {np.array2string(trim, formatter={'float_kind': lambda v: f'{v:+.2e}'})} N m, "
-          f"median |tau| {np.median(np.abs(torque_all)):.2e} N m")
-    print("     (NanoBench: 0.250 / 0.097 / 0.000 at its best 30 ms lag, trim as large as the signal)\n")
+          f"median |tau| {np.median(np.abs(torque_all)):.2e} N m\n")
+
+
+def _hat(w: np.ndarray) -> np.ndarray:
+    zero = np.zeros(w.shape[:-1])
+    return np.stack([np.stack([zero, -w[..., 2], w[..., 1]], -1), np.stack([w[..., 2], zero, -w[..., 0]], -1),
+                     np.stack([-w[..., 1], w[..., 0], zero], -1)], -2)
+
+
+def _exp_so3(phi: np.ndarray) -> np.ndarray:
+    theta = np.linalg.norm(phi, axis=-1)[..., None, None]
+    small = theta < 1e-8
+    safe = np.where(small, 1.0, theta)
+    skew = _hat(phi)
+    a = np.where(small, 1.0, np.sin(safe) / safe)
+    b = np.where(small, 0.5, (1.0 - np.cos(safe)) / safe ** 2)
+    return np.eye(3) + a * skew + b * (skew @ skew)
+
+
+def _rigid_body_rollout(flights: np.ndarray, step: float, damping: float, substeps: int = 4) -> np.ndarray:
+    """Analytic rigid body with the published constants, damping -c m (1 + |v|) v and -c J (1 + |w|) w, input
+    u = [T, tau] (body frame), integrated with Lie-group Heun; every flight from its first measured state."""
+    inertia, inverse_inertia = np.diag(PUBLISHED_INERTIA), np.diag(1.0 / PUBLISHED_INERTIA)
+    e3 = np.array([0.0, 0.0, 1.0])
+
+    def rates(rotation, v, w, u):
+        thrust, torque = u[:, :1], u[:, 1:4]
+        dv = (-np.cross(w, v) - GRAVITY * np.einsum("fji,j->fi", rotation, e3) + thrust * e3 / MASS
+              - damping * (1.0 + np.linalg.norm(v, axis=-1, keepdims=True)) * v)
+        jw = w @ inertia
+        dw = ((np.cross(jw, w) + torque) @ inverse_inertia
+              - damping * (1.0 + np.linalg.norm(w, axis=-1, keepdims=True)) * w)
+        return np.einsum("fij,fj->fi", rotation, v), dv, dw
+
+    x, rotation = flights[:, 0, :3].copy(), flights[:, 0, 3:12].reshape(-1, 3, 3).copy()
+    v, w = flights[:, 0, 12:15].copy(), flights[:, 0, 15:18].copy()
+    path = np.empty(flights.shape[:2] + (3,))
+    path[:, 0] = x
+    h = step / substeps
+    with np.errstate(all="ignore"):
+        for k in range(1, flights.shape[1]):
+            u = flights[:, k, 18:22]                                  # row k holds the input of interval k-1 -> k
+            for _ in range(substeps):
+                dx1, dv1, dw1 = rates(rotation, v, w, u)
+                rotation_p = rotation @ _exp_so3(h * w)
+                dx2, dv2, dw2 = rates(rotation_p, v + h * dv1, w + h * dw1, u)
+                x = x + 0.5 * h * (dx1 + dx2)
+                rotation = rotation @ _exp_so3(0.5 * h * (w + w + h * dw1))
+                v, w = v + 0.5 * h * (dv1 + dv2), w + 0.5 * h * (dw1 + dw2)
+            path[:, k] = x
+    return path
+
+
+def _valid_prediction_times(truth: np.ndarray, prediction: np.ndarray, step: float) -> np.ndarray:
+    """Per flight: first time the position error exceeds 0.158 x the flight's RMS extent (the VPT convention)."""
+    error = np.linalg.norm(prediction - truth[..., :3], axis=-1)
+    extent = np.sqrt(np.mean(np.sum((truth[..., :3] - truth[:, :1, :3]) ** 2, axis=-1), axis=1))
+    out = np.empty(truth.shape[0])
+    for flight in range(truth.shape[0]):
+        exceeded = np.flatnonzero(~(error[flight] <= 0.158 * extent[flight]))
+        out[flight] = exceeded[0] * step if exceeded.size else (truth.shape[1] - 1) * step
+    return out
 
 
 def test_c(flights: np.ndarray, step: float, damping_values=(0.0, 0.25, 0.5), horizons=(0.1, 0.5, 1.0, 3.0)) -> None:
-    if str(PROJECT_ROOT) not in sys.path:
-        sys.path.insert(0, str(PROJECT_ROOT))
-    from src.models.SE3_Quadrotor.comparision import report_evaluation as evaluation
-    from src.models.SE3_Quadrotor.comparision import open_loop as openloop
-
     truth = np.asarray(flights, dtype=np.float64)
     print("C  forward integration of the analytic rigid body, driven only by x0 and the reconstructed u")
     print(f"     {truth.shape[0]} flights, published mass {MASS * 1000:.1f} g and inertia")
@@ -108,16 +161,14 @@ def test_c(flights: np.ndarray, step: float, damping_values=(0.0, 0.25, 0.5), ho
     constant = truth[:, :1, :3] + start_velocity[:, None, :] * times[None, :, None]
     print("     " + "damping c".ljust(14) + "".join(f"{h:>10.1f} s" for h in horizons) + "     VPT median")
     for damping in damping_values:
-        model = evaluation.ground_truth_model(
-            {"mass": MASS, "inertia": np.diag(PUBLISHED_INERTIA), "gravity": GRAVITY, "damping": damping})
-        prediction, _ = openloop.timed_rollout(model, truth, step, repeats=1)
-        if prediction is None:
+        prediction = _rigid_body_rollout(truth, step, damping)
+        if not np.all(np.isfinite(prediction[:, int(round(horizons[0] / step))])):
             print(f"     {damping:<14.2f}  diverged")
             continue
-        errors = [float(np.sqrt(np.mean(np.sum((prediction[:, int(round(h / step)), :3]
+        errors = [float(np.sqrt(np.mean(np.sum((prediction[:, int(round(h / step))]
                                                 - truth[:, int(round(h / step)), :3]) ** 2, axis=-1))))
                   for h in horizons]
-        valid = openloop.valid_prediction_times(truth, prediction, step)
+        valid = _valid_prediction_times(truth, prediction, step)
         print(f"     {damping:<14.2f}" + "".join(f"{e:>12.3f}" for e in errors) + f"     {np.median(valid):.2f} s")
     reference = [float(np.sqrt(np.mean(np.sum((constant[:, int(round(h / step))]
                                                - truth[:, int(round(h / step)), :3]) ** 2, axis=-1))))
@@ -134,6 +185,10 @@ def main() -> None:
     arguments = parser.parse_args()
     with arguments.dataset.open("rb") as handle:
         payload = pickle.load(handle)
+    input_mode = payload["settings"].get("input_mode", "wrench")
+    if input_mode != "wrench":
+        raise SystemExit(f"{arguments.dataset.name} has input_mode {input_mode!r}; these checks read columns 18:22 as "
+                         "the wrench [T, tau_x, tau_y, tau_z], so use the wrench dataset")
     flights = payload[f"{arguments.split}_trajectories"]
     step = payload["settings"]["sample_dt"]
     print(f"\nValidating the IDSIA wrench on the {arguments.split} split: {flights.shape[0]} flights of "

@@ -1,0 +1,59 @@
+created_at: '2026-10-05T11:03:03-05:00'
+data:
+  dataset_path: datasets/ROV-MARINARIUM-DATASET-PAPER-MANUAL-COMMANDS-5s/PAPER-MANUAL-COMMANDS-5s_clean.pkl
+  train_key: train_trajectories
+  test_key: test_trajectories
+  window_points: 101
+  window_stride: 75
+  substeps: 1
+  control_scaling: rms
+experiment:
+  root: experiments/rov_se3/real_marinarium_05-10-2026/runs
+  name_suffix: PH-NODE_REAL-MARINARIUM
+  notes:
+  - BlueROV2 real data (KTH Marinarium, manual recording, paper chronological 80/20 split), 8 raw PX4 commands as input, 5
+    s training pieces cut into 2 s windows (25 % overlap), 5000 steps, final model, float32; no priors, no pretraining. Protocol
+    of the pendulum / quadrotor campaigns; M1_form spd (added mass) and V_rotation (buoyancy above the CG) are model forms
+    only.
+  - 'PH-NODE: tanh MLPs, RK4, the prior work''s rollout loss, start spread 1 (as the campaigns).'
+model:
+  control_dim: 8
+  M1_form: spd
+  V_rotation: true
+  family: nn
+  feature_count: 64
+  initial_D: 1.0
+  initial_M_inverse: 1.0
+  initial_control_gp_mean_scale: 0.0
+  initial_diffusion: 0.1
+  initial_log_std: -5.0
+  initial_observation_sigma: 0.1
+  initial_randomness: 1.0
+  integrator: rk4
+  matern_length_scale: 1.0
+  matern_smoothness: 2.5
+  nn_hidden: 20
+  nn_layers: 2
+  wind: false
+optimizer:
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  final_learning_fraction: 0.1
+  gradient_clip_norm: 1.0
+  learning_rate: 0.003
+  level_learning_rate: 0.25
+runtime:
+  enable_x64: false
+  gpu: 1
+schema: ph_node/rov/v1
+training:
+  batch_size: 16
+  checkpoint_every: 1000
+  eval_every: 500
+  eval_windows: null
+  kl_anneal_steps: 1000
+  kl_beta_max: 1.0
+  loss: rollout
+  seed: 0
+  total_steps: 5000

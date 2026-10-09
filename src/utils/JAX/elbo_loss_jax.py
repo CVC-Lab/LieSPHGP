@@ -184,7 +184,8 @@ def pl_loss(model, batch_x_cat, dt, sigma_obs_omega, gp_keys_batch,
 
     q_t      = batch_x_cat[:-1, :, :9]                           # (T-1, B, 9)
     omega_t  = batch_x_cat[:-1, :, 9:12]                         # (T-1, B, 3)
-    u_t      = batch_x_cat[:-1, :, 12:15]                        # (T-1, B, 3)
+    # control of t -> t+1: the datagen stores row k = (x_k, u_{k-1}), so it is row t+1
+    u_t      = batch_x_cat[1:, :, 12:15]                         # (T-1, B, 3)
     delta_om = batch_x_cat[1:, :, 9:12] - omega_t                # (T-1, B, 3)
     Tm1 = T_obs - 1
 

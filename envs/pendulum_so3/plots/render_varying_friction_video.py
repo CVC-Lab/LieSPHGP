@@ -20,7 +20,7 @@ from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d  # noqa: E402
 
 N_STEPS = 500
 FPS = 30
-SAVE_PATH = "videos/windy_pendulum_3d_varying_friction.mp4"
+SAVE_PATH = os.path.join(PROJECT_ROOT, "outputs", "pendulum_so3", "windy_pendulum_3d_varying_friction.mp4")   # needs ffmpeg
 
 
 def main():
@@ -58,9 +58,7 @@ def main():
 
     env.close()
 
-    save_path = os.path.join(PROJECT_ROOT,
-                             "videos",
-                             "windy_pendulum_3d_varying_friction.mp4")
+    save_path = SAVE_PATH
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     fig_vid, ax_vid = plt.subplots(figsize=(7, 7))

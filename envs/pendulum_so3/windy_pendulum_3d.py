@@ -109,11 +109,13 @@ def _random_rotation(rng: np.random.Generator) -> np.ndarray:
 class windy_pendulum_3d(gym.Env):
     """3D spherical pendulum on SO(3) with wind, friction, and stochastic forcing.
     
-    Uses a geometrically exact Lie group integrator (``integrator``, ``substeps`` steps per ``dt``):
+    Uses a geometrically exact Lie-IMEX integrator (``substeps`` steps per ``dt``):
       - Rotation updates use the exponential map (Rodrigues), so R stays on SO(3)
         by construction — no SVD projection needed in the integration loop.
-      - lie_imex (default): Heun predictor/corrector with the friction treated implicitly
-        (the scheme of the SE(3) Lie-IMEX models); lie_heun: fully explicit Stratonovich Heun.
+      - Heun predictor/corrector with the friction treated implicitly and everything else
+        (gravity, external force, control, gyroscopic term, Stratonovich noise) explicit.
+
+    The defaults match datagen/config.yaml (constant friction c = 0.5, external force off, G = diag(0.5, 0.7, 0.8)).
     """
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
@@ -127,24 +129,25 @@ class windy_pendulum_3d(gym.Env):
         dt: float = 0.05,
         max_torque: float = 2.0,
         max_speed: float = 8.0,
-        friction_coeff: Union[float, Tuple[float, float, float]] = 0.1,
-        varying_friction: bool = True,
+        friction_coeff: Union[float, Tuple[float, float, float]] = 0.5,
+        varying_friction: bool = False,
         external_force_type: str = "sine",
-        external_force_std: float = 1.0,
+        external_force_std: float = 0.0,
         external_force_direction: Tuple[float, float, float] = (1.0, 0.0, 0.0),
         wind_force_std: float = 0.0,
-        g_diag: Union[float, Tuple[float, float, float]] = 1.0,
+        g_diag: Union[float, Tuple[float, float, float]] = (0.5, 0.7, 0.8),
         ori_rep: str = "rotmat",
         seed: Optional[int] = None,
         integrator: str = "lie_imex",
         substeps: int = 10,
+        friction_law: Optional[str] = None,
     ):
         super().__init__()
 
         if ori_rep != "rotmat":
             raise ValueError("Only ori_rep='rotmat' is supported for the 3D pendulum env.")
-        if integrator not in ("lie_imex", "lie_heun"):
-            raise ValueError(f"integrator must be 'lie_imex' or 'lie_heun', got {integrator!r}")
+        if integrator != "lie_imex":                    # kept as a keyword so dataset settings can be passed through
+            raise ValueError(f"integrator must be 'lie_imex', got {integrator!r}")
         self.integrator = str(integrator)
         self.substeps = int(substeps)
 
@@ -161,6 +164,13 @@ class windy_pendulum_3d(gym.Env):
             np.asarray(friction_coeff, dtype=np.float64), (3,)
         ).copy()
         self.varying_friction = bool(varying_friction)
+        # friction_law: None -> from varying_friction (True -> "varying", False -> "constant").
+        #   constant        tau_f = c w
+        #   varying         tau_f = c (1 + 0.5 height + 0.5 tanh|w|) w
+        #   rate_dependent  tau_f = c (1 + |w|) w      (the PyBullet quadrotor's law)
+        self.friction_law = friction_law or ("varying" if self.varying_friction else "constant")
+        if self.friction_law not in ("constant", "varying", "rate_dependent"):
+            raise ValueError(f"friction_law must be constant, varying or rate_dependent, got {friction_law!r}")
 
         self.external_force_type = str(external_force_type)
         self.external_force_std = float(external_force_std)
@@ -172,7 +182,7 @@ class windy_pendulum_3d(gym.Env):
         self.wind_force_std = float(wind_force_std)
 
         # Constant diagonal control-gain matrix G(q) = diag(g_x, g_y, g_z).
-        # Applied as G·u in body-frame torque; defaults to I₃.
+        # Applied as G·u in body-frame torque; defaults to diag(0.5, 0.7, 0.8).
         self.g_diag = np.broadcast_to(
             np.asarray(g_diag, dtype=np.float64), (3,)
         ).copy()
@@ -186,9 +196,8 @@ class windy_pendulum_3d(gym.Env):
         self.I = np.diag([I_perp, I_perp, I_para]).astype(np.float64)
         self.I_inv = np.linalg.inv(self.I)
 
-        # NOTE: action_space uses self.max_torque to define the API bounds for
-        # the agent's torque inputs. Kept active because gym.Env requires a
-        # well-defined action_space.
+        # action_space bounds (+-max_torque) are nominal: gym.Env requires an action_space, but step()
+        # does not clip u, so larger inputs (the datasets use u ~ U(-7, 7)) are applied as given.
         self.action_space = spaces.Box(
             low=-self.max_torque, high=self.max_torque, shape=(3,), dtype=np.float32
         )
@@ -232,8 +241,10 @@ class windy_pendulum_3d(gym.Env):
     # ── State-dependent friction ──────────────────────────────────────────
 
     def _variable_friction(self, R: np.ndarray, omega: np.ndarray) -> np.ndarray:
-        if not self.varying_friction:
+        if self.friction_law == "constant":
             return self.friction_coeff
+        if self.friction_law == "rate_dependent":
+            return self.friction_coeff * (1.0 + float(np.linalg.norm(omega)))
         ez = np.array([0.0, 0.0, 1.0], dtype=np.float64)
         bob_dir = R @ ez
         height_term = 0.5 * (1.0 - bob_dir[2])
@@ -292,66 +303,6 @@ class windy_pendulum_3d(gym.Env):
 
         return omega_dot_det, dOmega_stoch
 
-    # ── Lie group Heun integrator (Stratonovich) ──────────────────────────
-
-    def _lie_heun_step(
-        self, R: np.ndarray, omega: np.ndarray,
-        w: float, u: np.ndarray, h: float, sigma: float,
-        dW: np.ndarray
-    ):
-        """One substep of Stratonovich Heun integration on SO(3) x R^3.
-        
-        Rotation update uses the exponential map so R stays on SO(3)
-        by construction.  The Heun scheme averages two Lie algebra
-        elements before exponentiating, giving second-order accuracy
-        in the deterministic part.
-        
-        Algorithm:
-        ---------
-        1. At (R_n, omega_n), compute omega_dot_1 and the Lie algebra
-           element phi_1 = omega_n * h  (body angular displacement).
-        
-        2. Predictor:
-             R_pred    = R_n * exp([phi_1]_x)
-             omega_pred = omega_n + omega_dot_1 * h + dOmega_stoch_1
-        
-        3. At (R_pred, omega_pred), compute omega_dot_2 and
-           phi_2 = omega_pred * h.
-        
-        4. Corrector (average in Lie algebra, then exponentiate once):
-             phi_avg   = (phi_1 + phi_2) / 2
-             R_{n+1}   = R_n * exp([phi_avg]_x)
-             omega_{n+1} = omega_n + (omega_dot_1 + omega_dot_2)/2 * h
-                           + (dOmega_stoch_1 + dOmega_stoch_2) / 2
-        """
-        # ── Stage 1: evaluate at current state ──
-        omega_dot_1, dOmega_stoch_1 = self._compute_omega_rates(
-            R, omega, w, u, dW, sigma
-        )
-        phi_1 = omega * h  # Lie algebra element for rotation
-
-        # ── Stage 2: predictor (Euler on the manifold) ──
-        R_pred = R @ _exp_so3(phi_1)
-        omega_pred = omega + omega_dot_1 * h + dOmega_stoch_1
-
-        # ── Stage 3: evaluate at predicted state (reuse same dW) ──
-        omega_dot_2, dOmega_stoch_2 = self._compute_omega_rates(
-            R_pred, omega_pred, w, u, dW, sigma
-        )
-        phi_2 = omega_pred * h
-
-        # ── Stage 4: corrector (average in Lie algebra, single exp) ──
-        phi_avg = 0.5 * (phi_1 + phi_2)
-        R_new = R @ _exp_so3(phi_avg)
-
-        omega_new = (
-            omega
-            + 0.5 * (omega_dot_1 + omega_dot_2) * h
-            + 0.5 * (dOmega_stoch_1 + dOmega_stoch_2)
-        )
-
-        return R_new, omega_new
-
     # ── Lie group IMEX integrator (friction implicit) ─────────────────────
 
     def _friction_matrix(self, R: np.ndarray, omega: np.ndarray) -> np.ndarray:
@@ -383,6 +334,7 @@ class windy_pendulum_3d(gym.Env):
         D_2 = self._friction_matrix(R_pred, omega_pred)
         a_2 = omega_dot_2 + D_2 @ omega_pred
         rhs = omega + 0.5 * h * (a_1 + a_2 - D_1 @ omega) + 0.5 * (dOmega_stoch_1 + dOmega_stoch_2)
+        self._last_wind_increment = 0.5 * (dOmega_stoch_1 + dOmega_stoch_2)   # recorded by step() (no RNG use)
         omega_new = np.linalg.solve(eye + 0.5 * h * D_2, rhs)
         R_new = R @ _exp_so3(0.5 * h * (omega + omega_pred))
         return R_new, omega_new
@@ -391,9 +343,6 @@ class windy_pendulum_3d(gym.Env):
 
     def step(self, u):
         u = np.asarray(u, dtype=np.float64).reshape(3)
-        # NOTE: torque clipping by self.max_torque disabled — keeping the
-        # parameter available but no longer constraining the action.
-        # u = np.clip(u, -self.max_torque, self.max_torque)
         self.last_u = u.copy()
 
         self.t += self.dt
@@ -403,9 +352,11 @@ class windy_pendulum_3d(gym.Env):
         # Substep settings
         n_substeps = self.substeps
         dt_sub = self.dt / n_substeps
-        integrate = self._lie_imex_step if self.integrator == "lie_imex" else self._lie_heun_step
         sigma = self.wind_force_std
 
+        # Recorded wind: the body angular-velocity increment the noise added in this sample, summed over the substeps
+        # (the 0.5 (s_1 + s_2) term of each substep, before the implicit friction solve). info['wind_increment'].
+        wind_increment = np.zeros(3)
         for _ in range(n_substeps):
             # Sample Wiener increment once per substep
             if sigma > 0.0:
@@ -413,11 +364,8 @@ class windy_pendulum_3d(gym.Env):
             else:
                 dW = np.zeros(3)
 
-            self.R, self.omega = integrate(self.R, self.omega, w, u, dt_sub, sigma, dW)
-
-        # NOTE: angular velocity clipping by self.max_speed disabled —
-        # keeping the parameter available but no longer constraining omega.
-        # self.omega = np.clip(self.omega, -self.max_speed, self.max_speed)
+            self.R, self.omega = self._lie_imex_step(self.R, self.omega, w, u, dt_sub, sigma, dW)
+            wind_increment = wind_increment + self._last_wind_increment
 
         # Periodic re-orthogonalization as a safety net
         # (numerical drift from floating-point accumulation over many steps)
@@ -437,7 +385,7 @@ class windy_pendulum_3d(gym.Env):
         reward = -cost
         terminated = False
         truncated = False
-        info = {"wind": self.last_w}
+        info = {"wind": self.last_w, "wind_increment": wind_increment}
 
         return obs, reward, terminated, truncated, info
 
@@ -465,10 +413,6 @@ class windy_pendulum_3d(gym.Env):
             w0 = np.asarray(options["omega_init"], dtype=np.float64).reshape(3)
         else:
             w0 = self._np_rng.uniform(low=-1.0, high=1.0, size=3)
-
-        # NOTE: initial-omega clipping by self.max_speed disabled — keeping the
-        # parameter available but no longer constraining the initial state.
-        # w0 = np.clip(w0, -self.max_speed, self.max_speed)
 
         self.R = R0
         self.omega = w0
@@ -611,7 +555,9 @@ if __name__ == "__main__":
     from matplotlib.animation import FuncAnimation
 
     N_STEPS = 500
-    SAVE_PATH = "videos/windy_pendulum_3d_lie_group.mp4"
+    import os
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+    SAVE_PATH = os.path.join(PROJECT_ROOT, "outputs", "pendulum_so3", "windy_pendulum_3d_lie_group.mp4")   # needs ffmpeg
 
     env = windy_pendulum_3d(
         g=9.81,
@@ -653,7 +599,6 @@ if __name__ == "__main__":
 
     print(f"\nSaving {len(frames)} frames to {SAVE_PATH} ...")
 
-    import os
     os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
 
     fig_vid, ax_vid = plt.subplots(figsize=(7, 7))

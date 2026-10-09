@@ -1,38 +1,20 @@
-"""Sampling, observation noise and the legacy get_dataset() for the SO(3) windy pendulum.
+"""Sampling, observation noise and the older get_dataset() for the SO(3) windy pendulum.
 
 For NEW datasets use generate_dataset.py + config.yaml (same sampling code, one pickle per noise level).
 This module stays because the pendulum trainers import get_dataset() and arrange_data() from it.
 """
-import numpy as np
-import pickle
-import os
 import argparse
-
-import gymnasium as gym
-
 import os
-import importlib.util
+import pickle
 import sys
+
+import numpy as np
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d  # noqa: E402
-
-# --- Import Environment ---
-# try:
-#     # If you keep it in an envs/ folder, update this path accordingly.
-#     from windy_pendulum_3d import windy_pendulum_3d
-# except ImportError:
-#     # Fallback for the common project structure used in the original file:
-#     try:
-#         from envs.pendulum_so3.windy_pendulum_3d import windy_pendulum_3d
-#     except ImportError as e:
-#         raise ImportError(
-#             "Could not import windy_pendulum_3d. "
-#             "Place windy_pendulum_3d.py on your PYTHONPATH (or inside envs/)."
-#         ) from e
 
 
 # ─────────────────── Helper Functions ───────────────────
@@ -73,16 +55,6 @@ def arrange_data(x, t, num_points=2):
                          (x.shape[0], num_points, -1, x.shape[3]))
     t_eval = t[0:num_points]
     return x_stack, t_eval
-
-
-def _project_to_so3(R):
-    """Numpy polar decomposition projection to SO(3)."""
-    U, _, Vt = np.linalg.svd(R)
-    Rproj = U @ Vt
-    if np.linalg.det(Rproj) < 0:
-        U[:, -1] *= -1.0
-        Rproj = U @ Vt
-    return Rproj
 
 
 def add_proper_noise_3d(clean_data, obs_noise_std, rng):
@@ -150,29 +122,33 @@ def sample_windy_pendulum_3d(
     trials=50,
     u=(0.0, 0.0, 0.0),
     ori_rep="rotmat",
-    friction_coeff=0.1,
+    friction_coeff=0.5,
     external_force_type="sine",
-    external_force_std=1.0,
+    external_force_std=0.0,
     external_force_direction=(1.0, 0.0, 0.0),
     wind_force_std=0.0,
     g=9.81,
     random_u=False,
     random_u_scale=1.0,
-    g_diag=1.0,
-    varying_friction=True,
+    g_diag=(0.5, 0.7, 0.8),
+    varying_friction=False,
+    return_wind=False,
     **kwargs
 ):
     """
     Returns:
         trajs: (timesteps, trials, obs_dim + action_dim)
         tspan: (timesteps,)
+        winds (only with return_wind=True): (timesteps, trials, 3), row k+1 = the recorded body angular-velocity
+            increment of the wind during k -> k+1 (env info['wind_increment']); row 0 is zero. Recording draws no
+            random numbers, so trajs are identical with or without it.
 
     random_u_scale: half-width of the uniform distribution used when
         random_u=True. u ~ U(-scale, scale) per timestep. Defaults to 1.0
         for backward compatibility.
     g_diag: scalar or 3-tuple defining the constant diagonal control gain
         matrix G(q) = diag(g_x, g_y, g_z) applied as G·u in the body-frame
-        torque. Defaults to 1.0 (G = I₃).
+        torque. Defaults to (0.5, 0.7, 0.8).
     """
     env = windy_pendulum_3d(
         g=g,
@@ -195,6 +171,7 @@ def sample_windy_pendulum_3d(
     trials = int(trials)
 
     trajs = []
+    winds = []
     main_seed = int(seed)
 
     for trial in range(trials):
@@ -216,6 +193,7 @@ def sample_windy_pendulum_3d(
                 curr_u = np.array(u, dtype=np.float64).reshape(act_dim)
 
             traj = []
+            wind = [np.zeros(3)]
             # Record initial state
             x_init = np.concatenate((obs, curr_u.astype(np.float32)))
             traj.append(x_init)
@@ -231,6 +209,7 @@ def sample_windy_pendulum_3d(
 
                 x = np.concatenate((obs, curr_u.astype(np.float32)))
                 traj.append(x)
+                wind.append(np.asarray(info.get("wind_increment", np.zeros(3)), dtype=np.float64))
 
                 curr_u = next_u
 
@@ -260,6 +239,7 @@ def sample_windy_pendulum_3d(
                 main_seed += 10
 
         trajs.append(traj)
+        winds.append(np.stack(wind, axis=0))
         main_seed += 1
 
     env.close()
@@ -268,6 +248,8 @@ def sample_windy_pendulum_3d(
     trajs = np.transpose(trajs, (1, 0, 2))   # (timesteps, trials, obs_dim+act_dim)
     tspan = np.arange(timesteps) * dt
 
+    if return_wind:
+        return trajs, tspan, np.transpose(np.stack(winds, axis=0), (1, 0, 2))   # (timesteps, trials, 3)
     return trajs, tspan
 
 
@@ -280,9 +262,9 @@ def get_dataset(
     save_dir=None,
     us=((0.0, 0.0, 0.0),),
     ori_rep="rotmat",
-    friction_coeff=0.1,
+    friction_coeff=0.5,
     external_force_type="sine",
-    external_force_std=1.0,
+    external_force_std=0.0,
     external_force_direction=(1.0, 0.0, 0.0),
     g=9.81,
     obs_noise_std=0.0,
@@ -290,8 +272,8 @@ def get_dataset(
     timesteps=75,
     random_u=False,
     random_u_scale=1.0,
-    g_diag=1.0,
-    varying_friction=True,
+    g_diag=(0.5, 0.7, 0.8),
+    varying_friction=False,
     **kwargs
 ):
     """
@@ -311,7 +293,10 @@ def get_dataset(
     extforce_str = f"extforce-{external_force_type}-std{str(external_force_std).replace('.', 'p')}"
     obs_str = f"obs_noise{str(obs_noise_std).replace('.', 'p')}"
     wind_str = f"wind_force{str(wind_force_std).replace('.', 'p')}"
-    fric_str = f"fric{str(friction_coeff).replace('.', 'p')}"
+    if isinstance(friction_coeff, (list, tuple, np.ndarray)):
+        fric_str = "fric" + "_".join(str(float(x)).replace('.', 'p') for x in friction_coeff)
+    else:
+        fric_str = f"fric{str(friction_coeff).replace('.', 'p')}"
     var_fric_str = f"var_fric{str(varying_friction)}"
     if random_u:
         rand_u_str = f"random_u{str(random_u)}_uScale{str(random_u_scale).replace('.', 'p')}"
@@ -322,7 +307,10 @@ def get_dataset(
         g_str = "G_" + "_".join(str(x).replace('.', 'p') for x in gd)
     else:
         g_str = f"G{str(float(g_diag)).replace('.', 'p')}"
-    filename = f"wp3d_dataset_{extforce_str}_{fric_str}_{var_fric_str}_{obs_str}_{wind_str}_{rand_u_str}_{g_str}_steps{timesteps}.pkl"
+    # seed, samples and test_split are part of the name so runs that differ only in them do not share a cached file
+    split_str = f"seed{seed}_n{samples}_split{str(test_split).replace('.', 'p')}"
+    filename = (f"wp3d_dataset_{extforce_str}_{fric_str}_{var_fric_str}_{obs_str}_{wind_str}_{rand_u_str}_{g_str}"
+                f"_steps{timesteps}_{split_str}.pkl")
     out_path = os.path.join(save_dir, filename)
 
     try:
@@ -427,11 +415,11 @@ if __name__ == "__main__":
     parser.add_argument("--random_u", action="store_true")
     parser.add_argument("--random_u_scale", type=float, default=1.0,
                         help="if --random_u, sample u ~ U(-scale, scale) per step per axis")
-    parser.add_argument("--g_x", type=float, default=1.0,
+    parser.add_argument("--g_x", type=float, default=0.5,
                         help="diagonal control gain G[0,0]")
-    parser.add_argument("--g_y", type=float, default=1.0,
+    parser.add_argument("--g_y", type=float, default=0.7,
                         help="diagonal control gain G[1,1]")
-    parser.add_argument("--g_z", type=float, default=1.0,
+    parser.add_argument("--g_z", type=float, default=0.8,
                         help="diagonal control gain G[2,2]")
     args = parser.parse_args()
 
@@ -441,7 +429,7 @@ if __name__ == "__main__":
         timesteps=args.timesteps,
         test_split=args.test_split,
         save_dir=args.save_dir,
-        friction_coeff=[0.5,0.5,0.5],
+        friction_coeff=args.friction_coeff,
         varying_friction=args.varying_friction,
         external_force_type=args.external_force_type,
         external_force_std=args.external_force_std,

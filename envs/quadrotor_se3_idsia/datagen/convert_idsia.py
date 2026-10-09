@@ -4,13 +4,11 @@ Source: Busetto et al., "Nonlinear System Identification for a Nano-drone Benchm
 Practice; https://github.com/idsia-robotics/nanodrone-sysid-benchmark.  Real flights of a Crazyflie 2.1
 **Brushless** in a motion-capture arena at 100 Hz.
 
-Why this set rather than NanoBench: its input is the **measured** motor angular velocity from the ESC
-telemetry, not a commanded PWM.  There is therefore no PWM-to-thrust map to calibrate, no battery term, and no
-gap between the command and what the motors actually did.  On NanoBench the rotational channel was
-unidentifiable (yaw R^2 = 0.000, best fit needing a 20-30 ms motor lag); here the same test gives roll/pitch/yaw
-R^2 = 0.369/0.342/0.417 at **zero** lag.
+The input is the **measured** motor angular velocity from the ESC telemetry, not a commanded PWM, so there is no
+PWM-to-thrust map to calibrate, no battery term and no gap between the command and what the motors actually did
+(validate_idsia_input_reconstruction.py checks the resulting wrench against the measured motion).
 
-The benchmark also publishes its physical constants, which NanoBench does not (models/models.py):
+The benchmark publishes its physical constants (models/models.py):
     m = 0.045 kg, g = 9.81, J = diag(2.3951e-5, 2.3951e-5, 3.2347e-6) kg m^2, thrust-to-weight 2.0,
     K_t = 3.72e-8 N/(rad/s)^2, K_c = 7.74e-12 N m/(rad/s)^2, arm = 0.0353 m
 None of them is given to our models; they are recorded in the settings for reference and used only by the
@@ -34,7 +32,7 @@ SPLIT: the benchmark's own protocol, which is already shape-disjoint.
 
 INPUT VARIANT ``--input rotor2``: instead of the pre-mixed wrench, the four measured rotor speeds squared,
     u_i = Omega_i^2 / Omega_hover^2,   Omega_hover^2 = m g / (4 K_t)   (so u_i ~ 1 at hover)
-so that the learned control map g(x, R) in R^{6x4} learns the mixer itself (per-motor thrust, the yaw
+so that the learned control matrix G(x, R) in R^{6x4} learns the mixer itself (per-motor thrust, the yaw
 coefficient, any cross-coupling) instead of only rescaling four channels fixed by the published constants.
 The two variants differ only in columns 18:22; the state columns are byte-identical.  The rotor2 file is named
 ``IDSIA_CF21BL_10s_h0p01_rotor2_clean.pkl`` and its settings carry ``input_mode = "rotor2"``.
@@ -66,7 +64,7 @@ THRUST_TO_WEIGHT = 2.0
 
 TRAIN_FAMILIES = ("chirp", "random", "square")
 TEST_FAMILIES = ("melon",)
-FLIGHT_POINTS = 1001                 # 10.01 s at 100 Hz, the same flight length as the other datasets
+FLIGHT_POINTS = 1001                 # 10 s flights (1001 samples at 100 Hz)
 SAMPLE_HZ = 100
 MOTOR_COLUMNS = [f"m{i}_rads" for i in (1, 2, 3, 4)]
 

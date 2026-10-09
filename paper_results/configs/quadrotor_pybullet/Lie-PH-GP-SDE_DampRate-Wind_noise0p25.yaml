@@ -1,0 +1,55 @@
+created_at: '2026-10-06T00:50:00'                    # when this config was written
+data:
+  control_scaling: rms                               # divide the wrench u by its training-flight RMS (rms | none)
+  dataset_path: datasets/QUADROTOR-DATASET-SDE-DiffusionConstant-0p5-DissipationRateDependent-0p5-5s-NoisyPID0p01-50Hz-300flights/SDE-DiffusionConstant-0p5-DissipationRateDependent-0p5-5s-NoisyPID0p01-50Hz-300flights_CF2P_5s_h0p02_train-obs-noise-absolute0p25.pkl   # PyBullet, rate-dependent damping, wind 0.5, 50 Hz, observation noise 0.25
+  substeps: 1                                        # Lie-IMEX integrator steps per observation interval
+  window_points: 101                                 # samples per training window (101 x 0.02 s = 2 s)
+  window_stride: 75                                  # samples between the starts of two windows (25 % overlap)
+experiment:
+  name_suffix: Lie-PH-GP-SDE_DampRate-Wind_noise0p25 # run-folder name after the time stamp
+  notes:                                             # free text copied into the run folder
+  - '6 Oct 2026: recipe, all 300 flights, 5000 steps, global-norm clip 1,
+    DampRate-Wind obs noise 0.25.'
+  root: experiments/quadrotor/campaign_06-10-2026/runs   # where the run folder is created
+model:
+  family: gp                                         # subnetworks: gp = level + variational GP | nn = tanh MLP
+  feature_count: 64                                  # random Fourier features per GP
+  initial_D: 1.0                                     # start of the damping levels: D_v = D_w = 1.0 I
+  initial_M_inverse: 1.0                             # start of the inverse-mass levels: M1^-1 = M2^-1 = 1.0 I
+  initial_control_gp_mean_scale: 0.0                 # start of the control-matrix GP weights (0 = all zero)
+  initial_diffusion: 0.1                             # start of the process noise Sigma (6 numbers, twist units)
+  initial_log_std: -5.0                              # start of log std of every GP weight posterior q(w)
+  initial_observation_sigma: 0.1                     # start of the 4 observation-noise scales sigma_obs
+  initial_randomness: 0.1                            # random spread 0.1 added to the level / noise starts
+  integrator: lie_imex                               # Lie-IMEX (the only integrator of lie_ph)
+  learn_gp_hyperparameters: true                     # learn every GP's amplitude tau and length scale ell (start 1)
+  matern_length_scale: 1.0                           # Matern kernel length scale of the features
+  matern_smoothness: 2.5                             # Matern smoothness nu
+  nn_hidden: 20                                      # MLP width (used only by family nn)
+  nn_layers: 2                                       # MLP hidden layers (used only by family nn)
+  wind: true                                         # true = SDE with learned process noise Sigma | false = ODE
+optimizer:
+  beta1: 0.9                                         # Adam / Prodigy first-moment decay
+  beta2: 0.999                                       # Adam / Prodigy second-moment decay
+  epsilon: 1.0e-08                                   # Adam / Prodigy epsilon
+  final_learning_fraction: 0.1                       # cosine decay ends at 0.1 x the start learning rate
+  gradient_clip_norm: 1.0                            # global-norm gradient clipping (null = off)
+  hyper_initial_distance: 0.01                       # Prodigy start distance d0 for tau and ell
+  hyper_optimizer: prodigy                           # optimiser for tau and ell (prodigy | adam)
+  learning_rate: 0.003                               # Adam rate for GP weights and noise scales
+  level_initial_distance: 0.01                       # Prodigy start distance d0 for the level scalars
+  level_learning_rate: 0.25                          # Prodigy base rate for the level scalars
+runtime:
+  enable_x64: false                                  # float32 (true = float64)
+  gpu: 1                                             # use GPU 1 (unless CUDA_VISIBLE_DEVICES is set)
+schema: lie_ph/quadrotor/v1                          # config format: trained by src/models/SE3_Quadrotor/lie_ph/train.py
+training:
+  batch_size: 16                                     # windows per training step
+  checkpoint_every: 1000                             # save a checkpoint every 1000 steps
+  eval_every: 500                                    # log the test EKF NLL every 500 steps (monitor only)
+  eval_windows: null                                 # test windows for that monitor (null = all)
+  kl_anneal_steps: 1000                              # KL weight rises linearly over the first 1000 steps
+  kl_beta_max: 1.0                                   # final KL weight beta (1 = the full ELBO)
+  loss: ekf                                          # EKF marginal likelihood (ekf | rollout)
+  seed: 0                                            # random seed (features, start, batches, weight samples)
+  total_steps: 5000                                  # fixed training budget; checkpoint_final.pkl is the result

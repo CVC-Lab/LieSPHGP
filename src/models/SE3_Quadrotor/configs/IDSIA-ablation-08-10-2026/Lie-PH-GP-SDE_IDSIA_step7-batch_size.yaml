@@ -1,0 +1,54 @@
+created_at: '2026-10-08T18:25:05'
+data:
+  control_scaling: rms
+  dataset_path: datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_real.pkl
+  substeps: 1
+  window_points: 51
+  window_stride: 10
+experiment:
+  name_suffix: Lie-PH-GP-SDE_IDSIA_step7-batch_size
+  notes:
+  - 'IDSIA ablation step 7: batch_size 256 -> 16, on top of the kept changes [''spd_eigenvalue_floor'',
+    ''prodigy_d0'', ''kl_beta_max'', ''matmul_precision''] (working IDSIA config otherwise).'
+  root: experiments/quadrotor/IDSIA_ablation_08-10-2026/runs
+model:
+  family: gp
+  feature_count: 64
+  initial_D: 1.0
+  initial_M_inverse: 1.0
+  initial_control_gp_mean_scale: 0.0
+  initial_diffusion: 0.1
+  initial_log_std: -5.0
+  initial_observation_sigma: 0.1
+  initial_randomness: 0.0
+  integrator: lie_imex
+  learn_gp_hyperparameters: false
+  matern_length_scale: 1.0
+  matern_smoothness: 2.5
+  nn_hidden: 20
+  nn_layers: 2
+  wind: true
+optimizer:
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  final_learning_fraction: 0.1
+  gradient_clip_norm: 1.0
+  learning_rate: 0.003
+  level_learning_rate: 0.25
+  level_initial_distance: 0.01
+runtime:
+  enable_x64: false
+  gpu: 1
+schema: lie_ph/quadrotor/v1
+training:
+  batch_size: 16
+  checkpoint_every: 1000
+  eval_every: 500
+  eval_windows: null
+  kl_anneal_steps: 1000
+  kl_beta_max: 1.0
+  loss: ekf
+  max_skipped_steps: 0
+  seed: 0
+  total_steps: 5000

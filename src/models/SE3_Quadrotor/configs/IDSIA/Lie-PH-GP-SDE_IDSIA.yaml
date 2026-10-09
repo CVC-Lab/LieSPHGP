@@ -1,0 +1,59 @@
+created_at: '2026-10-08T16:00:00'                    # when this config was written
+data:
+  control_scaling: rms                               # divide the wrench u by its training-flight RMS (rms | none)
+  dataset_path: datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_real.pkl   # real IDSIA flights, 100 Hz (h = 0.01 s)
+  substeps: 1                                        # Lie-IMEX integrator steps per observation interval
+  window_points: 51                                  # samples per training window (51 x 0.01 s = 0.5 s)
+  window_stride: 10                                  # samples between the starts of two windows
+experiment:
+  name_suffix: Lie-PH-GP-SDE_IDSIA                   # run-folder name after the time stamp
+  notes:                                             # free text copied into the run folder
+  - 'Lie-PH-GP-SDE on the real IDSIA flights (100 Hz, wrench from measured rotor speeds;
+    train chirp/random/square, test melon), with the IDSIA config of the unified code:
+    0.5 s windows (51 points, stride 10), batch 256, matmul highest, KL 0.1 ramped
+    over 1000 steps, level spread 0, M2^-1 eigenvalue floor 0.01, fixed GP hyperparameters,
+    Prodigy level d0 1e-3; 5000 steps, final checkpoint, float32, no priors, no skipped
+    steps.'
+  root: experiments/quadrotor/IDSIA_06-10-2026/runs   # where the run folder is created
+model:
+  family: gp                                         # subnetworks: gp = level + variational GP | nn = tanh MLP
+  feature_count: 64                                  # random Fourier features per GP
+  initial_D: 1.0                                     # start of the damping levels: D_v = D_w = 1.0 I
+  initial_M_inverse: 1.0                             # start of the inverse-mass levels: M1^-1 = M2^-1 = 1.0 I
+  initial_control_gp_mean_scale: 0.0                 # start of the control-matrix GP weights (0 = all zero)
+  initial_diffusion: 0.1                             # start of the process noise Sigma (6 numbers, twist units)
+  initial_log_std: -5.0                              # start of log std of every GP weight posterior q(w)
+  initial_observation_sigma: 0.1                     # start of the 4 observation-noise scales sigma_obs
+  initial_randomness: 0.0                            # random spread added to the level / noise starts (0 = fixed neutral start)
+  integrator: lie_imex                               # Lie-IMEX (the only integrator of lie_ph)
+  learn_gp_hyperparameters: false                    # GP amplitude tau and length scale ell fixed at 1 (true = learned)
+  matern_length_scale: 1.0                           # Matern kernel length scale of the features
+  matern_smoothness: 2.5                             # Matern smoothness nu
+  nn_hidden: 20                                      # MLP width (used only by family nn)
+  nn_layers: 2                                       # MLP hidden layers (used only by family nn)
+  spd_eigenvalue_floor: 0.01                         # M2^-1 = L L^T + 0.01 I: keeps the rotational inverse mass invertible
+  wind: true                                         # true = SDE with learned process noise Sigma | false = ODE
+optimizer:
+  beta1: 0.9                                         # Adam / Prodigy first-moment decay
+  beta2: 0.999                                       # Adam / Prodigy second-moment decay
+  epsilon: 1.0e-08                                   # Adam / Prodigy epsilon
+  final_learning_fraction: 0.1                       # cosine decay ends at 0.1 x the start learning rate
+  gradient_clip_norm: 1.0                            # global-norm gradient clipping (null = off)
+  learning_rate: 0.003                               # Adam rate for GP weights and noise scales
+  level_learning_rate: 0.25                          # Prodigy base rate for the level scalars (start distance d0 1e-3, default)
+runtime:
+  enable_x64: false                                  # float32 (true = float64)
+  gpu: 1                                             # use GPU 1 (unless CUDA_VISIBLE_DEVICES is set)
+  matmul_precision: highest                          # true float32 matrix products (no TF32); needed on the real data
+schema: lie_ph/quadrotor/v1                          # config format: trained by src/models/SE3_Quadrotor/lie_ph/train.py
+training:
+  batch_size: 256                                    # windows per training step
+  checkpoint_every: 1000                             # save a checkpoint every 1000 steps
+  eval_every: 500                                    # log the test EKF NLL every 500 steps (monitor only)
+  eval_windows: null                                 # test windows for that monitor (null = all)
+  kl_anneal_steps: 1000                              # KL weight rises linearly over the first 1000 steps
+  kl_beta_max: 0.1                                   # final KL weight beta
+  loss: ekf                                          # EKF marginal likelihood (ekf | rollout)
+  max_skipped_steps: 0                               # non-finite steps allowed before aborting (0 = abort on the first)
+  seed: 0                                            # random seed (features, start, batches, weight samples)
+  total_steps: 5000                                  # fixed training budget; checkpoint_final.pkl is the result

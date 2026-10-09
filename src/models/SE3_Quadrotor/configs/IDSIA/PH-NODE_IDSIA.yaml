@@ -1,0 +1,59 @@
+created_at: '2026-10-08T16:00:00'
+data:
+  control_scaling: rms
+  dataset_path: datasets/QUADROTOR-DATASET-IDSIA/IDSIA_CF21BL_10s_h0p01_real.pkl
+  substeps: 1
+  window_points: 51
+  window_stride: 10
+experiment:
+  name_suffix: PH-NODE_IDSIA
+  notes:
+  - 'PH-NODE on the real IDSIA flights (100 Hz, wrench from measured rotor speeds;
+    train chirp/random/square, test melon), with the IDSIA config of the unified code:
+    0.5 s windows (51 points, stride 10), batch 256, matmul highest, KL 0.1 ramped
+    over 1000 steps, level spread 0, M2^-1 eigenvalue floor 0.01, fixed GP hyperparameters,
+    Prodigy level d0 1e-3; 5000 steps, final checkpoint, float32, no priors, no skipped
+    steps.'
+  root: experiments/quadrotor/IDSIA_06-10-2026/runs
+model:
+  family: nn
+  feature_count: 64
+  initial_D: 1.0
+  initial_M_inverse: 1.0
+  initial_control_gp_mean_scale: 0.0
+  initial_diffusion: 0.1
+  initial_log_std: -5.0
+  initial_observation_sigma: 0.1
+  initial_randomness: 0.0
+  integrator: rk4
+  learn_gp_hyperparameters: false
+  matern_length_scale: 1.0
+  matern_smoothness: 2.5
+  nn_hidden: 20
+  nn_layers: 2
+  spd_eigenvalue_floor: 0.01
+  wind: false
+optimizer:
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 1.0e-08
+  final_learning_fraction: 0.1
+  gradient_clip_norm: 1.0
+  learning_rate: 0.003
+  level_learning_rate: 0.25
+runtime:
+  enable_x64: false
+  gpu: 1
+  matmul_precision: highest
+schema: ph_node/quadrotor/v1
+training:
+  batch_size: 256
+  checkpoint_every: 1000
+  eval_every: 500
+  eval_windows: null
+  kl_anneal_steps: 1000
+  kl_beta_max: 0.1
+  loss: rollout
+  max_skipped_steps: 0
+  seed: 0
+  total_steps: 5000

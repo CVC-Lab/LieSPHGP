@@ -2,22 +2,43 @@
 
 Real BlueROV2 Heavy recordings from the KTH Marinarium tank (9 × 5 × 3 m, underwater motion capture), released with
 Torroba et al., *Marinarium: A Modular Experimental Facility for Reproducible Maritime and Space-Analog Field Robotics*,
-arXiv:2602.23053v2 (2026), Sec. IV. There is no simulator here: the recordings are converted to the SE(3) layout the
-models use. The simulator with the same vehicle is `envs/rov_se3_port_ham/`.
+arXiv:2602.23053v2 (2026), Sec. IV. The recordings are converted to the SE(3) layout the models use.
+`bluerov2.py` holds the published vehicle model (constants, thruster geometry, T200 thrust map from `data/`), used for
+the input conversion and as the published-physics baseline.
 
 | File | Role |
 |---|---|
-| `marinarium_raw/` | clone of `github.com/ViktorNfa/bluerov2_dynamics` (MIT, commit 5843178): rosbags, their CSVs, baselines (git-ignored, 1.4 GB) |
+| `marinarium_raw/` | clone of `github.com/ViktorNfa/bluerov2_dynamics` (MIT, commit 5843178): rosbags, their CSVs, baselines (git-ignored; see Setup) |
 | `datagen/bag_to_npz.py` | step 1: rosbag2 → `marinarium_raw/npz/<recording>.npz`, raw streams on their own clocks (needs `pip install rosbags`) |
-| `datagen/generate_dataset.py` + `datagen/config.yaml` | step 2: npz → `datasets/ROV-MARINARIUM-DATASET-<name>/<name>_clean.pkl` |
+| `datagen/generate_dataset.py` + `datagen/config.yaml` | step 2: npz → `datasets/ROV-MARINARIUM-DATASET-<name>/<name>_clean.pkl`; named variants in `datagen/configs/` (`PAPER-MANUAL-COMMANDS`, `-COMMANDS-5s`, `-WRENCH`) |
 | `datagen/validate_marinarium.py` | frame, sensor and input checks of one recording |
 | `analysis/sim_to_real_gap.py` | sim-to-real gap of the published physics (paper protocol + clean protocol + per-axis scales) → `experiments/rov_se3/analysis/sim_to_real_gap/` |
 
+## Setup
+
+The raw recordings are not part of this repository. They come from the Marinarium repository, whose rosbags are stored
+with Git LFS (about 6 GB on disk after `git lfs pull`: 0.7 GB working tree, the rest in `.git`). From the project root:
+
 ```
-python envs/rov_se3_marinarium/datagen/bag_to_npz.py --all
+git clone https://github.com/ViktorNfa/bluerov2_dynamics envs/rov_se3_marinarium/marinarium_raw
+git -C envs/rov_se3_marinarium/marinarium_raw checkout 5843178f831e6c10ee9158eaffd7774e3ea83a7a
+git -C envs/rov_se3_marinarium/marinarium_raw lfs pull          # needs git-lfs (e.g. apt install git-lfs; git lfs install)
+pip install rosbags scipy pyyaml pandas matplotlib               # rosbags is pure Python: no ROS installation needed
+```
+
+Then, in this order:
+
+```
+python envs/rov_se3_marinarium/datagen/bag_to_npz.py --all                     # 1. rosbag2 -> marinarium_raw/npz/*.npz
 python envs/rov_se3_marinarium/datagen/generate_dataset.py --config envs/rov_se3_marinarium/datagen/config.yaml
-python envs/rov_se3_marinarium/datagen/validate_marinarium.py --recording manual
+                                                                                # 2. -> datasets/ROV-MARINARIUM-DATASET-PAPER-MANUAL/
+python envs/rov_se3_marinarium/datagen/validate_marinarium.py --recording manual   # optional: the checks below
+python envs/rov_se3_marinarium/analysis/sim_to_real_gap.py                     # 3. needs PAPER-MANUAL (input: thrust) from step 2
 ```
+
+`sim_to_real_gap.py` also re-runs the upstream Fossen baseline (`marinarium_raw/fossen/BlueROV2.py`, imported from the
+clone), which is slow; `--skip-their-fossen` skips it (and reuses an earlier result from `results.json` if present).
+`bag_to_npz.py` uses the PX4 message definitions shipped in the clone (`rosbags/types/px4_msgs/msg`).
 
 ## Recordings
 
@@ -57,5 +78,32 @@ bytes because the bag has no type definition for it; 13.3–16.5 V).
 Rows `[p (3), vec(R) (9), v_b (3), ω_b (3), u (n_u)]`; `n_u = 8` (`commands`, `thrust`) or 6 (`wrench`), recorded in
 `settings["control_dim"]`. `u` in row $k$ is the mean input over $(t_{k-1}, t_k]$ (it drives row $k-1 \to k$).
 Keys: `train_trajectories`, `test_trajectories` (fixed-length, dropout- and glitch-free), `x`, `test_x` (stored windows),
-`train_stream`/`test_stream` (+ `_time`, `_valid`) for the paper's continuous H-step evaluation, `settings`
-(allocation $E$, thruster geometry, published nominal parameters, coverage audits).
+`train_stream`/`test_stream` (+ `_time`, `_valid`; one continuous series per split, gaps interpolated and flagged in
+`_valid`, the layout of the paper's continuous H-step evaluation; with `split: recordings` one `<split>_streams` dict per
+recording), `settings` (allocation $E$, thruster geometry, published nominal parameters, coverage audits).
+
+`u` is the mean over the motor messages inside each sample interval. The ~100 Hz motor stream has gaps up to ~40 ms, so
+a few 20 ms intervals contain no message and get $u = 0$ (26 of the `PAPER-MANUAL-COMMANDS` input rows); the count is
+reported per piece in `settings["splits"][...]["pieces"]` as `input_intervals_without_motor_message`.
+
+## Data source and licence
+
+The recordings, the paper's CSV and the Fossen baseline are from
+[github.com/ViktorNfa/bluerov2_dynamics](https://github.com/ViktorNfa/bluerov2_dynamics), released under the MIT
+License, "Copyright (c) 2025 Victor Nan Fernandez-Ayala" (see `marinarium_raw/LICENSE`). Datasets derived from them
+keep that notice. Please cite the Marinarium paper; the BibTeX given in that repository's README is:
+
+```bibtex
+@misc{torroba2026marinariumnewarenabring,
+      title={Marinarium: a New Arena to Bring Maritime Robotics Closer to Shore}, 
+      author={Ignacio Torroba and David Dorner and Victor Nan Fernandez-Ayala and Mart Kartasev and Joris Verhagen and Elias Krantz and Gregorio Marchesini and Carl Ljung and Pedro Roque and Chelsea Sidrane and Linda Van der Spaa and Nicola De Carli and Petter Ogren and Christer Fuglesang and Jana Tumova and Dimos V. Dimarogonas and Ivan Stenius},
+      year={2026},
+      eprint={2602.23053},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2602.23053}, 
+}
+```
+
+The current arXiv version (v2) carries the title *Marinarium: A Modular Experimental Facility for Reproducible Maritime
+and Space-Analog Field Robotics*.

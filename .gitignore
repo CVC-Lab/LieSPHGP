@@ -7,6 +7,7 @@
 *.pyc
 *.pth
 *.txt
+!requirements.txt
 *.sh
 *.pdf
 *.png
@@ -16,17 +17,23 @@ datasets/**/*.pkl
 # vendored gym-pybullet-drones clone and retired data
 envs/quadrotor_se3_pybullet/gym-pybullet-drones/
 envs/quadrotor_se3_idsia/idsia_raw/
-envs/dynabench_se3/raw/
 envs/rov_se3_marinarium/marinarium_raw/
+# third-party README copied next to the converted IDSIA data (no licence to redistribute)
+datasets/QUADROTOR-DATASET-IDSIA/README_idsia.md
 archive/
 results/
 stats/
 *.json
 
-# Generated quadrotor runs and the preserved pre-cleanup archive.
-experiments/quadrotor/*/
-experiments/dynabench_se3/*/
-experiments/rov_se3/*/
+# Generated runs, reports and logs (not distributed).
+experiments/
+
+# Generated datasets: rebuilt with the generators (see datasets/README.md, which stays tracked).
+datasets/*/
+
+# Paper source and working notes.
+my_paper.tex
+new_ph_gp_sde_algorithm.md
 
 # local archives / scratch
 tmp/

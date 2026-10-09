@@ -1,0 +1,20 @@
+# NeuralSDE (unstructured drift + diffusion MLPs) on the rate-dependent-damping wind dataset
+# (c = 0.5, wind 0.5, G = diag(0.5, 0.7, 0.8)), observation noise 0.5: the NeuralSDE column of the windy pendulum table.
+# Same settings as the paper run experiments/pendulum_so3/campaign_04-10-2026/runs/07-10-01-11_neural_sde_NeuralSDE_DampRate-Wind_noise0p5
+# (its command.txt): 5-point windows, full batch, AdamW 1e-3 (weight decay 1e-4), clip 1, Stratonovich Heun with
+# 10 substeps, hidden width 500; 5000 steps, seed 0, float32.
+#   python src/models/3D_SO3_Windy_Pendulum/neural_sde/train.py --config paper_results/configs/pendulum/NeuralSDE_DampRate-Wind_noise0p5.yaml
+dataset_path: datasets/PENDULUM-DATASET-SDE-DiffusionConstant-0p5-DissipationRateDependent-0p5-5s-G0p5-0p7-0p8/SDE-DiffusionConstant-0p5-DissipationRateDependent-0p5-5s-G0p5-0p7-0p8_obs-noise0p5.pkl
+save_dir: experiments/pendulum_so3/campaign_04-10-2026/runs/neural_sde_NeuralSDE_DampRate-Wind_noise0p5
+name: NeuralSDE_DampRate-Wind_noise0p5
+total_steps: 5000
+eval_every: 500
+learn_rate: 0.001
+num_points: 5
+hidden_dim: 500
+init_gain: 1.0
+n_substeps: 10
+grad_clip: 1.0
+seed: 0
+gpu: 0
+verbose: true
